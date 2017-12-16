@@ -1,0 +1,11 @@
+"Twitch Unofficial" Copyright (C) 2017 Rolando Islas. All Rights Reserved.
+
+
+
+                  "TWITCH UNOFFICIAL" LICENSE
+                    Version 1, December 2017
+
+   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+
+  0. Do not distribute, copy, or modify any source files, resources, or binary
+     files.

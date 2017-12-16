@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="TwitchApi" extends="Task">
+	<interface>
+		<!-- Fields -->
+		<field id="get_streams" type="array" alwaysNotify="true" />
+		<field id="get_games" type="array" alwaysNotify="true" />
+		<field id="result" type="assocarray" alwaysNotify="true" />
+		<field id="get_communities" type="array" alwaysNotify="true" />
+		<field id="user_name" type="string" />
+		<!-- Functions -->
+		<function name="get_stream_url" />
+	</interface>
+	
+	<script type="text/brightscript" uri="pkg:/components/TwitchApi.brs" />
+</component>

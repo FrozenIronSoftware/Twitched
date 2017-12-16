@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="InfoScreen" extends="Group">
+	<children>
+	
+		<Rectangle
+			id="background"
+			color="0x19171c"
+			width="1920"
+			height="1080" />
+			
+		<Poster
+			id="preview"
+			width="292"
+			height="180"
+			translation="[300,130]"
+			loadingBitmapUri="pkg:/locale/default/images/poster_loading.png"
+			failedBitmapUri="pkg:/locale/default/images/poster_error.png" />
+	
+		<Label
+			id="title"
+			width="600"
+			height="100"
+			translation="[350, 25]"
+			horizAlign="center"
+			vertAlign="center"
+			wrap="true"
+			numLines="2"
+			maxLines="2" />
+
+    	<ButtonGroup
+    		id="buttons"
+    		minWidth="250"
+    		maxWidth="500"
+    		translation="[650,140]" />
+    		
+    	<Label
+			id="viewers"
+			width="300"
+			height="100"
+			translation="[300, 330]"
+			horizAlign="left"
+			vertAlign="center"
+			wrap="false"
+			numLines="1"
+			maxLines="1" />
+			
+		<Label
+			id="start_time"
+			width="500"
+			height="100"
+			translation="[650, 330]"
+			horizAlign="left"
+			vertAlign="center"
+			wrap="false"
+			numLines="1"
+			maxLines="1" />
+			
+		<Label
+			id="language"
+			width="300"
+			height="100"
+			translation="[300, 385]"
+			horizAlign="left"
+			vertAlign="center"
+			wrap="false"
+			numLines="1"
+			maxLines="1" />
+			
+		<Label
+			id="stream_type"
+			width="300"
+			height="100"
+			translation="[650, 385]"
+			horizAlign="left"
+			vertAlign="center"
+			wrap="false"
+			numLines="1"
+			maxLines="1" />
+
+	</children>
+
+	<interface>
+		<!-- Fields -->
+		<field id="preview_image" type="string" alwaysNotify="true" />
+		<field id="title" type="string" alwaysNotify="true" />
+		<field id="streamer" type="array" alwaysNotify="true" />
+		<field id="game" type="array" alwaysNotify="true" />
+		<field id="viewers" type="integer" alwaysNotify="true" />
+		<field id="start_time" type="string" alwaysNotify="true" />
+		<field id="language" type="string" alwaysNotify="true" />
+		<field id="stream_type" type="string" alwaysNotify="true" />
+		<field id="game_selected" type="string" alwaysNotify="true" />
+		<field id="play_selected" type="string" alwaysNotify="true" />
+		<field id="focus" type="boolean" alwaysNotify="true" />
+	</interface>
+
+	<script type="text/brightscript" uri="pkg:/components/InfoScreen.brs" />
+	<script type="text/brightscript" uri="pkg:/components/TranslateUtil.brs" />
+</component>

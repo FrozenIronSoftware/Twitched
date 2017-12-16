@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="Twitch" extends="Scene">
+	<children>
+
+		<Rectangle
+			id="background"
+			color="0x19171c"
+			width="1920"
+			height="1080" />
+
+		<Overhang
+			id="header"
+			color="0x6441a4"
+	    	showClock="true"
+	    	clockColor="0xffffff"
+	    	logoUri="pkg:/locale/default/images/overhang_logo_hd.png"
+	    	title=""
+	    	titleColor="0xffffff" />
+
+    	<LabelList
+    		id="main_menu"
+    		translation="[120,155]"
+    		itemSize="[300,48]"
+    		focusBitmapUri="pkg:/locale/default/images/list_selection.9.png"
+    		focusBitmapBlendColor="0x6441a4"
+    		focusFootprintBitmapUri=
+    			"pkg:/locale/default/images/list_selection.9.png"
+    		focusFootprintBlendColor="0x281942"
+    		vertFocusAnimationStyle="fixedFocusWrap"
+    		focusedColor="0xffffff"
+    		color="0xffffff" >
+    		<ContentNode role="content" />
+    	</LabelList>
+
+    	<PosterGrid
+    		id="content_grid"
+    		visible="false"
+    		translation="[440,155]"
+    		basePosterSize="[195,120]"
+    		itemSpacing="[4,8]"
+    		numColumns="4"
+    		numRows="4"
+    		caption1NumLines="1"
+    		caption1Color="0xffffff"
+    		caption2NumLines="1"
+    		caption2Color="0xffffff"
+    		caption2Font="font:SmallestSystemFont"
+    		captionBackgroundBitmapUri=
+    			"pkg:/locale/default/images/transparent.png"
+    		imageWellBitmapUri=
+    			"pkg:/locale/default/images/transparent.png"
+    		loadingBitmapUri="pkg:/locale/default/images/poster_loading.png"
+    		failedBitmapUri="pkg:/locale/default/images/poster_error.png" />
+    	
+    	<PosterGrid
+    		id="poster_grid"
+    		visible="false"
+    		translation="[440,155]"
+    		basePosterSize="[128,170]"
+    		itemSpacing="[4,8]"
+    		numColumns="6"
+    		numRows="2"
+    		caption1NumLines="1"
+    		caption1Color="0xffffff"
+    		caption2NumLines="1"
+    		caption2Color="0xffffff"
+    		caption2Font="font:SmallestSystemFont"
+    		captionBackgroundBitmapUri=
+    			"pkg:/locale/default/images/transparent.png"
+    		imageWellBitmapUri=
+    			"pkg:/locale/default/images/transparent.png"
+    		loadingBitmapUri=
+    			"pkg:/locale/default/images/poster_loading_vertical.png"
+    		failedBitmapUri=
+    			"pkg:/locale/default/images/poster_error_vertical.png" />
+    	
+    	<InfoScreen
+    		id="info_screen"
+    		visible="false"
+    		translation="[0,115]" />
+    		
+    	<Dialog 
+    		id="dialog"
+    		visible="false" />
+    		
+    	<Video 
+    		id="video"
+    		visible="false" />
+    	
+    	<Registry 
+    		id="registry" />
+    		
+    	<TwitchApi 
+    		id="twitch_api" />
+
+	</children>
+
+	<script type="text/brightscript" uri="pkg:/source/Twitch.brs" />
+	<script type="text/brightscript" uri="pkg:/components/TranslateUtil.brs" />
+</component>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+    <file datatype="x-brs" original="source/source/Twitch.brs" 
+    	source-language="en-US" target-language="en-US">
+        <body>
+            <trans-unit id="0">
+            	<source>title_featured</source>
+            	<target>Featured</target>
+           	</trans-unit>
+           	<trans-unit id="1">
+            	<source>title_games</source>
+            	<target>Games</target>
+           	</trans-unit>
+           	<trans-unit id="2">
+            	<source>title_creative</source>
+            	<target>Creative</target>
+           	</trans-unit>
+           	<trans-unit id="3">
+            	<source>title_communities</source>
+            	<target>Communities</target>
+           	</trans-unit>
+           	<trans-unit id="4">
+            	<source>title_popular</source>
+            	<target>Popular</target>
+           	</trans-unit>
+           	<trans-unit id="5">
+            	<source>title_followed</source>
+            	<target>Followed</target>
+           	</trans-unit>
+           	<trans-unit id="6">
+           		<source>error_api_fail</source>
+           		<target>Failed to connect to the API server.</target>
+           	</trans-unit>
+           	<trans-unit id="6">
+           		<source>title_community</source>
+           		<target>Community</target>
+           	</trans-unit>
+           	<trans-unit id="7">
+           		<source>button_play</source>
+           		<target>Play</target>
+           	</trans-unit>
+           	<trans-unit id="8">
+           		<source>title_stream</source>
+           		<target>Stream</target>
+           	</trans-unit>
+           	<trans-unit id="9">
+           		<source>prefix_streamer</source>
+           		<target>Streamer</target>
+           	</trans-unit>
+           	<trans-unit id="10">
+           		<source>prefix_game</source>
+           		<target>Game</target>
+           	</trans-unit>
+           	<trans-unit id="11">
+           		<source>title_error</source>
+           		<target>Error</target>
+           	</trans-unit>
+           	<trans-unit id="12">
+           		<source>title_error_code</source>
+           		<target>Error Code</target>
+           	</trans-unit>
+           	<trans-unit id="13">
+           		<source>title_viewers</source>
+           		<target>Viewers</target>
+           	</trans-unit>
+           	<trans-unit id="14">
+           		<source>title_language</source>
+           		<target>Language</target>
+           	</trans-unit>
+           	<trans-unit id="15">
+           		<source>title_uptime</source>
+           		<target>Uptime</target>
+           	</trans-unit>
+           	<trans-unit id="16">
+           		<source>title_stream_type</source>
+           		<target>Type</target>
+           	</trans-unit>
+           	<trans-unit id="17">
+           		<source>inline_viewers_singular</source>
+           		<target>viewer</target>
+           	</trans-unit>
+           	<trans-unit id="18">
+           		<source>inline_viewers_plural</source>
+           		<target>viewers</target>
+           	</trans-unit>
+           	<trans-unit id="19">
+           		<source>inline_hours_singular</source>
+           		<target>hour</target>
+           	</trans-unit>
+           	<trans-unit id="20">
+           		<source>inline_hours_plural</source>
+           		<target>hours</target>
+           	</trans-unit>
+           	<trans-unit id="21">
+           		<source>inline_minutes_singular</source>
+           		<target>minute</target>
+           	</trans-unit>
+           	<trans-unit id="22">
+           		<source>inline_minutes_plural</source>
+           		<target>minutes</target>
+           	</trans-unit>
+        </body>
+    </file>
+</xliff>
