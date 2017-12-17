@@ -100,6 +100,22 @@
            		<source>inline_minutes_plural</source>
            		<target>minutes</target>
            	</trans-unit>
+           	<trans-unit id="23">
+           		<source>title_exit_confirm</source>
+           		<target>Exit</target>
+           	</trans-unit>
+           	<trans-unit id="24">
+           		<source>message_exit_confirm</source>
+           		<target>Would you like to exit Twitched?</target>
+           	</trans-unit>
+           	<trans-unit id="25">
+           		<source>button_cancel</source>
+           		<target>Cancel</target>
+           	</trans-unit>
+           	<trans-unit id="26">
+           		<source>button_confirm</source>
+           		<target>Confirm</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

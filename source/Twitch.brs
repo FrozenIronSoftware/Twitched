@@ -6,13 +6,13 @@ function main(args as dynamic) as void
     print("Twitched started")
     ' Load secret keys
 	secret = parseJson(readAsciiFile("pkg:/secret.json"))
-	' Initialize the TwitchApi "class"
-	' Show the main screen
+	' Initialize the main screen
 	screen = createObject("roSGScreen")
-	m.port = createObject("roMessagePort")
-	screen.setMessagePort(m.port)
+	port = createObject("roMessagePort")
+	screen.setMessagePort(port)
 	scene = screen.createScene("Twitch")
 	scene.backExitsScene = false
+	' Set globals
 	m.global = screen.getGlobalNode()
 	m.global.addFields({
 	   args: args, ' TODO handle deep links
@@ -20,13 +20,22 @@ function main(args as dynamic) as void
 	   REG_TWITCH: "TWITCH",
 	   REG_USER_NAME: "USER_NAME"
 	})
+	' Events
 	screen.show()
+	scene.observeField("do_exit", port)
 	' Main loop
 	while true
-	   msg = wait(0, m.port)
+	   msg = wait(0, port)
 	   if type(msg) = "roSGScreenEvent" 
 	       if msg.isScreenClosed() 
 	           return
+	       end if
+	   else if type(msg) = "roSGNodeEvent"
+	       if msg.getField() = "do_exit"
+	           if msg.getData()
+	               screen.close()
+	               return
+	           end if
 	       end if
 	   end if
 	end while
@@ -62,6 +71,7 @@ function init() as void
     m.twitch_api.observeField("result", "on_callback")
     m.info_screen.observeField("play_selected", "play_video")
     m.info_screen.observeField("game_selected", "load_dynamic_grid_for_game")
+    m.dialog.observeField("buttonSelected", "on_dialog_button_selected")
     ' Init
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_USER_NAME, 
         "set_twitch_user_name"]
@@ -305,6 +315,17 @@ function onKeyEvent(key as string, press as boolean) as boolean
                 return false
             end if
             return true
+        ' App exit
+        else if press and key = "back"
+            ' Show exit confirm dialog
+            m.dialog.title = tr("title_exit_confirm")
+            m.dialog.message = tr("message_exit_confirm")
+            m.dialog.buttons = [tr("button_cancel"), tr("button_confirm")]
+            m.dialog.focusButton = 1
+            m.dialog_callback = "do_exit"
+            m.dialog.visible = true
+            m.top.dialog = m.dialog
+            return true
         end if
     ' Video/Poster Grid
     else if m.content_grid.hasFocus() or m.poster_grid.hasFocus()
@@ -541,4 +562,29 @@ function load_dynamic_grid_for_game(event as object) as void
     game_id = m.info_screen.game[1]
     game_name = m.info_screen.game[0]
     load_dynamic_grid(game_name, game_id)
+end function
+
+' Send an exit event (set the exit field to true for any observers)
+function do_exit() as void
+    m.top.setField("do_exit", true)
+end function
+
+' Handle a button selected event for a dialog
+' Expects the event's getData() function to have the buttonSelected index
+' The index should be 0 for cancel or 1 for confirm
+function on_dialog_button_selected(event as object) as void
+    ' Canceled
+    if event.getData() = 0
+        m.dialog.close = true
+        m.main_menu.setFocus(true)
+    ' Confirmed - call callback
+    else if event.getData() = 1
+        if m.dialog_callback <> invalid
+            eval(m.dialog_callback + "()")
+        else
+            print("Dialog missing callback")
+        end if
+    else
+        print("Unknown button selected on dialog:" + event.getData().toStr())
+    end if
 end function
