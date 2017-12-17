@@ -46,6 +46,8 @@ function init() as void
     print("Main scene started")
     ' Constants
     m.ARROW = "»"
+    m.MAX_POSTERS = 100
+    m.MAX_VIDEOS = 50
     m.DYNAMIC_GRID = 999
     m.INFO = 1000
     m.VIDEO_PLAYER = 1001
@@ -152,21 +154,21 @@ function on_menu_item_focused(message as object) as void
     ' Popular
     if message.getData() = m.POPULAR
         m.content_grid.visible = true
-        m.twitch_api.get_streams = [{limit: 16}, "set_content_grid"]
+        m.twitch_api.get_streams = [{limit: m.MAX_VIDEOS}, "set_content_grid"]
     ' Games
     else if message.getData() = m.GAMES
         m.poster_grid.visible = true
-        m.twitch_api.get_games = [{limit: 18}, "set_poster_grid"]
+        m.twitch_api.get_games = [{limit: m.MAX_POSTERS}, "set_poster_grid"]
     ' Creative
     else if message.getData() = m.CREATIVE
         m.content_grid.visible = true
         ' Creative id: 488191
-        m.twitch_api.get_streams = [{limit: 16, game: "488191"}, 
+        m.twitch_api.get_streams = [{limit: m.MAX_VIDEOS, game: "488191"}, 
             "set_content_grid"]
     ' Communities
     else if message.getData() = m.COMMUNITIES
         m.poster_grid.visible = true
-        m.twitch_api.get_communities = [{limit: 18}, "on_community_data"]
+        m.twitch_api.get_communities = [{limit: m.MAX_POSTERS}, "on_community_data"]
     ' Followed
     else if message.getData() = m.FOLLOWED
         m.content_grid.visible = true
@@ -458,7 +460,7 @@ function load_dynamic_grid(game_name = "" as string, game_id = "" as string, com
     ' Load streams
     m.content_grid.content = invalid
     m.twitch_api.get_streams = [{
-        limit: 16,
+        limit: m.MAX_VIDEOS,
         game: game_id,
         community: community_id
     }, "set_content_grid"]
@@ -572,7 +574,7 @@ function load_dynamic_grid_for_game(event as object) as void
     ' Hide info screen
     'set_saved_stage_info(m.INFO)
     m.main_menu.jumpToItem = m.GAMES
-    m.twitch_api.get_games = [{limit: 18}, "set_poster_grid"]
+    m.twitch_api.get_games = [{limit: m.MAX_POSTERS}, "set_poster_grid"]
     m.info_screen.visible = false
     m.content_grid.setFocus(true)
     m.stage = m.GAMES
