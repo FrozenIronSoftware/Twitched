@@ -124,6 +124,10 @@
            		<source>error_stream_not_found</source>
            		<target>The stream is not live or does not exist.</target>
            	</trans-unit>
+           	<trans-unit id="29">
+           		<source>error_deep_link_invalid</source>
+           		<target>Could not launch content: Invalid deep link.</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

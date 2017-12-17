@@ -88,6 +88,9 @@ function init() as void
                 user_id: args.twitch_user_id
             }, "on_stream_info"]
             return
+        ' Invalid deep link
+        else
+            error("error_deep_link_invalid", 1009)
         end if
     end if
     ' Normal init
