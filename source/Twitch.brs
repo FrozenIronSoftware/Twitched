@@ -458,6 +458,8 @@ function show_video_info_screen() as void
     m.info_screen.setFocus(true)
     m.info_screen.visible = true
     m.stage = m.INFO
+    ' Start video preload
+    preload_video()
 end function
 
 ' Save the stage info
@@ -484,10 +486,9 @@ function set_saved_stage_info(stage_id as integer) as void
     m.stage = m.previous_stage[stage_id].stage
 end function
 
-' Show and play video
-' Only called by info_screen variable event
-' @param event field update notifier
-function play_video(event as object) as void
+' Initialize video node and set it to preload
+' Should only be called after info_screen is populated with video data
+function preload_video() as void
     master_playlist = m.twitch_api.callFunc("get_stream_url", m.info_screen.streamer[1])
     print(master_playlist)
     ' Setup video data
@@ -507,13 +508,21 @@ function play_video(event as object) as void
     video.actors = m.info_screen.streamer[0]
     video.streamFormat = "hls"
     video.live = true
+    ' Preload
+    m.video.content = video
+    m.video.control = "prebuffer"
+end function
+
+' Show and play video
+' Only called by info_screen variable event
+' @param event field update notifier
+function play_video(event as object) as void
     ' Show video
     save_stage_info(m.VIDEO_PLAYER)
     m.stage = m.VIDEO_PLAYER
     m.video.setFocus(true)
-    m.video.content = video
-    m.video.control = "play"
     m.video.visible = true
+    m.video.control = "play"
 end function
 
 ' Load the dynamic grid for a specific game
