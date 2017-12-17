@@ -3,7 +3,7 @@
 ' Main entry point for the application.
 ' Starts the main scene
 function main(args as dynamic) as void
-    print("TwitchUnoffcial started")
+    print("Twitched started")
     ' Load secret keys
 	secret = parseJson(readAsciiFile("pkg:/secret.json"))
 	' Initialize the TwitchApi "class"
