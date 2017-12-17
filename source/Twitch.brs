@@ -76,6 +76,22 @@ function init() as void
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_USER_NAME, 
         "set_twitch_user_name"]
     init_main_menu()
+    ' Parse args
+    args = m.global.args
+    ' Deep link
+    if args.contentId <> invalid and args.mediaType <> invalid
+        ' Go to a live stream
+        if args.contentId = "twitch_stream" and args.mediaType = "live" and (args.twitch_user_name <> invalid or args.twitch_user_id <> invalid)
+            m.twitch_api.get_streams = [{
+                limit: 1,
+                user_login: args.twitch_user_name,
+                user_id: args.twitch_user_id
+            }, "on_stream_info"]
+            return
+        end if
+    end if
+    ' Normal init
+    m.main_menu.setFocus(true)
 end function
 
 ' Handle an async callback result
@@ -119,7 +135,6 @@ function init_main_menu() as void
     ' Add events
     m.main_menu.observeField("itemFocused", "on_menu_item_focused")
     ' Focus main menu
-    m.main_menu.setFocus(true)
     m.main_menu.jumpToItem = m.POPULAR
 end function
 
@@ -258,6 +273,7 @@ end function
 '        {result: object twitch_get_streams response}
 function set_content_grid(event as object) as void
     if type(event.getData().result) <> "roArray"
+        print(event.getData().result)
         error("error_api_fail", 1005)
         return
     end if
@@ -459,11 +475,12 @@ end function
 function show_video_info_screen() as void
     ' Get current video data
     selected_index = m.content_grid.itemSelected
-    if selected_index = invalid or selected_index >= m.video_data.count()
+    if selected_index = invalid or selected_index >= m.video_data.count() or selected_index < 0
+        print("Could not show info screen: Index invalid")
+        print(selected_index)
         return
     end if
     video_item = m.video_data[selected_index]
-    m.info_screen.video_data = video_item
     ' Set info screen data
     m.info_screen.preview_image = video_item.thumbnail_url.replace("{width}", "292").replace("{height}", "180")
     m.info_screen.title = video_item.title
@@ -511,7 +528,6 @@ end function
 ' Should only be called after info_screen is populated with video data
 function preload_video() as void
     master_playlist = m.twitch_api.callFunc("get_stream_url", m.info_screen.streamer[1])
-    print(master_playlist)
     ' Setup video data
     video = createObject("roSGNode", "ContentNode")
     video.streams = [{
@@ -537,7 +553,7 @@ end function
 ' Show and play video
 ' Only called by info_screen variable event
 ' @param event field update notifier
-function play_video(event as object) as void
+function play_video(event = invalid as object) as void
     ' Show video
     save_stage_info(m.VIDEO_PLAYER)
     m.stage = m.VIDEO_PLAYER
@@ -587,4 +603,33 @@ function on_dialog_button_selected(event as object) as void
     else
         print("Unknown button selected on dialog:" + event.getData().toStr())
     end if
+end function
+
+' Handle stream info and launch a video directly for a stream
+' Expects TwitchAPI data for a single stream
+' This will give an API error if the API returns invalid data or it cannot be
+' reached.
+' If no stream data is given to this an error will be displayed stating
+' that the streamer could not be found or is not live
+' This also closes any top level dialog if there are no errors
+function on_stream_info(event as object) as void
+    ' Show API error
+    if type(event.getData().result) <> "roArray"
+        error("error_api_fail", 1007)
+        m.main_menu.setFocus(true)
+        return
+    ' Not found
+    else if event.getData().result.count() = 0
+        error("error_stream_not_found", 1008)
+        m.main_menu.setFocus(true)
+        return
+    end if
+    ' Play the video
+    set_content_grid(event)
+    m.content_grid.jumpToItem = 0
+    m.content_grid.itemSelected = 0
+    show_video_info_screen()
+    play_video()
+    ' Init
+    m.main_menu.setFocus(true)
 end function

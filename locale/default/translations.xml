@@ -116,6 +116,14 @@
            		<source>button_confirm</source>
            		<target>Confirm</target>
            	</trans-unit>
+           	<trans-unit id="27">
+           		<source>title_loading_stream</source>
+           		<target>Loading Stream</target>
+           	</trans-unit>
+           	<trans-unit id="28">
+           		<source>error_stream_not_found</source>
+           		<target>The stream is not live or does not exist.</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>
