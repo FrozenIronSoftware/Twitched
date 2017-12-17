@@ -635,6 +635,4 @@ function on_stream_info(event as object) as void
     m.content_grid.itemSelected = 0
     show_video_info_screen()
     play_video()
-    ' Init
-    m.main_menu.setFocus(true)
 end function
