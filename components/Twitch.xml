@@ -93,6 +93,18 @@
     		
     	<TwitchApi 
     		id="twitch_api" />
+    		
+    	<Label
+    		id="status_message"
+    		width="800"
+    		height="50"
+    		translation="[440, 280]"
+    		horizAlign="center"
+			vertAlign="center"
+			wrap="false"
+			numLines="1"
+			maxLines="1"
+			visible="false" />
 
 	</children>
 	

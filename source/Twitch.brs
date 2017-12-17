@@ -68,6 +68,7 @@ function init() as void
     m.registry = m.top.findNode("registry")
     m.twitch_api = m.top.findNode("twitch_api")
     m.video = m.top.findNode("video")
+    m.message = m.top.findNode("status_message")
     ' Events
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
@@ -154,20 +155,25 @@ function on_menu_item_focused(message as object) as void
     ' Popular
     if message.getData() = m.POPULAR
         m.content_grid.visible = true
+        show_message("message_loading")
         m.twitch_api.get_streams = [{limit: m.MAX_VIDEOS}, "set_content_grid"]
     ' Games
     else if message.getData() = m.GAMES
         m.poster_grid.visible = true
+        show_message("message_loading")
         m.twitch_api.get_games = [{limit: m.MAX_POSTERS}, "set_poster_grid"]
     ' Creative
     else if message.getData() = m.CREATIVE
         m.content_grid.visible = true
+        show_message("message_loading")
         ' Creative id: 488191
         m.twitch_api.get_streams = [{limit: m.MAX_VIDEOS, game: "488191"}, 
             "set_content_grid"]
+        show_message("message_loading")
     ' Communities
     else if message.getData() = m.COMMUNITIES
         m.poster_grid.visible = true
+        show_message("message_loading")
         m.twitch_api.get_communities = [{limit: m.MAX_POSTERS}, "on_community_data"]
     ' Followed
     else if message.getData() = m.FOLLOWED
@@ -184,6 +190,7 @@ end function
 ' @param event roSGNodeMessage with data containing an associative array 
 '        {result: object twitch_get_communities response}
 function on_community_data(event as object) as void
+    show_message("")
     community_data = event.getData().result
     if type(community_data) <> "roAssociativeArray" or type(community_data.communities) <> "roArray"
         print("on_community_data: invalid data")
@@ -232,6 +239,7 @@ end function
 ' @param event roSGNodeMessage with data containing an associative array 
 '        {result: object twitch_get_games response}
 function set_poster_grid(event as object) as void
+    show_message("")
     ' Check for data
     is_event = type(event) = "roSGNodeEvent"
     is_assocarray = type(event) = "roAssociativeArray"
@@ -277,6 +285,7 @@ end function
 ' @param event roSGNodeMessage with data containing an associative array 
 '        {result: object twitch_get_streams response}
 function set_content_grid(event as object) as void
+    show_message("")
     if type(event.getData().result) <> "roArray"
         print(event.getData().result)
         error("error_api_fail", 1005)
@@ -458,6 +467,7 @@ function load_dynamic_grid(game_name = "" as string, game_id = "" as string, com
     ' Reset
     reset(true)
     ' Load streams
+    show_message("message_loading")
     m.content_grid.content = invalid
     m.twitch_api.get_streams = [{
         limit: m.MAX_VIDEOS,
@@ -465,7 +475,7 @@ function load_dynamic_grid(game_name = "" as string, game_id = "" as string, com
         community: community_id
     }, "set_content_grid"]
     ' Title
-    if m.stage = m.COMMUNITIES and community <> ""
+    if m.stage = m.COMMUNITIES and community_id <> ""
         m.header.title = tr("title_community") + " " + m.ARROW + " " + game_name
     else
         m.header.title = game_name
@@ -635,4 +645,18 @@ function on_stream_info(event as object) as void
     m.content_grid.itemSelected = 0
     show_video_info_screen()
     play_video()
+end function
+
+' Show the message label
+function show_message(message as string) as void
+    ' Hide
+    if message = ""
+        m.message.text = ""
+        m.message.visible = false
+    ' Show
+    else
+        message = tr(message)
+        m.message.text = message
+        m.message.visible = true
+    end if
 end function
