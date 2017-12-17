@@ -86,13 +86,13 @@ function get_streams(params as object) as object
     if passed_params.before <> invalid
         url_params.push("before=" + m.http.escape(passed_params.before.toStr()))
     end if
-    if passed_params.community <> invalid
+    if passed_params.community <> invalid and passed_params.community <> ""
         url_params.push("community_id=" + m.http.escape(passed_params.community.toStr()))
     end if
     if passed_params.first <> invalid
         url_params.push("first=" + m.http.escape(passed_params.first.toStr()))
     end if
-    if passed_params.game <> invalid
+    if passed_params.game <> invalid and passed_params.game <> ""
         url_params.push("game_id=" + m.http.escape(passed_params.game.toStr()))
     end if
     if passed_params.lang <> invalid
