@@ -231,6 +231,8 @@ function reset(only_hide = false as boolean) as void
     m.content_grid.visible = false
     m.poster_grid.visible = false
     m.info_screen.visible = false
+    ' Cancel any async requests
+    m.twitch_api.cancel = true
 end function
 
 ' Set the poster grid with game content

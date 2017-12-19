@@ -27,14 +27,14 @@ function init() as void
     m.http.addHeader("X-Roku-Reserved-Dev-Id", "") ' Automatically populated
     m.http.initClientCertificates()
     ' Variables
-    m.http_response = invalid
-    m.http_start_time = 0
+    m.callback = invalid
     ' Events
     m.top.observeField("get_streams", m.port)
     m.top.observeField("get_games", m.port)
     m.top.observeField("get_communities", m.port)
     m.top.observeField("get_link_code", m.port)
     m.top.observeField("get_link_status", m.port)
+    m.top.observeField("cancel", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -46,7 +46,7 @@ function run() as void
     while true
         msg = wait(0, m.port)
         if type(msg) = "roUrlEvent"
-            handle_url_event(msg)
+            on_http_response(msg)
         else if type(msg) = "roSGNodeEvent"
             if msg.getField() = "get_streams"
                 get_streams(msg)
@@ -58,28 +58,18 @@ function run() as void
                 get_link_code(msg)
             else if msg.getField() = "get_link_status"
                 get_link_status(msg)
+            else if msg.getField() = "cancel"
+                m.http.asyncCancel()
+                m.callback = invalid
             end if
         end if
     end while
 end function
 
-' Handle a URL event
-function handle_url_event(event as object) as void
-    ' Transfer not complete
-    if event.getInt() <> 1 then return
-    ' Set the URL response variable
-    m.http_response = {
-        data: event.getString(),
-        headers: event.getResponseHeadersArray(),
-        status_code: event.getResponseCode(),
-        error: event.getFailureReason()
-    }
-end function
-
 ' Make an API request for a list of streams
 ' @param params array of parameters [associative request_params, string callback]
 ' @return JSON data or invalid on error
-function get_streams(params as object) as object
+function get_streams(params as object) as void
     request_url = m.API_HELIX + "/streams"
     passed_params = params.getData()[0]
     ' Construct parameter array
@@ -125,7 +115,7 @@ end function
 ' Make an API request for a list of games
 ' @param params array of parameters [associative request_params, string callback]
 ' @return JSON data or invalid on error
-function get_games(params as object) as object
+function get_games(params as object) as void
     request_url = m.API_KRAKEN + "/games"
     passed_params = params.getData()[0]
     ' Construct parameter array
@@ -139,7 +129,8 @@ function get_games(params as object) as object
     request("GET", request_url, url_params, params.getData()[1])
 end function
 
-' Make a request and set the results to the value.
+' Make an async request, automatically handling the callback result and setting it to
+' the result field
 ' A JSON parse is attempted, so the expected data should be JSON
 ' @param req type of request GET or POST
 ' @param request_url base URL to call with no parameters
@@ -156,24 +147,42 @@ function request(req as string, request_url as string, params as object, callbac
         end for
     end if
     ' Make the HTTP request
+    m.callback = callback
     if req = "GET"
-        response = get(request_url)
+        get(request_url)
     else if req = "POST"
         'response = post(request_url, data)
         ' TODO handle post
     end if
+end function
+
+' Event callback for an http response
+' set the result data if the status is not an error
+function on_http_response(event as object) as void
+    ' Transfer not complete
+    if event.getInt() <> 1 or m.callback = invalid then return
+    if event.getResponseCode() <> 200
+        print "HTTP request failed:"
+        print tab(2)"URL: " + m.http.getUrl()
+        print tab(2)"Status Code: " + event.getResponseCode().toStr()
+        print tab(2)"Reason: " + event.getFailureReason()
+    end if
+    ' Response
+    response = event.getString()
+    ' Parse
     json = parseJson(response)
     ' Send result event
     m.top.setField("result", {
-        callback: callback
+        callback: m.callback
         result: json
     })
+    m.callback = invalid
 end function
 
 ' Make an API request for a list of communities
 ' @param params array of parameters [associative request_params, string callback]
 ' @return JSON data or invalid on error
-function get_communities(params as object) as object
+function get_communities(params as object) as void
     request_url = m.API_KRAKEN + "/communities/top"
     passed_params = params.getData()[0]
     ' Construct parameter array
@@ -187,16 +196,16 @@ function get_communities(params as object) as object
     request("GET", request_url, url_params, params.getData()[1])
 end function
 
-' Helper function to request a URL and get its contents as a string
-function get(request_url as string) as string
+' Helper function to request a URL in an asynchronous fashion
+function get(request_url as string) as void
     m.http.setRequest("GET")
     m.http.setUrl(request_url)
-    return m.http.getToString()
+    m.http.asyncGetToString()
 end function
 
 ' Get stream HLS URL for a streamer
 function get_stream_url(params as object) as string
-    return m.API + "twitch/hls/" + params.encodeUri() + ".m3u8"
+    return m.API + "/twitch/hls/" + params.encodeUri() + ".m3u8"
 end function
 
 ' Request a link code from the API
