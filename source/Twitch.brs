@@ -421,7 +421,6 @@ function onKeyEvent(key as string, press as boolean) as boolean
             m.info_screen.visible = true
             m.info_screen.focus = true
             m.video.control = "stop"
-            m.video.content = invalid
             m.video.visible = false
         end if
     ' Link screen
