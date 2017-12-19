@@ -18,7 +18,7 @@ function main(args as dynamic) as void
 	   args: args, ' TODO handle deep links
 	   secret: secret,
 	   REG_TWITCH: "TWITCH",
-	   REG_USER_NAME: "USER_NAME"
+	   REG_TOKEN: "TOKEN"
 	})
 	' Events
 	screen.show()
@@ -46,11 +46,13 @@ function init() as void
     print("Main scene started")
     ' Constants
     m.ARROW = "»"
+    m.MAX_LIMIT = 100
     m.MAX_POSTERS = 100
     m.MAX_VIDEOS = 50
     m.DYNAMIC_GRID = 999
     m.INFO = 1000
     m.VIDEO_PLAYER = 1001
+    m.LINK = 1002
     m.POPULAR = 0
     m.GAMES = 1
     m.CREATIVE = 2
@@ -69,15 +71,19 @@ function init() as void
     m.twitch_api = m.top.findNode("twitch_api")
     m.video = m.top.findNode("video")
     m.message = m.top.findNode("status_message")
+    m.link_screen = m.top.findNode("link_screen")
     ' Events
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
     m.info_screen.observeField("play_selected", "play_video")
     m.info_screen.observeField("game_selected", "load_dynamic_grid_for_game")
     m.dialog.observeField("buttonSelected", "on_dialog_button_selected")
+    m.link_screen.observeField("linked_token", "on_link_token")
+    m.link_screen.observeField("error", "on_link_error")
+    m.link_screen.observeField("timeout", "on_link_timeout")
     ' Init
-    m.registry.read = [m.global.REG_TWITCH, m.global.REG_USER_NAME, 
-        "set_twitch_user_name"]
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
+        "set_twitch_user_token"]
     init_main_menu()
     ' Parse args
     args = m.global.args
@@ -100,35 +106,13 @@ function init() as void
     m.main_menu.setFocus(true)
 end function
 
-' Handle an async callback result
-' The event data is expected to be an associative array with a callback field
-' The callback should expect the event passed to it with the result in the 
-' result field of the data assocarray
-function on_callback(event as object) as void
-    callback = event.getData().callback
-    error_code = eval(callback + "(event)")
-    ' Compile error
-    if type(error_code) = "roList"
-        for each field in error_code
-            print(field)
-        end for
+' Callback function that sets a the twitch API user token read from the registry
+function set_twitch_user_token(event as object) as void
+    if event.getData().result = invalid
+        m.twitch_api.user_token = ""
         return
-    ' Runtime error
-    else if type(error_code) = "Integer"
-        if error_code <> &hfc and error_code <> &he2 and error_code <> &hff
-            print "Callback error:" + error_code.toStr()
-        end if
-        return
-    ' Unknown
-    else
-        print "An unknown error occurred whilst attempting a callback."
-        print error_code
     end if
-end function
-
-' Callback function that sets a the twitch API user name read from the registry
-function set_twitch_user_name(event as object) as void
-    m.twitch_api.user_name = event.getData().result
+    m.twitch_api.user_token = event.getData().result
 end function
 
 ' Initialize the main menu with translated items and set it as focused
@@ -177,7 +161,15 @@ function on_menu_item_focused(message as object) as void
         m.twitch_api.get_communities = [{limit: m.MAX_POSTERS}, "on_community_data"]
     ' Followed
     else if message.getData() = m.FOLLOWED
-        m.content_grid.visible = true
+        ' User name is not set show a login message
+        if not is_authenticated()
+            show_message("message_web_link")
+        ' Show followed streams
+        else
+            show_message("message_loading")
+            m.content_grid.visible = true
+            'm.twitch_api.get_followed_streams = [{limit: m.MAX_LIMIT}, "set_content_grid"]
+        end if
     ' Unhandled
     else
         print("Unknown menu item focused: " + message.getData().toStr())
@@ -312,11 +304,16 @@ function set_content_grid(event as object) as void
 end function
 
 ' Show an error message and possibly exit
-function error(msg as string, error_code = invalid as object) as void
+function error(msg as string, error_code = invalid as object, title = "" as string) as void
     msg = tr(msg)
     print(msg)
+    if title = ""
+        title = tr("title_error")
+    else
+        title = tr(title)
+    end if
     ' Show error
-    m.dialog.title = tr("title_error")
+    m.dialog.title = title
     m.dialog.message = msg
     if error_code <> invalid
         m.dialog.message += chr(10) + tr("title_error_code") + ": " + error_code.toStr()
@@ -326,6 +323,14 @@ function error(msg as string, error_code = invalid as object) as void
     m.top.dialog = m.dialog
 end function
 
+' Show a message dialog
+function show_message_dialog(msg as string, title = "" as string)
+    if title = ""
+        title = tr("title_info")
+    end if
+    error(msg, invalid, title)
+end function
+
 ' Handles key events not handled by other components
 function onKeyEvent(key as string, press as boolean) as boolean
     print("Key: " + key + " Press: " + press.toStr())
@@ -333,8 +338,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if m.main_menu.hasFocus() 
         ' Menu item selected
         if press and (key = "right" or key = "OK")
+            ' Show login/link prompt
+            if stage_requires_authentication() and not is_authenticated()
+                show_link_screen()
             ' Focus video grid
-            if stage_contains_video_grid()
+            else if stage_contains_video_grid()
                 m.content_grid.setFocus(true)
             ' Focus poster grid
             else if stage_contains_poster_grid()
@@ -415,6 +423,13 @@ function onKeyEvent(key as string, press as boolean) as boolean
             m.video.control = "stop"
             m.video.content = invalid
             m.video.visible = false
+        end if
+    ' Link screen
+    else if m.link_screen.isInFocusChain()
+        ' Back button pressed - cancel link
+        if press and key = "back"
+            hide_link_screen()
+            error("error_link_canceled")
         end if
     end if
     return false
@@ -659,4 +674,62 @@ function show_message(message as string) as void
         m.message.text = message
         m.message.visible = true
     end if
+end function
+
+' Check if the current stage requires authentication
+function stage_requires_authentication() as boolean
+    return m.stage = m.FOLLOWED
+end function
+
+' Check if the app is authenticated with Twitch
+function is_authenticated() as boolean
+    return m.twitch_api.user_token <> invalid and m.twitch_api.user_token <> ""
+end function
+
+' Show the link screen and begin the link process
+function show_link_screen() as void
+    save_stage_info(m.LINK)
+    m.stage = m.LINK
+    m.link_screen.visible = true
+    m.link_screen.do_link = true
+    m.link_screen.setFocus(true)
+end function
+
+' Hide the link screen
+function hide_link_screen() as void
+    set_saved_stage_info(m.LINK)
+    m.main_menu.setFocus(true)
+    m.link_screen.visible = false
+end function
+
+' Handle a twitch token having been obtain
+function on_link_token(event as object) as void
+    m.main_menu.setFocus(true) ' Set this here so the current tab reloads
+    hide_link_screen()
+    token = event.getData()
+    m.twitch_api.user_token = token
+    show_message_dialog("message_link_success")
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_TOKEN, token, "on_token_write"]
+end function
+
+' Handle a twitch link error
+function on_link_error(event as object) as void
+    hide_link_screen()
+    error("error_link_failed", event.getData())
+end function
+
+' Handle user token being written to registry
+function on_token_write(event as object) as void
+    if not event.getData().result
+        error("error_token_write_fail", 1010)
+    end if
+end function
+
+' Handle a twitch link timeout
+' This generally means that the link time has expired
+' It could also mean that the API has an error, but that would usually be 
+' caught on the initial call to the link API endpoint
+function on_link_timeout(event as object) as void
+    hide_link_screen()
+    error("error_link_timeout")
 end function

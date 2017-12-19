@@ -97,14 +97,19 @@
     	<Label
     		id="status_message"
     		width="800"
-    		height="50"
+    		height="100"
     		translation="[440, 280]"
     		horizAlign="center"
 			vertAlign="center"
-			wrap="false"
-			numLines="1"
-			maxLines="1"
+			wrap="true"
+			numLines="2"
+			maxLines="2"
 			visible="false" />
+			
+		<LinkScreen
+			id="link_screen"
+			visible="false"
+			translation="[0, 115]" />
 
 	</children>
 	
@@ -115,5 +120,5 @@
 	</interface>
 
 	<script type="text/brightscript" uri="pkg:/source/Twitch.brs" />
-	<script type="text/brightscript" uri="pkg:/components/TranslateUtil.brs" />
+	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
 </component>

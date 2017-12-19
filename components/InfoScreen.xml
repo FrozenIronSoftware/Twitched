@@ -96,5 +96,5 @@
 	</interface>
 
 	<script type="text/brightscript" uri="pkg:/components/InfoScreen.brs" />
-	<script type="text/brightscript" uri="pkg:/components/TranslateUtil.brs" />
+	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
 </component>

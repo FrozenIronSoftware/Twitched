@@ -47,7 +47,7 @@ function write(params as object) as void
         type: "write",
         section: params.getData()[0],
         key: params.getData()[1],
-        callback: params.getData()[2],
-        result: reg.write(params.getData()[1],params.getData()[2])
+        callback: params.getData()[3],
+        result: reg.write(params.getData()[1], params.getData()[2])
     })
 end function

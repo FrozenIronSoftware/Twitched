@@ -4,9 +4,10 @@
 function init() as void
     m.port = createObject("roMessagePort")
     ' Constants
-    m.API_KRAKEN = "https://twitchunofficial.herokuapp.com/api/twitch/kraken" ' API proxy/cacher
-    m.API_HELIX = "https://twitchunofficial.herokuapp.com/api/twitch/helix" ' API proxy/cacher
-    m.API = "https://twitchunofficial.herokuapp.com/api/twitch" ' Direct/unofficial API
+    m.API_KRAKEN = "https://twitched.org/api/twitch/kraken" ' API proxy/cacher
+    m.API_HELIX = "https://twitched.org/api/twitch/helix" ' API proxy/cacher
+    m.API = "https://twitched.org/api" ' Direct/unofficial API
+    m.top.setField("AUTH_URL", "https://twitched.org/link") ' User web endpoint
     if m.global.secret.api_kraken <> invalid
         m.API_KRAKEN = m.global.secret.api_kraken
     end if
@@ -26,14 +27,14 @@ function init() as void
     m.http.addHeader("X-Roku-Reserved-Dev-Id", "") ' Automatically populated
     m.http.initClientCertificates()
     ' Variables
-    ' TODO allow user login
-    m.user_token = invalid
     m.http_response = invalid
     m.http_start_time = 0
     ' Events
     m.top.observeField("get_streams", m.port)
     m.top.observeField("get_games", m.port)
     m.top.observeField("get_communities", m.port)
+    m.top.observeField("get_link_code", m.port)
+    m.top.observeField("get_link_status", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -53,6 +54,10 @@ function run() as void
                 get_games(msg)
             else if msg.getField() = "get_communities"
                 get_communities(msg)
+            else if msg.getField() = "get_link_code"
+                get_link_code(msg)
+            else if msg.getField() = "get_link_status"
+                get_link_status(msg)
             end if
         end if
     end while
@@ -191,5 +196,31 @@ end function
 
 ' Get stream HLS URL for a streamer
 function get_stream_url(params as object) as string
-    return m.API + "/hls/" + params.encodeUri() + ".m3u8"
+    return m.API + "twitch/hls/" + params.encodeUri() + ".m3u8"
+end function
+
+' Request a link code from the API
+' @param params is expected to be an event with data being a string callback
+function get_link_code(params as object) as void
+    device_info = createObject("roDeviceInfo")
+    request_url = m.API + "/link"
+    ' Params
+    url_params = [
+        "type=roku",
+        "id=" + m.http.escape(device_info.getClientTrackingId())
+    ]
+    request("GET", request_url, url_params, params.getData())
+end function
+
+' Request the link status from the API
+' @param params is expected to be an event with data being a string callback
+function get_link_status(params as object) as void
+    device_info = createObject("roDeviceInfo")
+    request_url = m.API + "/link/status"
+    ' Params
+    url_params = [
+        "type=roku",
+        "id=" + m.http.escape(device_info.getClientTrackingId())
+    ]
+    request("GET", request_url, url_params, params.getData())
 end function

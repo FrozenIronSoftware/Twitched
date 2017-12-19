@@ -132,6 +132,46 @@
            		<source>message_loading</source>
            		<target>Loading</target>
            	</trans-unit>
+           	<trans-unit id="31">
+           		<source>message_web_link</source>
+           		<target>Press OK on your Roku remote to begin linking a Twitch account.</target>
+           	</trans-unit>
+           	<trans-unit id="32">
+           		<source>error_link_canceled</source>
+           		<target>Account linking was canceled.</target>
+           	</trans-unit>
+           	<trans-unit id="33">
+           		<source>title_link</source>
+           		<target>Link your Twitch Account</target>
+           	</trans-unit>
+           	<trans-unit id="34">
+           		<source>message_link</source>
+           		<target>On a web browser, go to {1} and enter the following code:</target>
+           	</trans-unit>
+           	<trans-unit id="35">
+           		<source>message_link_close</source>
+           		<target>This screen will automatically close once the link has completed successfully.</target>
+           	</trans-unit>
+           	<trans-unit id="36">
+           		<source>error_link_failed</source>
+           		<target>Account linking failed.</target>
+           	</trans-unit>
+           	<trans-unit id="37">
+           		<source>error_token_write_fail</source>
+           		<target>Failed to save authentication data.</target>
+           	</trans-unit>
+           	<trans-unit id="38">
+           		<source>error_link_timeout</source>
+           		<target>Account linking timed out.</target>
+           	</trans-unit>
+           	<trans-unit id="39">
+           		<source>message_link_success</source>
+           		<source>A Twitch account has been linked.</source>
+           	</trans-unit>
+           	<trans-unit id="40">
+           		<source>title_info</source>
+           		<source>Info</source>
+           	</trans-unit>
         </body>
     </file>
 </xliff>
