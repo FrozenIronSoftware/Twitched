@@ -609,6 +609,12 @@ end function
 ' Only called by info_screen variable event
 ' @param event field update notifier
 function load_dynamic_grid_for_game(event as object) as void
+    ' Check game id is not empty
+    game_id = m.info_screen.game[1]
+    game_name = m.info_screen.game[0]
+    if game_id = invalid or game_id = ""
+        return
+    end if
     ' Hide info screen
     'set_saved_stage_info(m.INFO)
     m.main_menu.jumpToItem = m.GAMES
@@ -618,8 +624,6 @@ function load_dynamic_grid_for_game(event as object) as void
     m.stage = m.GAMES
     m.header.title = ""
     ' Load grid
-    game_id = m.info_screen.game[1]
-    game_name = m.info_screen.game[0]
     load_dynamic_grid(game_name, game_id)
 end function
 
