@@ -12,6 +12,7 @@
 		<field id="get_link_code" type="string" alwaysNotify="true" />
 		<field id="get_link_status" type="string" alwaysNotify="true" />
 		<field id="cancel" type="boolean" alwaysNotify="true" />
+		<field id="get_followed_streams" type="array" alwaysNotify="true" />
 		<!-- Functions -->
 		<function name="get_stream_url" />
 	</interface>

@@ -35,6 +35,7 @@ function init() as void
     m.top.observeField("get_link_code", m.port)
     m.top.observeField("get_link_status", m.port)
     m.top.observeField("cancel", m.port)
+    m.top.observeField("get_followed_streams", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -61,6 +62,8 @@ function run() as void
             else if msg.getField() = "cancel"
                 m.http.asyncCancel()
                 m.callback = invalid
+            else if msg.getField() = "get_followed_streams"
+                get_followed_streams(msg)
             end if
         end if
     end while
@@ -116,6 +119,7 @@ end function
 ' @param params array of parameters [associative request_params, string callback]
 ' @return JSON data or invalid on error
 function get_games(params as object) as void
+    ' TODO move this to the Helix endpoint
     request_url = m.API_KRAKEN + "/games"
     passed_params = params.getData()[0]
     ' Construct parameter array
@@ -232,4 +236,20 @@ function get_link_status(params as object) as void
         "id=" + m.http.escape(device_info.getClientTrackingId())
     ]
     request("GET", request_url, url_params, params.getData())
+end function
+
+' Request followed streams from the API for a user
+' @param params array of parameters [associative request_params, string callback]
+function get_followed_streams(params as object) as void
+    request_url = m.API_HELIX + "/users/follows/streams"
+    passed_params = params.getData()[0]
+    url_params = []
+    if passed_params.limit <> invalid
+        url_params.push("limit=" + m.http.escape(passed_params.limit.toStr()))
+    end if
+    if passed_params.offset <> invalid
+        url_params.push("offset=" + m.http.escape(passed_params.offset.toStr()))
+    end if
+    url_params.push("token=" + m.http.escape(m.top.getField("user_token")))
+    request("GET", request_url, url_params, params.getData()[1])
 end function
