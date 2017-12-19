@@ -59,8 +59,10 @@ function init() as void
     m.CREATIVE = 2
     m.COMMUNITIES = 3
     m.FOLLOWED = 4
+    m.SEARCH = 5
+    m.SETTINGS = 6
     m.MENU_ITEMS = ["title_popular", "title_games", "title_creative", 
-        "title_communities", "title_followed"]
+        "title_communities", "title_followed", "title_search", "title_settings"]
     ' Components
     m.header = m.top.findNode("header")
     m.main_menu = m.top.findNode("main_menu")
@@ -73,6 +75,7 @@ function init() as void
     m.video = m.top.findNode("video")
     m.message = m.top.findNode("status_message")
     m.link_screen = m.top.findNode("link_screen")
+    m.settings_panel = m.top.findNode("settings")
     ' Events
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
@@ -84,6 +87,7 @@ function init() as void
     m.link_screen.observeField("timeout", "on_link_timeout")
     m.video.observeField("state", "on_video_state_change")
     m.dialog.observeField("wasClosed", "on_dialog_closed")
+    m.settings_panel.observeField("sign_out_in", "on_settings_authentication_request")
     ' Init
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
         "set_twitch_user_token"]
@@ -179,6 +183,13 @@ function load_menu_item(stage as integer, force = false as boolean) as void
             m.content_grid.visible = true
             m.twitch_api.get_followed_streams = [{limit: m.MAX_LIMIT}, "set_content_grid"]
         end if
+    ' Search
+    else if stage = m.SEARCH
+    ' Settings
+    else if stage = m.SETTINGS
+        show_message("")
+        m.settings_panel.authenticated = is_authenticated()
+        m.settings_panel.visible = true
     ' Unhandled
     else
         print("Unknown menu item focused/stage selected: " + stage.toStr())
@@ -234,6 +245,7 @@ function reset(only_hide = false as boolean) as void
     m.content_grid.visible = false
     m.poster_grid.visible = false
     m.info_screen.visible = false
+    m.settings_panel.visible = false
     ' Cancel any async requests
     m.twitch_api.cancel = true
 end function
@@ -359,6 +371,10 @@ function onKeyEvent(key as string, press as boolean) as boolean
             ' Focus poster grid
             else if stage_contains_poster_grid()
                 m.poster_grid.setFocus(true)
+            ' Focus settings panel
+            else if m.stage = m.SETTINGS
+                m.settings_panel.setFocus(true)
+                m.settings_panel.focus = true
             ' Unhandled
             else
                 print("Unhandled menu item selection")
@@ -382,7 +398,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     ' Video/Poster Grid
     else if m.content_grid.hasFocus() or m.poster_grid.hasFocus()
         ' Return to menu
-        if press and (key = "left" or key = "back" or key = "rewind")
+        if press and (key = "left" or key = "back")
             ' Go to previous poster grid
             if m.stage = m.DYNAMIC_GRID
                 set_saved_stage_info(m.DYNAMIC_GRID)
@@ -429,6 +445,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
                 m.main_menu.setFocus(true)
             end if
             m.info_screen.visible = false
+            m.video.control = "stop" ' Stop any pre-buffering
         end if
     ' Video
     else if m.video.hasFocus()
@@ -443,6 +460,12 @@ function onKeyEvent(key as string, press as boolean) as boolean
             hide_link_screen()
             error("error_link_canceled")
         end if
+    ' Settings
+    else if m.settings_panel.isInFocusChain()
+        ' Back - return focus to main menu
+        if press and (key = "back" or key = "left")
+            m.main_menu.setFocus(true)
+        end if
     end if
     return false
 end function
@@ -456,7 +479,6 @@ end function
 function stage_contains_poster_grid() as boolean
     return m.stage = m.GAMES or m.stage = m.COMMUNITIES
 end function
-
 
 ' Load a video grid with the currently selected game/community/creative videos
 function load_dynamic_grid(game_name = "" as string, game_id = "" as string, community_id = "" as string) as void
@@ -727,10 +749,10 @@ end function
 
 ' Handle a twitch token having been obtain
 function on_link_token(event as object) as void
-    m.main_menu.setFocus(true) ' Set this here so the current tab reloads
     hide_link_screen()
     token = event.getData()
     m.twitch_api.user_token = token
+    load_menu_item(m.stage, true) ' Force a reload of the menu
     show_message_dialog("message_link_success")
     m.registry.write = [m.global.REG_TWITCH, m.global.REG_TOKEN, token, "on_token_write"]
 end function
@@ -787,5 +809,25 @@ function on_dialog_closed(event as object) as void
     if m.stage = m.EXIT_DIALOG
         set_saved_stage_info(m.EXIT_DIALOG)
         m.main_menu.setFocus(true)
+    end if
+end function
+
+' Handle a request from the settings menu to sign in or out
+function on_settings_authentication_request(event as object) as void
+    direction = event.getData()
+    ' Sign in
+    if direction = "in"
+        load_menu_item(m.stage, true) ' Force a reload of the menu
+        show_link_screen()
+    ' Sign out
+    else if direction = "out"
+        m.twitch_api.user_token = ""
+        load_menu_item(m.stage, true) ' Force a reload of the menu
+        show_message_dialog("message_log_out")
+        m.registry.write = [m.global.REG_TWITCH, m.global.REG_TOKEN, "", "on_token_write"]
+    ' Unhandled
+    else
+        print("Unhandled on_settings_authentication_request:")
+        print(direction)
     end if
 end function

@@ -176,6 +176,54 @@
            		<source>error_video</source>
            		<target>An error occurred while playing a video.</target>
            	</trans-unit>
+           	<trans-unit id="42">
+           		<source>title_search</source>
+           		<target>Search</target>
+           	</trans-unit>
+           	<trans-unit id="43">
+           		<source>title_settings</source>
+           		<target>Settings</target>
+           	</trans-unit>
+           	<trans-unit id="44">
+           		<source>title_info</source>
+           		<target>Info</target>
+           	</trans-unit>
+           	<trans-unit id="45">
+           		<source>title_oss</source>
+           		<target>Open Source Software</target>
+           	</trans-unit>
+           	<trans-unit id="46">
+           		<source>title_privacy_policy</source>
+           		<target>Privacy Policy</target>
+           	</trans-unit>
+           	<trans-unit id="47">
+           		<source>title_log_in_out</source>
+           		<target></target>
+           	</trans-unit>
+           	<trans-unit id="48">
+           		<source>title_log_in</source>
+           		<target>Log In</target>
+           	</trans-unit>
+           	<trans-unit id="49">
+           		<source>title_log_out</source>
+           		<target>Log Out</target>
+           	</trans-unit>
+           	<trans-unit id="50">
+           		<source>message_log_out</source>
+           		<target>Log out successful.</target>
+           	</trans-unit>
+           	<trans-unit id="51">
+           		<source>message_settings_info</source>
+           		<target>Information about the Twitched app is available at {1}.</target>
+           	</trans-unit>
+           	<trans-unit id="52">
+           		<source>message_settings_oss</source>
+           		<target>Information about open source software used in Twitched is available at {1}.</target>
+           	</trans-unit>
+           	<trans-unit id="53">
+           		<source>message_settings_privacy_policy</source>
+           		<target>Twitched's privacy policy is available at {1}.</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

@@ -75,19 +75,6 @@
     		failedBitmapUri=
     			"pkg:/locale/default/images/poster_error_vertical.png" />
     	
-    	<InfoScreen
-    		id="info_screen"
-    		visible="false"
-    		translation="[0,115]" />
-    		
-    	<Dialog 
-    		id="dialog"
-    		visible="false" />
-    		
-    	<Video 
-    		id="video"
-    		visible="false" />
-    	
     	<Registry 
     		id="registry" />
     		
@@ -106,10 +93,28 @@
 			maxLines="2"
 			visible="false" />
 			
-		<LinkScreen
+		<Settings
+			id="settings"
+			translation="[440,155]"
+			visible="false" />
+			
+		<InfoScreen
+    		id="info_screen"
+    		visible="false"
+    		translation="[0,115]" />
+			
+		<Video 
+    		id="video"
+    		visible="false" />
+    		
+    	<LinkScreen
 			id="link_screen"
 			visible="false"
 			translation="[0, 115]" />
+			
+		<Dialog 
+    		id="dialog"
+    		visible="false" />
 
 	</children>
 	

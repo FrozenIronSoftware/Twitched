@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="Settings" extends="Group">
+	<children>
+	
+		<LabelList 
+			id="menu"
+			itemSize="[350,48]"
+    		focusBitmapUri="pkg:/locale/default/images/list_selection.9.png"
+    		focusBitmapBlendColor="0x6441a4"
+    		focusFootprintBitmapUri=
+    			"pkg:/locale/default/images/list_selection.9.png"
+    		focusFootprintBlendColor="0x281942"
+    		vertFocusAnimationStyle="fixedFocusWrap"
+    		focusedColor="0xffffff"
+    		color="0xffffff" >
+    		<ContentNode role="content" />
+    	
+    	<Label
+			id="title"
+			width="300"
+			height="100"
+			translation="[400, 0]"
+			horizAlign="center"
+			vertAlign="center"
+			wrap="true"
+			numLines="1"
+			maxLines="1"
+			font="font:LargeBoldSystemFont" />
+			
+		<Label
+			id="message"
+			width="350"
+			height="600"
+			translation="[400, 100]"
+			horizAlign="left"
+			vertAlign="top"
+			wrap="true"
+			numLines="6"
+			maxLines="6"
+			font="font:SmallSystemFont" />
+
+    	</LabelList>
+
+	</children>
+
+	<interface>
+		<!-- Fields -->
+		<field id="focus" type="boolean" alwaysNotify="true" />
+		<field id="authenticated" type="boolean" />
+		<field id="sign_out_in" type="string" alwaysNotify="true" />
+	</interface>
+
+	<script type="text/brightscript" uri="pkg:/components/Settings.brs" />
+</component>
