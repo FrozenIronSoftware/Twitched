@@ -120,7 +120,7 @@ end function
 ' @return JSON data or invalid on error
 function get_games(params as object) as void
     ' TODO move this to the Helix endpoint
-    request_url = m.API_KRAKEN + "/games"
+    request_url = m.API_KRAKEN + "/games/top"
     passed_params = params.getData()[0]
     ' Construct parameter array
     url_params = []
