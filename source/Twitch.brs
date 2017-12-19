@@ -81,6 +81,7 @@ function init() as void
     m.link_screen.observeField("linked_token", "on_link_token")
     m.link_screen.observeField("error", "on_link_error")
     m.link_screen.observeField("timeout", "on_link_timeout")
+    m.video.observeField("state", "on_video_state_change")
     ' Init
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
         "set_twitch_user_token"]
@@ -428,12 +429,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     else if m.video.hasFocus()
         ' Stop playing and hide video node
         if press and key = "back"
-            set_saved_stage_info(m.VIDEO_PLAYER)
-            m.info_screen.setFocus(true)
-            m.info_screen.visible = true
-            m.info_screen.focus = true
-            m.video.control = "stop"
-            m.video.visible = false
+            hide_video()
         end if
     ' Link screen
     else if m.link_screen.isInFocusChain()
@@ -595,6 +591,12 @@ end function
 ' Only called by info_screen variable event
 ' @param event field update notifier
 function play_video(event = invalid as object) as void
+    ' Check state before playing. The info screen preloads and fails silently.
+    ' If this happens, the video should be in a "finished" state
+    if m.video.state = "finished" or m.video.state = "error"
+        error("error_video", m.video.errorCode)
+        return
+    end if
     ' Show video
     save_stage_info(m.VIDEO_PLAYER)
     m.stage = m.VIDEO_PLAYER
@@ -743,4 +745,29 @@ end function
 function on_link_timeout(event as object) as void
     hide_link_screen()
     error("error_link_timeout")
+end function
+
+' Handle video state changes
+function on_video_state_change(event as object) as void
+    print "Video State:" + event.getData()
+    ' Handle error
+    if event.getData() = "error"
+        print(m.video.errorMsg)
+        if m.stage = m.VIDEO_PLAYER
+            hide_video()
+            error("error_video", m.video.errorCode)
+        end if
+    else if event.getData() = "finished" and m.stage = m.VIDEO_PLAYER
+        hide_video()
+    end if
+end function
+
+' Hide the video and show the info screen
+function hide_video() as void
+    set_saved_stage_info(m.VIDEO_PLAYER)
+    m.info_screen.setFocus(true)
+    m.info_screen.visible = true
+    m.info_screen.focus = true
+    m.video.control = "stop"
+    m.video.visible = false
 end function

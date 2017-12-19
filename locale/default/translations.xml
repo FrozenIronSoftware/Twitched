@@ -166,11 +166,15 @@
            	</trans-unit>
            	<trans-unit id="39">
            		<source>message_link_success</source>
-           		<source>A Twitch account has been linked.</source>
+           		<target>A Twitch account has been linked.</target>
            	</trans-unit>
            	<trans-unit id="40">
            		<source>title_info</source>
-           		<source>Info</source>
+           		<target>Info</target>
+           	</trans-unit>
+           	<trans-unit id="41">
+           		<source>error_video</source>
+           		<target>An error occurred while playing a video.</target>
            	</trans-unit>
         </body>
     </file>
