@@ -131,36 +131,42 @@ end function
 ' Handles an item focus event for the main menu
 ' Determines what content is loaded for the content grid
 function on_menu_item_focused(message as object) as void
+    load_menu_item(message.getData())
+end function
+
+' Loads a menu item and sets the stage passed
+' @param stage stage to load/set
+function load_menu_item(stage as integer, force = false as boolean) as void
     ' Ignore if the item is already active
-    if m.stage = message.getData() then return
+    if m.stage = stage and not force then return
     ' Reset
     reset()
     ' Handle selection
     ' Popular
-    if message.getData() = m.POPULAR
+    if stage = m.POPULAR
         m.content_grid.visible = true
         show_message("message_loading")
         m.twitch_api.get_streams = [{limit: m.MAX_VIDEOS}, "set_content_grid"]
     ' Games
-    else if message.getData() = m.GAMES
+    else if stage = m.GAMES
         m.poster_grid.visible = true
         show_message("message_loading")
         m.twitch_api.get_games = [{limit: m.MAX_POSTERS}, "set_poster_grid"]
     ' Creative
-    else if message.getData() = m.CREATIVE
+    else if stage = m.CREATIVE
         m.content_grid.visible = true
         show_message("message_loading")
         ' Creative id: 488191
+        show_message("message_loading")
         m.twitch_api.get_streams = [{limit: m.MAX_VIDEOS, game: "488191"}, 
             "set_content_grid"]
-        show_message("message_loading")
     ' Communities
-    else if message.getData() = m.COMMUNITIES
+    else if stage = m.COMMUNITIES
         m.poster_grid.visible = true
         show_message("message_loading")
         m.twitch_api.get_communities = [{limit: m.MAX_POSTERS}, "on_community_data"]
     ' Followed
-    else if message.getData() = m.FOLLOWED
+    else if stage = m.FOLLOWED
         ' User name is not set show a login message
         if not is_authenticated()
             show_message("message_web_link")
@@ -172,10 +178,10 @@ function on_menu_item_focused(message as object) as void
         end if
     ' Unhandled
     else
-        print("Unknown menu item focused: " + message.getData().toStr())
+        print("Unknown menu item focused/stage selected: " + stage.toStr())
         return
     end if
-    m.stage = message.getData()
+    m.stage = stage
 end function
 
 ' Set the poster grid to community data
@@ -375,6 +381,10 @@ function onKeyEvent(key as string, press as boolean) as boolean
                 m.poster_grid.setFocus(true)
                 m.content_grid.visible = false
                 m.poster_grid.visible = true
+                ' Check if the poster grid is empty
+                if m.poster_grid.content = invalid
+                    load_menu_item(m.stage, true)
+                end if
             ' Menu
             else
                 m.main_menu.setFocus(true)
