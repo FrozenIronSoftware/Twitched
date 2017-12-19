@@ -53,6 +53,7 @@ function init() as void
     m.INFO = 1000
     m.VIDEO_PLAYER = 1001
     m.LINK = 1002
+    m.EXIT_DIALOG = 1003
     m.POPULAR = 0
     m.GAMES = 1
     m.CREATIVE = 2
@@ -82,6 +83,7 @@ function init() as void
     m.link_screen.observeField("error", "on_link_error")
     m.link_screen.observeField("timeout", "on_link_timeout")
     m.video.observeField("state", "on_video_state_change")
+    m.dialog.observeField("wasClosed", "on_dialog_closed")
     ' Init
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
         "set_twitch_user_token"]
@@ -328,6 +330,7 @@ function error(msg as string, error_code = invalid as object, title = "" as stri
         m.dialog.message += chr(10) + tr("title_error_code") + ": " + error_code.toStr()
         print("Error Code: " + error_code.toStr())
     end if
+    m.dialog.buttons = []
     m.dialog.visible = true
     m.top.dialog = m.dialog
 end function
@@ -365,6 +368,8 @@ function onKeyEvent(key as string, press as boolean) as boolean
         ' App exit
         else if press and key = "back"
             ' Show exit confirm dialog
+            save_stage_info(m.EXIT_DIALOG)
+            m.stage = m.EXIT_DIALOG
             m.dialog.title = tr("title_exit_confirm")
             m.dialog.message = tr("message_exit_confirm")
             m.dialog.buttons = [tr("button_cancel"), tr("button_confirm")]
@@ -638,6 +643,7 @@ end function
 function on_dialog_button_selected(event as object) as void
     ' Canceled
     if event.getData() = 0
+        set_saved_stage_info(m.EXIT_DIALOG)
         m.dialog.close = true
         m.main_menu.setFocus(true)
     ' Confirmed - call callback
@@ -774,4 +780,12 @@ function hide_video() as void
     m.info_screen.focus = true
     m.video.control = "stop"
     m.video.visible = false
+end function
+
+' Handle the close event for the dialog
+function on_dialog_closed(event as object) as void
+    if m.stage = m.EXIT_DIALOG
+        set_saved_stage_info(m.EXIT_DIALOG)
+        m.main_menu.setFocus(true)
+    end if
 end function
