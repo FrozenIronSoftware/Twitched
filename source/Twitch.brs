@@ -648,6 +648,7 @@ function preload_video() as void
         bitrate: 0,
         quality: false
     }]
+    video.adaptiveMaxStartBitrate = 800
     video.switchingStrategy = "full-adaptation"
     video.title = m.info_screen.title
     video.titleSeason = m.info_screen.game[0] + " - " + m.info_screen.streamer[0]
