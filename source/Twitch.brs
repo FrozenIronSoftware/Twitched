@@ -324,7 +324,7 @@ function set_content_grid(event as object) as void
         end if
         ' Add node
         node = m.content_grid.content.createChild("ContentNode")
-        if data.thumbnail_url <> "null"
+        if data.thumbnail_url <> "null" and data.thumbnail_url <> ""
             node.hdgridposterurl = data.thumbnail_url.replace("{width}", "195").replace("{height}", "120")
             node.sdgridposterurl = data.thumbnail_url.replace("{width}", "80").replace("{height}", "45")
         else
@@ -689,6 +689,7 @@ end function
 ' Only called by info_screen variable event
 ' @param event field update notifier
 function load_dynamic_grid_for_game(event as object) as void
+    m.video.control = "stop" ' Stop any pre-buffering
     ' Check game id is not empty
     game_id = m.info_screen.game[1]
     game_name = m.info_screen.game[0]
