@@ -2,7 +2,6 @@
 
 ' Create a new instance of the InfoScreen component
 function init() as void
-    m.port = createObject("roMessagePort")
     ' Constants
     m.URL_INFO = "https://twitched.org/info"
     m.URL_OSS = "https://twitched.org/info/oss"

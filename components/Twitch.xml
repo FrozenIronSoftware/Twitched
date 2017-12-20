@@ -98,6 +98,11 @@
 			translation="[440,155]"
 			visible="false" />
 			
+		<Search
+			id="search"
+			visible="false"
+			translation="[440,155]" />
+			
 		<InfoScreen
     		id="info_screen"
     		visible="false"

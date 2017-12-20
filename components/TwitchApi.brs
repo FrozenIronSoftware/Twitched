@@ -36,6 +36,7 @@ function init() as void
     m.top.observeField("get_link_status", m.port)
     m.top.observeField("cancel", m.port)
     m.top.observeField("get_followed_streams", m.port)
+    m.top.observeField("search", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -64,6 +65,8 @@ function run() as void
                 m.callback = invalid
             else if msg.getField() = "get_followed_streams"
                 get_followed_streams(msg)
+            else if msg.getField() = "search"
+                search(msg)
             end if
         end if
     end while
@@ -77,7 +80,6 @@ function get_streams(params as object) as void
     passed_params = params.getData()[0]
     ' Construct parameter array
     url_params = []
-    
     if passed_params.after <> invalid
         url_params.push("after=" + m.http.escape(passed_params.after.toStr()))
     end if
@@ -119,11 +121,20 @@ end function
 ' @param params array of parameters [associative request_params, string callback]
 ' @return JSON data or invalid on error
 function get_games(params as object) as void
-    ' TODO move this to the Helix endpoint
-    request_url = m.API_KRAKEN + "/games/top"
+    request_url = m.API_HELIX + "/games/top"
     passed_params = params.getData()[0]
     ' Construct parameter array
     url_params = []
+    if passed_params.after <> invalid
+        url_params.push("after=" + m.http.escape(passed_params.after.toStr()))
+    end if
+    if passed_params.before <> invalid
+        url_params.push("before=" + m.http.escape(passed_params.before.toStr()))
+    end if
+    if passed_params.first <> invalid
+        url_params.push("first=" + m.http.escape(passed_params.first.toStr()))
+    end if
+    ' Non-spec
     if passed_params.limit <> invalid
         url_params.push("limit=" + m.http.escape(passed_params.limit.toStr()))
     end if
@@ -251,5 +262,35 @@ function get_followed_streams(params as object) as void
         url_params.push("offset=" + m.http.escape(passed_params.offset.toStr()))
     end if
     url_params.push("token=" + m.http.escape(m.top.getField("user_token")))
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+
+' Request a search from the API
+' @param array of parameters [associative request_params, string callback]
+function search(params as object) as void
+    request_url = m.API_KRAKEN + "/search"
+    passed_params = params.getData()[0]
+    url_params = []
+    ' All
+    if passed_params.query <> invalid
+        url_params.push("query=" + m.http.escape(passed_params.query.toStr()))
+    end if
+    if passed_params.type <> invalid
+        url_params.push("type=" + m.http.escape(passed_params.type.toStr()))
+    end if
+    ' Streams/Channels       / (Games?)
+    if passed_params.limit <> invalid
+        url_params.push("limit=" + m.http.escape(passed_params.limit.toStr()))
+    end if
+    if passed_params.offset <> invalid
+        url_params.push("offset=" + m.http.escape(passed_params.offset.toStr()))
+    end if
+    if passed_params.hls <> invalid
+        url_params.push("hls=" + m.http.escape(passed_params.hls.toStr()))
+    end if
+    ' Games
+    if passed_params.live <> invalid
+        url_params.push("live=" + m.http.escape(passed_params.live.toStr()))
+    end if
     request("GET", request_url, url_params, params.getData()[1])
 end function

@@ -76,6 +76,7 @@ function init() as void
     m.message = m.top.findNode("status_message")
     m.link_screen = m.top.findNode("link_screen")
     m.settings_panel = m.top.findNode("settings")
+    m.search_panel = m.top.findNode("search")
     ' Events
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
@@ -88,6 +89,7 @@ function init() as void
     m.video.observeField("state", "on_video_state_change")
     m.dialog.observeField("wasClosed", "on_dialog_closed")
     m.settings_panel.observeField("sign_out_in", "on_settings_authentication_request")
+    m.search_panel.observeField("search", "on_search")
     ' Init
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
         "set_twitch_user_token"]
@@ -185,9 +187,9 @@ function load_menu_item(stage as integer, force = false as boolean) as void
         end if
     ' Search
     else if stage = m.SEARCH
+        m.search_panel.visible = true
     ' Settings
     else if stage = m.SETTINGS
-        show_message("")
         m.settings_panel.authenticated = is_authenticated()
         m.settings_panel.visible = true
     ' Unhandled
@@ -220,12 +222,8 @@ function on_community_data(event as object) as void
         end if
         ' Construct item
         item = {
-            game: {
-                box: {
-                    medium: community.avatarImageUrl
-                },
-                name: community.name
-            },
+            box_art_url: community.avatarImageUrl,
+            name: community.name,
             id: community.id,
             is_community: true
         }
@@ -246,8 +244,11 @@ function reset(only_hide = false as boolean) as void
     m.poster_grid.visible = false
     m.info_screen.visible = false
     m.settings_panel.visible = false
+    m.search_panel.visible = false
     ' Cancel any async requests
     m.twitch_api.cancel = true
+    ' Clear message
+    show_message("")
 end function
 
 ' Set the poster grid with game content
@@ -273,23 +274,25 @@ function set_poster_grid(event as object) as void
         error("error_api_fail", 1003)
         return
     end if
+    ' Check if there is no data
+    if m.poster_data.count() = 0
+        show_message("message_no_data")
+    end if
     ' Set content
     m.poster_grid.content = createObject("roSGNode","ContentNode")
     for each data in m.poster_data
         ' Validate json
-        if type(data) <> "roAssociativeArray" or type(data.game) <> "roAssociativeArray" or type(data.game.box) <> "roAssociativeArray"
+        if type(data) <> "roAssociativeArray" or data.box_art_url = invalid
             print("set_poster_grid: invalid json")
             error("error_api_fail", 1004)
             return
         end if
         ' Add node
         node = m.poster_grid.content.createChild("ContentNode")
-        node.hdgridposterurl = data.game.box.medium
-        node.sdgridposterurl = data.game.box.small
-        node.shortdescriptionline1 = data.game.name
+        node.hdgridposterurl = data.box_art_url.replace("{width}", "195").replace("{height}", "120")
+        node.sdgridposterurl = data.box_art_url.replace("{width}", "80").replace("{height}", "45")
+        node.shortdescriptionline1 = data.name
         if data.viewers <> invalid
-            plural = "s"
-            if data.viewers = 1 then plural = ""
             viewer_string = "{0} {1}"
             node.shortdescriptionline2 = substitute(viewer_string, data.viewers.toStr(), trs("inline_viewers", data.viewers), "", "")
         end if
@@ -308,6 +311,11 @@ function set_content_grid(event as object) as void
     end if
     m.video_data = event.getData().result
     m.content_grid.content = createObject("roSGNode","ContentNode")
+    ' Check if there is data
+    if m.video_data.count() = 0
+        show_message("message_no_data")
+    end if
+    ' Add items
     for each data in m.video_data
         ' Validate json data
         if type(data) <> "roAssociativeArray" or type(data.user_name) <> "roAssociativeArray" or data.thumbnail_url = invalid or data.title = invalid or data.viewer_count = invalid
@@ -316,13 +324,21 @@ function set_content_grid(event as object) as void
         end if
         ' Add node
         node = m.content_grid.content.createChild("ContentNode")
-        node.hdgridposterurl = data.thumbnail_url.replace("{width}", "195").replace("{height}", "120")
-        node.sdgridposterurl = data.thumbnail_url.replace("{width}", "80").replace("{height}", "45")
+        if data.thumbnail_url <> "null"
+            node.hdgridposterurl = data.thumbnail_url.replace("{width}", "195").replace("{height}", "120")
+            node.sdgridposterurl = data.thumbnail_url.replace("{width}", "80").replace("{height}", "45")
+        else
+            node.hdgridposterurl = "pkg:/locale/default/images/poster_error.png"
+        end if
         node.shortdescriptionline1 = data.title
-        plural = "s"
-        if data.viewer_count = 1 then plural = ""
-        viewer_string = "{0} {1} on {2}"
-        node.shortdescriptionline2 = substitute(viewer_string, data.viewer_count.toStr(), trs("inline_viewers", data.viewer_count), data.user_name.display_name, "")
+        ' User
+        if data.type = "user"
+            node.shortdescriptionline2 = data.user_name.display_name
+        ' Stream
+        else
+            viewer_string = "{0} {1} on {2}"
+            node.shortdescriptionline2 = substitute(viewer_string, data.viewer_count.toStr(), trs("inline_viewers", data.viewer_count), data.user_name.display_name, "")
+        end if
     end for
 end function
 
@@ -375,6 +391,10 @@ function onKeyEvent(key as string, press as boolean) as boolean
             else if m.stage = m.SETTINGS
                 m.settings_panel.setFocus(true)
                 m.settings_panel.focus = true
+            ' Focus search panel
+            else if m.stage = m.SEARCH
+                m.search_panel.setFocus(true)
+                m.search_panel.focus = true
             ' Unhandled
             else
                 print("Unhandled menu item selection")
@@ -409,6 +429,12 @@ function onKeyEvent(key as string, press as boolean) as boolean
                 if m.poster_grid.content = invalid
                     load_menu_item(m.stage, true)
                 end if
+            ' Return to search
+            else if m.stage = m.SEARCH
+                reset()
+                m.search_panel.visible = true
+                m.search_panel.setFocus(true)
+                m.search_panel.focus = true
             ' Menu
             else
                 m.main_menu.setFocus(true)
@@ -422,6 +448,18 @@ function onKeyEvent(key as string, press as boolean) as boolean
             ' Poster grid stages
             else if stage_contains_poster_grid()
                 load_dynamic_grid()
+            ' Search
+            else if m.stage = m.SEARCH
+                ' Info screen
+                if m.content_grid.hasFocus()
+                    show_video_info_screen()
+                ' Dynamic Grid
+                else if m.poster_grid.hasFocus()
+                    load_dynamic_grid()
+                ' Unhandled
+                else
+                    print "Unhandled search item OK press"
+                end if
             ' Unhandled
             else
                 print("Unhandled poster/video grid selection. Stage: " +  m.stage.toStr())
@@ -440,6 +478,9 @@ function onKeyEvent(key as string, press as boolean) as boolean
             ' Video
             else if stage_contains_video_grid()
                 m.content_grid.setFocus(true)
+            ' Search
+            else if m.stage = m.SEARCH
+                m.content_grid.setFocus(true)
             ' Other
             else
                 m.main_menu.setFocus(true)
@@ -452,6 +493,8 @@ function onKeyEvent(key as string, press as boolean) as boolean
         ' Stop playing and hide video node
         if press and key = "back"
             hide_video()
+            ' Preload again on the info screen
+            preload_video()
         end if
     ' Link screen
     else if m.link_screen.isInFocusChain()
@@ -463,6 +506,12 @@ function onKeyEvent(key as string, press as boolean) as boolean
     ' Settings
     else if m.settings_panel.isInFocusChain()
         ' Back - return focus to main menu
+        if press and (key = "back" or key = "left")
+            m.main_menu.setFocus(true)
+        end if
+    ' Search
+    else if m.search_panel.isInFocusChain()
+        ' Back
         if press and (key = "back" or key = "left")
             m.main_menu.setFocus(true)
         end if
@@ -493,13 +542,13 @@ function load_dynamic_grid(game_name = "" as string, game_id = "" as string, com
         if selected_index <> invalid and selected_index < m.poster_data.count()
             ' Set data
             poster_item = m.poster_data[selected_index]
-            game_name = poster_item.game.name
+            game_name = poster_item.name
             ' Community
             if poster_item.is_community = true
                 community_id = poster_item.id.toStr()
             ' Game
             else
-                game_id = poster_item.game.id.toStr()
+                game_id = poster_item.id.toStr()
             end if
         else
             print("Invalid poster selection")
@@ -618,9 +667,13 @@ end function
 ' Only called by info_screen variable event
 ' @param event field update notifier
 function play_video(event = invalid as object) as void
+    ' Check if the info screen is showing an offline stream
+    if m.info_screen.stream_type = "user"
+        error("error_stream_offline")
+        return
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
-    if m.video.state = "finished" or m.video.state = "error"
+    else if m.video.state = "finished" or m.video.state = "error"
         error("error_video", m.video.errorCode)
         return
     end if
@@ -830,4 +883,45 @@ function on_settings_authentication_request(event as object) as void
         print("Unhandled on_settings_authentication_request:")
         print(direction)
     end if
+end function
+
+' Handle a search request
+function on_search(event as object) as void
+    search_type = event.getData()[0]
+    term = event.getData()[1]
+    reset()
+    ' Video
+    if search_type = m.search_panel.VIDEO
+        m.content_grid.visible = true
+        m.content_grid.setFocus(true)
+        m.twitch_api.search = [{
+            type: "streams",
+            limit: m.MAX_LIMIT
+            query: term
+        }, "set_content_grid"]
+    ' Channel
+    else if search_type = m.search_panel.CHANNEL
+        m.content_grid.visible = true
+        m.content_grid.setFocus(true)
+        m.twitch_api.search = [{
+            type: "channels",
+            limit: m.MAX_LIMIT
+            query: term
+        }, "set_content_grid"]
+    ' Game
+    else if search_type = m.search_panel.GAME
+        m.poster_grid.visible = true
+        m.poster_grid.setFocus(true)
+        m.twitch_api.search = [{
+            type: "games",
+            limit: m.MAX_LIMIT
+            query: term
+        }, "set_poster_grid"]
+    ' Unhandled
+    else
+        print "Unhandled search type: " + search_type.toStr()
+    end if
+    ' Set title and message
+    m.header.title = tr("title_search") + " " + m.ARROW + " " + term
+    show_message("message_loading")
 end function

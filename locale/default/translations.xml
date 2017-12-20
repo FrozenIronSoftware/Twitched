@@ -224,6 +224,34 @@
            		<source>message_settings_privacy_policy</source>
            		<target>Twitched's privacy policy is available at {1}.</target>
            	</trans-unit>
+           	<trans-unit id="54">
+           		<source>button_search</source>
+           		<target>Search</target>
+           	</trans-unit>
+           	<trans-unit id="55">
+           		<source>button_search_channels</source>
+           		<target>Channels</target>
+           	</trans-unit>
+           	<trans-unit id="56">
+           		<source>button_search_games</source>
+           		<target>Games</target>
+           	</trans-unit>
+           	<trans-unit id="57">
+           		<source>message_no_data</source>
+           		<target>No data</target>
+           	</trans-unit>
+           	<trans-unit id="58">
+           		<source>error_stream_offline</source>
+           		<target>The stream is offline.</target>
+           	</trans-unit>
+           	<trans-unit id="59">
+           		<source>title_joined</source>
+           		<target>Joined</target>
+           	</trans-unit>
+           	<trans-unit id="60">
+           		<source>title_views</source>
+           		<target>Total Views</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

@@ -70,7 +70,11 @@ function on_set_field(event as object) as void
         on_set_visible(event)
     ' Viewers
     else if field = "viewers"
-        m.viewers.text = tr("title_viewers") + ": " + event.getData().toStr()
+        if m.top.getField("stream_type") = "user"
+            m.viewers.text = tr("title_views") + ": " + event.getData().toStr()
+        else
+            m.viewers.text = tr("title_viewers") + ": " + event.getData().toStr()
+        end if
     ' Start time
     else if field = "start_time"
         set_time(event.getData())
@@ -80,6 +84,8 @@ function on_set_field(event as object) as void
     ' Stream type
     else if field = "stream_type"
         m.stream_type.text = tr("title_stream_type") + ": " + event.getData()
+        m.top.setField("start_time", m.top.getField("start_time"))
+        m.top.setField("viewers", m.top.getField("viewers"))
     end if
 end function
 
@@ -89,7 +95,13 @@ function set_time(time_string as string) as void
     ' Time from string
     time = createObject("roDateTime")
     time.fromISO8601String(time_string)
-    'time.toLocalTime()
+    ' Show time created if the type is a user
+    if m.top.getField("stream_type") = "user"
+        time.toLocalTime()
+        m.start_time.text = tr("title_joined") + ": " + time.asDateString("short-month-no-weekday")
+        return
+    end if
+    ' Show the up time of a stream
     now = createObject("roDateTime")
     ' Calculate up time
     total_seconds = now.asSeconds() - time.asSeconds()

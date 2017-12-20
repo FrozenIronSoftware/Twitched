@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="Search" extends="Group">
+	<children>
+	
+		<MiniKeyboard
+			id="keyboard" />
+			
+		<ButtonGroup
+    		id="search_buttons"
+    		minWidth="250"
+    		maxWidth="300"
+    		translation="[400,300]" />
+
+	</children>
+
+	<interface>
+		<!-- Fields -->
+		<field id="focus" type="boolean" alwaysNotify="true" />
+		<field id="search" type="array" alwaysNotify="true" />
+		<field id="VIDEO" type="integer" />
+		<field id="CHANNEL" type="integer" />
+		<field id="GAME" type="integer" />
+	</interface>
+
+	<script type="text/brightscript" uri="pkg:/components/Search.brs" />
+</component>
