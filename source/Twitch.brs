@@ -659,6 +659,15 @@ function preload_video() as void
     video.actors = m.info_screen.streamer[0]
     video.streamFormat = "hls"
     video.live = true
+    ' Set HTTP Agent
+    http_agent = createObject("roHttpAgent")
+    video.setHttpAgent(http_agent)
+    video.httpCertificatesFile = "common:/certs/ca-bundle.crt"
+    video.httpHeaders = [
+        "X-Roku-Reserved-Dev-Id:",
+        "Client-ID:" + m.global.secret.client_id
+    ]
+    video.httpSendClientCertificate = true
     ' Preload
     m.video.content = video
     m.video.control = "prebuffer"
