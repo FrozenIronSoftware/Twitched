@@ -108,16 +108,9 @@
     		visible="false"
     		translation="[0,115]" />
 			
-	    <!-- 
-	    	 The video node is translated and resized so the entire video is 
-	    	 shown. The Video node zooms in on video.
-	    -->
 		<Video 
     		id="video"
-    		visible="false"
-    		translation="[30, 15]"
-    		width="1220"
-    		height="690" />
+    		visible="false" />
     		
     	<LinkScreen
 			id="link_screen"
