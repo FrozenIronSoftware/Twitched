@@ -176,7 +176,11 @@ end function
 function on_http_response(event as object) as void
     ' Transfer not complete
     if event.getInt() <> 1 or m.callback = invalid then return
-    if event.getResponseCode() <> 200
+    ' Canceled
+    if event.getResponseCode() = -10001 or event.getFailureReason() = "Cancelled"
+        return
+    ' Fail
+    else if event.getResponseCode() <> 200
         print "HTTP request failed:"
         print tab(2)"URL: " + m.http.getUrl()
         print tab(2)"Status Code: " + event.getResponseCode().toStr()

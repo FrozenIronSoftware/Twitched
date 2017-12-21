@@ -25,6 +25,10 @@ end function
 ' Begin the link process
 ' Ignores event
 function do_link(event as object) as void
+    ' Ensure the timer and any http requests are stopped
+    m.timer.control = "stop"
+    m.twitch_api.cancel = true
+    ' Request the link code
     m.twitch_api.get_link_code = "on_link_code"
 end function
 
@@ -48,6 +52,8 @@ end function
 ' Handle a timer event
 ' Request the status of a link code
 function on_timer(event as object) as void
+    ' Stop any active request
+    m.twitch_api.cancel = true
     ' Stop the loop if the link screen is not up
     if not m.top.visible
         m.timer.control = "stop"
