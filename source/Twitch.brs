@@ -15,7 +15,7 @@ function main(args as dynamic) as void
 	' Set globals
 	m.global = screen.getGlobalNode()
 	m.global.addFields({
-	   args: args, ' TODO handle deep links
+	   args: args,
 	   secret: secret,
 	   REG_TWITCH: "TWITCH",
 	   REG_TOKEN: "TOKEN"
@@ -97,18 +97,31 @@ function init() as void
     ' Parse args
     args = m.global.args
     ' Deep link
+    twitch_stream_regex = createObject("roRegex", "twitch_stream(?:_*)(.*)", "")
     if args.contentId <> invalid and args.mediaType <> invalid
+        print twitch_stream_regex.isMatch(args.contentId)
         ' Go to a live stream
-        if args.contentId = "twitch_stream" and args.mediaType = "live" and (args.twitch_user_name <> invalid or args.twitch_user_id <> invalid)
-            m.twitch_api.get_streams = [{
-                limit: 1,
-                user_login: args.twitch_user_name,
-                user_id: args.twitch_user_id
-            }, "on_stream_info"]
-            return
-        ' Invalid deep link
-        else
-            error("error_deep_link_invalid", 1009)
+        if twitch_stream_regex.isMatch(args.contentId) and args.mediaType = "live"
+            ' Additional parameters launch (twitch_user_name or twitch_user_id supplied)
+            if args.twitch_user_name <> invalid or args.twitch_user_id <> invalid
+                m.twitch_api.get_streams = [{
+                    limit: 1,
+                    user_login: args.twitch_user_name,
+                    user_id: args.twitch_user_id
+                }, "on_stream_info"]
+                return
+            ' Extract user name from contentId
+            else
+                user_name = twitch_stream_regex.match(args.contentId)[1]
+                if user_name <> invalid and user_name <> ""
+                    m.twitch_api.get_streams = [{
+                        limit: 1,
+                        user_login: user_name,
+                        user_id: user_name
+                    }, "on_stream_info"]
+                    return
+                end if
+            end if
         end if
     end if
     ' Normal init
@@ -751,15 +764,22 @@ end function
 ' If no stream data is given to this an error will be displayed stating
 ' that the streamer could not be found or is not live
 ' This also closes any top level dialog if there are no errors
+'
+' Roku requirements do not allow error messages shown for invalid deep links
+' Errors are logged and the home screen is started on error
 function on_stream_info(event as object) as void
     ' Show API error
     if type(event.getData().result) <> "roArray"
-        error("error_api_fail", 1007)
+        'error("error_api_fail", 1007)
+        print tr("error_api_fail")
+        print tab(2)"Error: 1007"
         m.main_menu.setFocus(true)
         return
     ' Not found
     else if event.getData().result.count() = 0
-        error("error_stream_not_found", 1008)
+        'error("error_stream_not_found", 1008)
+        print tr("error_stream_not_found")
+        print tab(2)"Error: 1008"
         m.main_menu.setFocus(true)
         return
     end if
