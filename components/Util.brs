@@ -34,3 +34,11 @@ function on_callback(event as object) as void
         print error_code
     end if
 end function
+
+' Clean a string that may have invalid characters.
+function clean(dirty as string) as string
+    if m.clean_regex = invalid
+        m.clean_regex = createObject("roRegex", "[^A-Za-z0-9\s!@#$%^&*()_\-+=<,>\./\?';\:\[\]\{\}\\\|" + chr(34) + "]", "")
+    end if
+    return m.clean_regex.replaceAll(dirty, "")
+end function

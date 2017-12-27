@@ -305,7 +305,7 @@ function set_poster_grid(event as object) as void
         node = m.poster_grid.content.createChild("ContentNode")
         node.hdgridposterurl = data.box_art_url.replace("{width}", "195").replace("{height}", "120")
         node.sdgridposterurl = data.box_art_url.replace("{width}", "80").replace("{height}", "45")
-        node.shortdescriptionline1 = data.name
+        node.shortdescriptionline1 = clean(data.name)
         if data.viewers <> invalid
             viewer_string = "{0} {1}"
             node.shortdescriptionline2 = substitute(viewer_string, data.viewers.toStr(), trs("inline_viewers", data.viewers), "", "")
@@ -344,14 +344,14 @@ function set_content_grid(event as object) as void
         else
             node.hdgridposterurl = "pkg:/locale/default/images/poster_error.png"
         end if
-        node.shortdescriptionline1 = data.title
+        node.shortdescriptionline1 = clean(data.title)
         ' User
         if data.type = "user"
-            node.shortdescriptionline2 = data.user_name.display_name
+            node.shortdescriptionline2 = clean(data.user_name.display_name)
         ' Stream
         else
             viewer_string = "{0} {1} on {2}"
-            node.shortdescriptionline2 = substitute(viewer_string, data.viewer_count.toStr(), trs("inline_viewers", data.viewer_count), data.user_name.display_name, "")
+            node.shortdescriptionline2 = substitute(viewer_string, data.viewer_count.toStr(), trs("inline_viewers", data.viewer_count), clean(data.user_name.display_name), "")
         end if
     end for
 end function
@@ -622,16 +622,16 @@ function show_video_info_screen() as void
     video_item = m.video_data[selected_index]
     ' Set info screen data
     m.info_screen.preview_image = video_item.thumbnail_url.replace("{width}", "292").replace("{height}", "180")
-    m.info_screen.title = video_item.title
-    m.info_screen.streamer = [video_item.user_name.display_name, video_item.user_name.login]
-    m.info_screen.game = [video_item.game_name, video_item.game_id]
+    m.info_screen.title = clean(video_item.title)
+    m.info_screen.streamer = [clean(video_item.user_name.display_name), video_item.user_name.login]
+    m.info_screen.game = [clean(video_item.game_name), video_item.game_id]
     m.info_screen.viewers = video_item.viewer_count
     m.info_screen.start_time = video_item.started_at
     m.info_screen.language = video_item.language
     m.info_screen.stream_type = video_item.type
     ' Show info screen
     save_stage_info(m.INFO)
-    m.header.title = tr("title_stream") + " " + m.ARROW + " " + video_item.user_name.display_name
+    m.header.title = tr("title_stream") + " " + m.ARROW + " " + clean(video_item.user_name.display_name)
     m.info_screen.setFocus(true)
     m.info_screen.visible = true
     m.stage = m.INFO
