@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="VideoTitle" extends="Group">
+	<children>
+	
+		<Rectangle
+			id="background"
+			width="1280"
+			height="290"
+			color="0x000000"
+			opacity="0.7"
+			translation="[0, 500]" />
+	
+		<Label
+			id="title"
+			text="test"
+			width="1180"
+    		height="30"
+			translation="[90, 530]"
+			horizAlign="center"
+			vertAlign="bottom"
+			wrap="false"
+			numLines="1"
+			maxLines="1"
+			font="font:MediumBoldSystemFont" />
+			
+		<Label
+			id="streamer"
+			width="1180"
+    		height="30"
+			translation="[90, 580]"
+			horizAlign="center"
+			vertAlign="bottom"
+			wrap="false"
+			numLines="1"
+			maxLines="1"
+			font="font:MediumBoldSystemFont" />
+
+	</children>
+
+	<interface>
+		<!-- Fields -->
+	</interface>
+	
+</component>

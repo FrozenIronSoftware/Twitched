@@ -252,6 +252,10 @@
            		<source>title_views</source>
            		<target>Total Views</target>
            	</trans-unit>
+           	<trans-unit id="61">
+           		<source>inline_playing</source>
+           		<target>playing</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

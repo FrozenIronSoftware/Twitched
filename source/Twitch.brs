@@ -77,6 +77,7 @@ function init() as void
     m.link_screen = m.top.findNode("link_screen")
     m.settings_panel = m.top.findNode("settings")
     m.search_panel = m.top.findNode("search")
+    m.video_title = m.top.findNode("video_title")
     ' Events
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
@@ -508,6 +509,18 @@ function onKeyEvent(key as string, press as boolean) as boolean
             hide_video()
             ' Preload again on the info screen
             preload_video()
+        ' Play/Pause
+        else if press and key = "play"
+            if m.video.state = "paused"
+                m.video.control = "resume"
+                m.video_title.visible = false
+            else if m.video.state = "playing"
+                m.video.control = "pause"
+                m.video_title.visible = true
+            end if
+        ' Show title
+        else if press and key = "OK" and (m.video.state = "paused" or m.video.state = "playing")
+            m.video_title.visible = not m.video_title.visible
         end if
     ' Link screen
     else if m.link_screen.isInFocusChain()
@@ -664,7 +677,10 @@ function preload_video() as void
     video.adaptiveMaxStartBitrate = 800
     video.switchingStrategy = "full-adaptation"
     video.title = m.info_screen.title
-    video.titleSeason = m.info_screen.game[0] + " - " + m.info_screen.streamer[0]
+    video.titleSeason = m.info_screen.streamer[0]
+    if m.info_screen.game[0] <> invalid and m.info_screen.game[0] <> ""
+        video.titleSeason += " " + tr("inline_playing") + " " + m.info_screen.game[0]
+    end if
     video.description = m.info_screen.streamer[0]
     video.sdPosterUrl = m.info_screen.preview
     video.shortDescriptionLine1 = m.info_screen.title
@@ -681,6 +697,9 @@ function preload_video() as void
         "Client-ID:" + m.global.secret.client_id
     ]
     video.httpSendClientCertificate = true
+    ' Set title component
+    m.video_title.findNode("title").text = video.title
+    m.video_title.findNode("streamer").text = video.titleSeason
     ' Preload
     m.video.content = video
     m.video.control = "prebuffer"
@@ -886,6 +905,7 @@ function hide_video() as void
     m.info_screen.focus = true
     m.video.control = "stop"
     m.video.visible = false
+    m.video_title.visible = false
 end function
 
 ' Handle the close event for the dialog

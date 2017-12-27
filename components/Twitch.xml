@@ -6,8 +6,8 @@
 		<Rectangle
 			id="background"
 			color="0x19171c"
-			width="1920"
-			height="1080" />
+			width="1280"
+			height="720" />
 
 		<Overhang
 			id="header"
@@ -110,6 +110,11 @@
 			
 		<Video 
     		id="video"
+    		visible="false"
+    		enableTrickPlay="false" />
+    	
+    	<VideoTitle 
+    		id="video_title"
     		visible="false" />
     		
     	<LinkScreen
