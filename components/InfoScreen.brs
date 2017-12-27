@@ -12,7 +12,7 @@ function init() as void
     m.language = m.top.findNode("language")
     m.stream_type = m.top.findNode("stream_type")
     ' Init
-    m.buttons.buttons = ["", "", ""]
+    m.buttons.buttons = ["", ""]
     m.button_callbacks = []
     set_button(0, tr("button_play"), "on_play_button_pressed")
     ' Events
@@ -61,10 +61,10 @@ function on_set_field(event as object) as void
         m.title.text = event.getData()
     ' Streamer
     else if field = "streamer"
-        set_button(1, tr("prefix_streamer") + ": " + event.getData()[0], "on_streamer_button_pressed")
+        'set_button(2, tr("prefix_streamer") + ": " + event.getData()[0], "on_streamer_button_pressed")
     ' Game
     else if field = "game"
-        set_button(2, tr("prefix_game") + ": " + event.getData()[0], "on_game_button_pressed")
+        set_button(1, tr("prefix_game") + ": " + event.getData()[0], "on_game_button_pressed")
     ' Visible
     else if field = "visible" or field = "focus"
         on_set_visible(event)
