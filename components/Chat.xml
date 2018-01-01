@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="Chat" extends="Group">
+	<children>
+	
+		<Rectangle
+			id="background"
+			color="0x000000"
+			opacity="0.8"
+			width="500"
+			height="720" />
+	
+		<MarkupList
+			id="chat_list"
+			itemComponentName="ChatItem"
+			itemSize="[400,120]"
+			itemSpacing="[0,0]"
+			translation="[90,90]"
+			numRows="5"
+			drawFocusFeedback="false">
+			<ContentNode role="content" />
+		</MarkupList>
+		
+		<Irc
+			id="irc" />
+
+	</children>
+
+	<interface>
+		<!-- Fields -->
+		<field id="connect" type="string" alwaysNotify="true" />
+		<field id="disconnect" type="boolean" alwaysNotify="true" />
+		<field id="do_input" type="boolean" alwaysNotify="true" />
+		<field id="token" type="string" alwaysNotify="true" />
+		<field id="user_name" type="string" alwaysNotify="true" />
+	</interface>
+
+	<script type="text/brightscript" uri="pkg:/components/Chat.brs" />
+	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
+</component>

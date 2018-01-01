@@ -78,6 +78,7 @@ function init() as void
     m.settings_panel = m.top.findNode("settings")
     m.search_panel = m.top.findNode("search")
     m.video_title = m.top.findNode("video_title")
+    m.chat = m.top.findNode("chat")
     ' Events
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
@@ -92,9 +93,15 @@ function init() as void
     m.settings_panel.observeField("sign_out_in", "on_settings_authentication_request")
     m.search_panel.observeField("search", "on_search")
     ' Init
+    init_main_menu()
+    show_message("message_loading")
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
         "set_twitch_user_token"]
-    init_main_menu()
+end function
+
+' Parse deep links (if any) and start at the specified state or do a normal
+' start
+function deep_link_or_start() as void
     ' Parse args
     args = m.global.args
     ' Deep link
@@ -131,11 +138,18 @@ end function
 
 ' Callback function that sets a the twitch API user token read from the registry
 function set_twitch_user_token(event as object) as void
-    if event.getData().result = invalid
+    if event.getData().result = invalid or event.getData().result = ""
         m.twitch_api.user_token = ""
+        m.chat.token = ""
+        m.chat.user_name = "justinfan" + rnd(&h7fffffff).toStr()
+        print("Using generic Twitch chat user name")
+        deep_link_or_start()
         return
     end if
     m.twitch_api.user_token = event.getData().result
+    m.chat.token = m.twitch_api.user_token
+    m.twitch_api.get_user_info = [{}, "on_twitch_user_info"]
+    print("Twitch user token set")
 end function
 
 ' Initialize the main menu with translated items and set it as focused
@@ -521,6 +535,17 @@ function onKeyEvent(key as string, press as boolean) as boolean
         ' Show title
         else if press and key = "OK" and (m.video.state = "paused" or m.video.state = "playing")
             m.video_title.visible = not m.video_title.visible
+        ' Show chat
+        else if (not m.chat.visible) and press and key = "right"
+            m.chat.visible = true
+            m.chat.connect = m.info_screen.streamer[1]
+        ' Hide chat
+        else if m.chat.visible and press and key = "left"
+            m.chat.visible = false
+            m.chat.disconnect = true
+        ' Show chat keyboard
+        else if m.chat.visible and press and key = "up"
+            m.chat.do_input = true
         end if
     ' Link screen
     else if m.link_screen.isInFocusChain()
@@ -540,6 +565,13 @@ function onKeyEvent(key as string, press as boolean) as boolean
         ' Back
         if press and (key = "back" or key = "left")
             m.main_menu.setFocus(true)
+        end if
+    ' Chat
+    else if m.chat.isInFocusChain()
+        ' Back
+        if press and (key = "back" or key = "left" or key = "down")
+            m.chat.do_input = false
+            m.video.setFocus(true)
         end if
     end if
     return false
@@ -906,6 +938,8 @@ function hide_video() as void
     m.video.control = "stop"
     m.video.visible = false
     m.video_title.visible = false
+    m.chat.visible = false
+    m.chat.disconnect = true
 end function
 
 ' Handle the close event for the dialog
@@ -925,10 +959,7 @@ function on_settings_authentication_request(event as object) as void
         show_link_screen()
     ' Sign out
     else if direction = "out"
-        m.twitch_api.user_token = ""
-        load_menu_item(m.stage, true) ' Force a reload of the menu
-        show_message_dialog("message_log_out")
-        m.registry.write = [m.global.REG_TWITCH, m.global.REG_TOKEN, "", "on_token_write"]
+        log_out()
     ' Unhandled
     else
         print("Unhandled on_settings_authentication_request:")
@@ -975,4 +1006,49 @@ function on_search(event as object) as void
     ' Set title and message
     m.header.title = tr("title_search") + " " + m.ARROW + " " + term
     show_message("message_loading")
+end function
+
+' Handle Twitch user info
+function on_twitch_user_info(event as object) as void
+    deep_link_or_start()
+    info = event.getData().result
+    ' API down
+    if type(info) <> "roArray"
+        print("on_twitch_user_info: invalid data")
+        error("error_api_fail", 1011)
+        return
+    end if
+    ' Invalid token. Remove it (log user out)
+    if info.count() < 1
+        print "Invalid token. Logging user out."
+        log_out(false)
+        return
+    end if
+    user = info[0]
+    if type(user) <> "roAssociativeArray"
+        print("on_twitch_user_info: invalid data")
+        error("error_api_fail", 1012)
+        return
+    end if
+    ' Set user info
+    if user.login = invalid or user.login = ""
+        print("on_twitch_user_info: empty username")
+        error("error_api_fail", 1013)
+        return
+    end if
+    m.chat.user_name = user.login
+    print("Twitch user name set")
+end function
+
+' Remove the token from the registry and all object that require it
+function log_out(do_show_message = true as boolean) as void
+    m.twitch_api.user_token = ""
+    load_menu_item(m.stage, true) ' Force a reload of the menu
+    if do_show_message
+        show_message_dialog("message_log_out")
+    end if
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_TOKEN, "", 
+        "on_token_write"]
+    m.chat.token = ""
+    m.chat.user_name = "justinfan" + rnd(&h7fffffff).toStr()
 end function

@@ -37,8 +37,55 @@ end function
 
 ' Clean a string that may have invalid characters.
 function clean(dirty as string) as string
-    if m.clean_regex = invalid
-        m.clean_regex = createObject("roRegex", "[^A-Za-z0-9\s!@#$%^&*()_\-+=<,>\./\?';\:\[\]\{\}\\\|" + chr(34) + "]", "")
+    if m._clean_regex = invalid
+        m._clean_regex = createObject("roRegex", "[^A-Za-z0-9\s!@#$%^&*()_\-+=<,>\./\?';\:\[\]\{\}\\\|" + chr(34) + "]", "")
     end if
-    return m.clean_regex.replaceAll(dirty, "")
+    return m._clean_regex.replaceAll(dirty, "")
+end function
+
+' Log a message
+' @param level log level string or integer
+' @param msg message to print
+function printl(level as object, msg as object) as void
+    if _parse_level(level) > m.log_level
+        return
+    end if
+    print(msg)
+end function
+
+' Parse level to an integer
+' @param level string or integer level
+function _parse_level(level as object) as integer
+    level_string = level.toStr()
+    log_level = 0
+    if level_string = "INFO" or level_string = "0"
+        log_level = m.INFO
+    else if level_string = "DEBUG" or level_string = "1"
+        log_level = m.DEBUG
+    else if level_string = "EXTRA" or level_string = "2"
+        log_level = m.EXTRA
+    else if level_string = "VERBOSE" or level_string = "3"
+        log_level = m.VERBOSE
+    end if
+    return log_level
+end function
+
+' Initialize logging
+function init_logging() as void
+    m.INFO = 0
+    m.DEBUG = 1
+    m.EXTRA = 2
+    m.VERBOSE = 3
+    level_string = m.global.secret.log_level
+    log_level = 0
+    if level_string = "INFO" or level_string = "0"
+        log_level = m.INFO
+    else if level_string = "DEBUG" or level_string = "1"
+        log_level = m.DEBUG
+    else if level_string = "EXTRA" or level_string = "2"
+        log_level = m.EXTRA
+    else if level_string = "VERBOSE" or level_string = "3"
+        log_level = m.VERBOSE
+    end if
+    m.log_level = log_level
 end function

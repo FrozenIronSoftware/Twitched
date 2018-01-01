@@ -1,6 +1,6 @@
 ' Copyright (C) 2017 Rolando Islas. All Rights Reserved.
 
-' Create a new instance of the InfoScreen component
+' Create a new instance of the Search component
 function init() as void
     ' Constants
     m.top.VIDEO = 0

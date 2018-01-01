@@ -112,6 +112,10 @@
     		id="video"
     		visible="false"
     		enableTrickPlay="false" />
+    		
+    	<Chat
+    		id="chat"
+    		visible="false" />
     	
     	<VideoTitle 
     		id="video_title"

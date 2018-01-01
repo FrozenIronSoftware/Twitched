@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="ChatItem" extends="Group">
+	<children>
+		
+		<Label 
+			id="name"
+			width="400"
+			wrap="false"
+			height="30"
+			color="0x00ff00" />
+		
+		<Label 
+			id="message"
+			wrap="true"
+			width="400"
+			height="90"
+			translation="[0,30]" />
+		
+	</children>
+
+	<interface>
+		<!-- Fields -->
+		<field id="itemContent" type="node" alwaysNotify="true" />
+	</interface>
+
+	<script type="text/brightscript" uri="pkg:/components/ChatItem.brs" />
+	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
+</component>

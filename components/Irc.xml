@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="Irc" extends="Task">
+	<interface>
+		<!-- Fields -->
+		<field id="connect" type="string" alwaysNotify="true" />
+		<field id="disconnect" type="boolean" alwaysNotify="true" />
+		<field id="chat_message" type="assocarray" alwaysNotify="true" />
+		<field id="token" type="string" />
+		<field id="user_name" type="string" />
+	    <!-- Functions -->
+	</interface>
+	
+	<script type="text/brightscript" uri="pkg:/components/Irc.brs" />
+	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
+</component>

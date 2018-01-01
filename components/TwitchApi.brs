@@ -38,6 +38,7 @@ function init() as void
     m.top.observeField("cancel", m.port)
     m.top.observeField("get_followed_streams", m.port)
     m.top.observeField("search", m.port)
+    m.top.observeField("get_user_info", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -68,6 +69,8 @@ function run() as void
                 get_followed_streams(msg)
             else if msg.getField() = "search"
                 search(msg)
+            else if msg.getField() = "get_user_info"
+                get_user_info(msg)
             end if
         end if
     end while
@@ -218,6 +221,7 @@ end function
 
 ' Helper function to request a URL in an asynchronous fashion
 function get(request_url as string) as void
+    print "Get request to " + request_url
     m.http.setRequest("GET")
     m.http.setUrl(request_url)
     m.http.asyncGetToString()
@@ -297,5 +301,21 @@ function search(params as object) as void
     if passed_params.live <> invalid
         url_params.push("live=" + m.http.escape(passed_params.live.toStr()))
     end if
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+
+' Request user data with the current token
+' @param array of parameters [associative request_params, string callback]
+function get_user_info(params as object) as void
+    request_url = m.API_HELIX + "/users"
+    passed_params = params.getData()[0]
+    url_params = []
+    if passed_params.login <> invalid
+        url_params.push("login=" + m.http.escape(passed_params.login))
+    end if
+    if passed_params.id <> invalid
+        url_params.push("id=" + m.http.escape(passed_params.id.toStr()))
+    end if
+    url_params.push("token=" + m.http.escape(m.top.getField("user_token")))
     request("GET", request_url, url_params, params.getData()[1])
 end function

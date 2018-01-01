@@ -256,6 +256,18 @@
            		<source>inline_playing</source>
            		<target>playing</target>
            	</trans-unit>
+           	<trans-unit id="62">
+           		<source>message_irc_connecting</source>
+           		<target>Connecting to chat</target>
+           	</trans-unit>
+           	<trans-unit id="63">
+           		<source>message_irc_connected</source>
+           		<target>Connected to chat</target>
+           	</trans-unit>
+           	<trans-unit id="64">
+           		<source>twitched</source>
+           		<target>Twitched</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>
