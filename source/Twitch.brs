@@ -146,10 +146,7 @@ function set_twitch_user_token(event as object) as void
         deep_link_or_start()
         return
     end if
-    m.twitch_api.user_token = event.getData().result
-    m.chat.token = m.twitch_api.user_token
-    m.twitch_api.get_user_info = [{}, "on_twitch_user_info"]
-    print("Twitch user token set")
+    log_in(event.getData().result)
 end function
 
 ' Initialize the main menu with translated items and set it as focused
@@ -886,10 +883,9 @@ end function
 function on_link_token(event as object) as void
     hide_link_screen()
     token = event.getData()
-    m.twitch_api.user_token = token
-    load_menu_item(m.stage, true) ' Force a reload of the menu
     show_message_dialog("message_link_success")
     m.registry.write = [m.global.REG_TWITCH, m.global.REG_TOKEN, token, "on_token_write"]
+    log_in(token, false)
 end function
 
 ' Handle a twitch link error
@@ -1010,7 +1006,6 @@ end function
 
 ' Handle Twitch user info
 function on_twitch_user_info(event as object) as void
-    deep_link_or_start()
     info = event.getData().result
     ' API down
     if type(info) <> "roArray"
@@ -1040,6 +1035,18 @@ function on_twitch_user_info(event as object) as void
     print("Twitch user name set")
 end function
 
+' Handle twitch user info and reload the menu
+function on_twitch_user_info_reload(event as object) as void
+    load_menu_item(m.stage, true) ' Force a reload of the menu
+    on_twitch_user_info(event)
+end function
+
+' Handle Twitch user info and initialize the app
+function on_twitch_user_info_start(event as object) as void
+    deep_link_or_start()
+    on_twitch_user_info(event)
+end function
+
 ' Remove the token from the registry and all object that require it
 function log_out(do_show_message = true as boolean) as void
     m.twitch_api.user_token = ""
@@ -1051,4 +1058,16 @@ function log_out(do_show_message = true as boolean) as void
         "on_token_write"]
     m.chat.token = ""
     m.chat.user_name = "justinfan" + rnd(&h7fffffff).toStr()
+end function
+
+' Add the token to objects that expect it and request user info
+function log_in(token as string, do_start = true as boolean) as void
+    m.twitch_api.user_token = token
+    m.chat.token = m.twitch_api.user_token
+    if do_start
+        m.twitch_api.get_user_info = [{}, "on_twitch_user_info_start"]
+    else
+        m.twitch_api.get_user_info = [{}, "on_twitch_user_info_reload"]
+    end if
+    print("Twitch user token set")
 end function
