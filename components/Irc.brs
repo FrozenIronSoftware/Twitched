@@ -116,10 +116,14 @@ function connect(streamer as string) as void
     if m.socket.connect():
         printl(m.INFO, "IRC socket connected")
         cmd(m.CAP, ["REQ", "twitch.tv/tags"])
-        if m.top.getField("token") <> ""
+        if m.top.getField("token") <> "" and m.top.getField("user_name") <> ""
             cmd(m.PASS, "oauth:" + m.top.getField("token"))
         end if
-        cmd(m.NICK, m.top.getField("user_name"))
+        if m.top.getField("user_name") <> ""
+            cmd(m.NICK, m.top.getField("user_name"))
+        else
+            cmd(m.NICK, "justinfan" + rnd(&h7fffffff).toStr())
+        end if
         cmd(m.JOIN, "#" + streamer)
     else
         printl(m.INFO, "Irc socket connection failed")
