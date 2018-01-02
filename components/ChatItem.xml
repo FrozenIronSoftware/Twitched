@@ -16,6 +16,9 @@
 			width="400"
 			height="90"
 			translation="[0,30]" />
+			
+		<Group
+			id="badges" />
 		
 	</children>
 

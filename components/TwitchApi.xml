@@ -15,6 +15,7 @@
 		<field id="get_followed_streams" type="array" alwaysNotify="true" />
 		<field id="search" type="array" alwaysNotify="true" />
 		<field id="get_user_info" type="array" alwaysNotify="true" />
+		<field id="get_badges" type="string" alwaysNotify="true" />
 		<!-- Functions -->
 		<function name="get_stream_url" />
 	</interface>

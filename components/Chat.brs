@@ -3,7 +3,7 @@
 ' Create a new instance of the Chat component
 function init() as void
     ' Constants
-    m.CHAT_ITEMS = 4
+    m.CHAT_ITEMS = 5
     ' Components
     m.irc = m.top.findNode("irc")
     m.chat_list = m.top.findNode("chat_list")
@@ -19,15 +19,14 @@ function init() as void
 end function
 
 function init_chat_list() as void
-    for item_index = 0 to m.CHAT_ITEMS
-        m.chat_list.content.createChild("ChatItemData")
+    for item_index = 0 to m.CHAT_ITEMS - 1
+        chat_item = m.chat_list.content.createChild("ChatItemData")
     end for
 end function
 
 ' Handle connecting
 ' Event is a field event with the value being a string with the streamer name
 function connect(event as object) as void
-    clear_chat()
     set_connecting_message()
     m.irc.connect = event.getData()
 end function
@@ -41,15 +40,9 @@ function set_connecting_message() as void
     })
 end function
 
-' Clear the chat messages
-function clear_chat() as void
-    m.chat_list.content.removeChildrenIndex(m.chat_list.getChildCount(), 0)
-end function
-
 ' Handle disconnect
 ' Event is a field event with the value being ignored
 function disconnect(event as object) as void
-    clear_chat()
     m.irc.disconnect = true
 end function
 
@@ -62,7 +55,7 @@ end function
 ' Add a chat message to the chat list
 function add_chat_message(message as object) as void
     ' Set the message to an empty chat item
-    for item_index = 0 to m.CHAT_ITEMS
+    for item_index = 0 to m.CHAT_ITEMS - 1
         chat_item = m.chat_list.content.getChild(item_index)
         if type(chat_item.message) <> "roAssociativeArray"
             chat_item.message = message

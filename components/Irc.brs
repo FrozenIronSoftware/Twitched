@@ -12,9 +12,9 @@ function init() as void
     m.TWITCH_TAGS_REGEX = createObject("roRegex", twitch_tags_regex, "")
     m.MESSAGE_REGEX = createObject("roRegex", "^$TWITCH_TAGS(?::([^!@\s]+)(?:!([^@\s]+))?(?:@([^\s]+))?\s)?([A-Za-z0-9]+)($PARAMS+)?(?:\r?\n?)".replace("$PARAMS", params_regex).replace("$TWITCH_TAGS", twitch_tags_regex), "")
     m.NEW_LINE_REGEX = createObject("roRegex", chr(13) + "?" + chr(10), "")
+    m.EMOTE_URL = "http://static-cdn.jtvnw.net/emoticons/v1/$ID/$SIZE"
     ' IRC Constants
     m.IRC_HOST_NAME = "irc.chat.twitch.tv"
-    'm.IRC_HOST_NAME = "h61n"
     m.IRC_PORT = 6667
     m.PASS = "PASS"
     m.NICK = "NICK"
@@ -31,17 +31,21 @@ function init() as void
     m.MOTD_END_D = "376"
     m.CAP = "CAP"
     m.NOTICE = "NOTICE"
+    ' Components
+    m.twitch_api = m.top.findNode("twitch_api")
     ' Variables
     m.channel = ""
     m.socket = invalid
     m.data = createObject("roByteArray")
     m.data[2048] = 0
     m.data_size = 0
+    m.badges = {}
     ' Init
     init_logging()
     ' Events
     m.top.observeField("connect", m.PORT)
     m.top.observeField("disconnect", m.PORT)
+    m.twitch_api.observeField("result", m.PORT)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -50,6 +54,7 @@ end function
 ' Main task loop
 function run() as void
     printl(m.INFO, "Irc task started")
+    m.twitch_api.get_badges = ["on_badges"]
     while true
         ' Check for messages
         msg = m.PORT.getMessage()
@@ -59,6 +64,8 @@ function run() as void
                 connect(msg.getData())
             else if msg.getField() = "disconnect"
                 disconnect()
+            else if msg.getField() = "result"
+                on_callback(msg)
             end if
         end if
         read_socket_data()
@@ -228,7 +235,14 @@ function parse_params(params_string as dynamic) as object
     ' Add last param
     last_param_split = params_string.split(":")
     if last_param_split.count() >= 2
-        params.push(last_param_split[last_param_split.count() - 1])
+        last_param = ""
+        for param_index = 1 to last_param_split.count() - 1
+            if param_index > 1
+                last_param += ":"
+            end if
+            last_param += last_param_split[param_index]
+        end for
+        params.push(last_param)
     end if
     ' Print params
     for each param in params
@@ -287,7 +301,68 @@ function handle_privmsg(message as object) as void
         name: name,
         message: message.params[1],
         color: message.twitch_tags.color,
-        badges: message.twitch_tags.badges
+        badges: parse_badges(message.twitch_tags.badges),
+        emotes: parse_emotes(message.twitch_tags.emotes)
     }
     m.top.setField("chat_message", chat_message)
+end function
+
+' Parse Twitch badges string
+' @return array of URL strings
+function parse_badges(badges_string as string) as object
+    badges = []
+    if badges_string = ""
+        return badges
+    end if
+    comma_split = badges_string.split(",")
+    for each badge_string in comma_split
+        slash_split = badge_string.split("/")
+        if slash_split.count() = 2
+            name = slash_split[0]
+            version = slash_split[1]
+            badge = m.badges[name]
+            if type(badge) = "roAssociativeArray" and type(badge.versions) = "roAssociativeArray" and type(badge.versions[version]) = "roAssociativeArray"
+                badge_url = badge.versions[version].image_url_1x
+                if badge_url <> invalid and badge_url <> ""
+                    badges.push(badge_url)
+                end if
+            end if
+        end if
+    end for
+    return badges
+end function
+
+' Parse Twich emotes string
+' @return array of associative arrays
+function parse_emotes(emotes_string as string) as object
+    emotes = []
+    if emotes_string = ""
+        return emotes
+    end if
+    comma_split = emotes_string.split(",")
+    for each emote_string in comma_split
+        colon_split = emote_string.split(":")
+        if colon_split.count() = 2
+            emote_id = colon_split[0]
+            dash_split = colon_split[1].split("-")
+            if dash_split.count() = 2
+                emote = {
+                    url: m.EMOTE_URL.replace("$ID", emote_id.toStr()).replace("$SIZE", "1.0"),
+                    start: dash_split[0],
+                    end: dash_split[1]
+                }
+                emotes.push(emote)
+            end if
+        end if
+    end for
+    return emotes
+end function
+
+' Handle badges data
+function on_badges(event as object) as void
+    badges = event.getData().result
+    if type(badges) <> "roAssociativeArray" or type(badges.badge_sets) <> "roAssociativeArray"
+        return
+    end if
+    m.badges = badges.badge_sets
 end function

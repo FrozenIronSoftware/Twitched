@@ -39,6 +39,7 @@ function init() as void
     m.top.observeField("get_followed_streams", m.port)
     m.top.observeField("search", m.port)
     m.top.observeField("get_user_info", m.port)
+    m.top.observeField("get_badges", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -71,6 +72,8 @@ function run() as void
                 search(msg)
             else if msg.getField() = "get_user_info"
                 get_user_info(msg)
+            else if msg.getField() = "get_badges"
+                get_badges(msg)
             end if
         end if
     end while
@@ -318,4 +321,11 @@ function get_user_info(params as object) as void
     end if
     url_params.push("token=" + m.http.escape(m.top.getField("user_token")))
     request("GET", request_url, url_params, params.getData()[1])
+end function
+
+' Get badges JSON directly from Twitch
+' @param params is expected to be an event with data being a string callback
+function get_badges(params as object) as void
+    request_url = "https://badges.twitch.tv/v1/badges/global/display"
+    request("GET", request_url, [], params.getData())
 end function

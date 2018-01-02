@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
 <component name="Irc" extends="Task">
+
+	<children>
+	
+		<TwitchApi 
+    		id="twitch_api" />
+		
+	</children>
+	
 	<interface>
 		<!-- Fields -->
 		<field id="connect" type="string" alwaysNotify="true" />
