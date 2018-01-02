@@ -278,7 +278,10 @@ function handle_privmsg(message as object) as void
     name = message.nick
     display_name = message.twitch_tags["display-name"]
     if display_name <> invalid and display_name <> ""
-        name = display_name
+        display_name_clean = clean(display_name)
+        if len(display_name) = len(display_name_clean)
+            name = display_name_clean
+        end if
     end if
     chat_message = {
         name: name,
