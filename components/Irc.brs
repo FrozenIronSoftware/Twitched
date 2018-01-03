@@ -40,15 +40,32 @@ function init() as void
     m.data[2048] = 0
     m.data_size = 0
     m.badges = {}
+    m.connected = false
     ' Init
     init_logging()
     ' Events
     m.top.observeField("connect", m.PORT)
     m.top.observeField("disconnect", m.PORT)
+    m.top.observeField("send_chat_message", m.PORT)
     m.twitch_api.observeField("result", m.PORT)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
+end function
+
+' Initialize the socket
+function init_socket() as void
+    ' Create socket
+    m.socket = createObject("roStreamSocket")
+    m.socket.notifyReadable(true)
+    m.socket.notifyWritable(true)
+    m.socket.notifyException(true)
+    m.socket.setMessagePort(m.PORT)
+    ' Set address
+    twitch_irc = createObject("roSocketAddress")
+    twitch_irc.setHostName(m.IRC_HOST_NAME)
+    twitch_irc.setPort(m.IRC_PORT)
+    m.socket.setSendToAddress(twitch_irc)
 end function
 
 ' Main task loop
@@ -57,7 +74,9 @@ function run() as void
     m.twitch_api.get_badges = ["on_badges"]
     while true
         ' Check for messages
-        msg = m.PORT.getMessage()
+        ' Do not user port.getMessage()!
+        ' SocketEvents will not show up if it is used.
+        msg = wait(0, m.PORT) 
         ' Field event
         if type(msg) = "roSGNodeEvent"
             if msg.getField() = "connect"
@@ -66,15 +85,20 @@ function run() as void
                 disconnect()
             else if msg.getField() = "result"
                 on_callback(msg)
+            else if msg.getField() = "send_chat_message"
+                send_chat_message(msg.getData())
             end if
+        ' Socket event
+        else if type(msg) = "roSocketEvent"
+            connect_to_server()
+            read_socket_data()
         end if
-        read_socket_data()
     end while
 end function
 
 ' Read socket data
 function read_socket_data() as void
-    if m.socket = invalid or (not m.socket.isConnected()) or (not m.socket.isReadable())
+    if m.socket = invalid or not m.socket.isReadable()
         return
     end if
     bytes_received =  m.socket.receive(m.data, m.data_size, 1024)
@@ -106,32 +130,37 @@ function read_socket_data() as void
     m.data[2048] = 0
 end function
 
+' Send connection details to the IRC server
+function connect_to_server() as void
+    if m.connected or m.socket = invalid or not m.socket.isWritable()
+        return
+    end if
+    ' Send initial request
+    printl(m.INFO, "IRC socket connected")
+    cmd(m.CAP, ["REQ", "twitch.tv/tags"])
+    if m.top.getField("token") <> "" and m.top.getField("user_name") <> ""
+        cmd(m.PASS, "oauth:" + m.top.getField("token"))
+    end if
+    if m.top.getField("user_name") <> ""
+        cmd(m.NICK, m.top.getField("user_name"))
+    else
+        cmd(m.NICK, "justinfan" + rnd(&h7fffffff).toStr())
+    end if
+    cmd(m.JOIN, "#" + m.streamer)
+    m.connected = true
+end function
+
 ' Handle connecting
 ' A hastag(#) is prefixed to the streamer name
 ' If the streamer name is an empty string, this will act as a disconnect call
 ' @param streamer channel to connect to
 function connect(streamer as string) as void
     disconnect()
-    ' Create socket
-    m.socket = createObject("roStreamSocket")
-    ' Set address
-    twitch_irc = createObject("roSocketAddress")
-    twitch_irc.setHostName(m.IRC_HOST_NAME)
-    twitch_irc.setPort(m.IRC_PORT)
-    m.socket.setSendToAddress(twitch_irc)
     ' Connect
-    if m.socket.connect():
-        printl(m.INFO, "IRC socket connected")
-        cmd(m.CAP, ["REQ", "twitch.tv/tags"])
-        if m.top.getField("token") <> "" and m.top.getField("user_name") <> ""
-            cmd(m.PASS, "oauth:" + m.top.getField("token"))
-        end if
-        if m.top.getField("user_name") <> ""
-            cmd(m.NICK, m.top.getField("user_name"))
-        else
-            cmd(m.NICK, "justinfan" + rnd(&h7fffffff).toStr())
-        end if
-        cmd(m.JOIN, "#" + streamer)
+    init_socket()
+    if m.socket.connect()
+        printl(m.INFO, "IRC socket connecting")
+        m.streamer = streamer
     else
         printl(m.INFO, "Irc socket connection failed")
     end if
@@ -139,16 +168,19 @@ end function
 
 ' Disconnect from the channel and the server
 function disconnect() as void
-    if m.socket <> invalid and m.socket.isConnected()
+    if m.socket <> invalid
         m.socket.close()
+        m.socket = invalid
     end if
     m.channel = ""
+    m.connected = false
+    m.streamer = ""
     printl(m.INFO, "IRC socket disconnected")
 end function
 
 ' Send a command to the IRC server
 function cmd(command as string, args as object) as void
-    if m.socket = invalid or not m.socket.isConnected()
+    if m.socket = invalid
         return
     end if
     formatted_args = ""
@@ -163,7 +195,8 @@ function cmd(command as string, args as object) as void
         end if
     end for
     printl(m.EXTRA, "IRC COMMAND: " + command + " " + formatted_args)
-    m.socket.sendStr(command + " " + formatted_args + chr(10))
+    sent = m.socket.sendStr(command + " " + formatted_args + chr(10))
+    printl(m.EXTRA, "  sent: " + sent.toStr())
 end function
 
 ' Parse a message string
@@ -365,4 +398,14 @@ function on_badges(event as object) as void
         return
     end if
     m.badges = badges.badge_sets
+end function
+
+' Send a chat message to the current channel
+function send_chat_message(msg as string) as void
+    chat_message = {
+        name: m.top.getField("user_name"),
+        message: msg
+    }
+    m.top.setField("chat_message", chat_message)
+    cmd(m.PRIVMSG, [m.channel, msg])
 end function

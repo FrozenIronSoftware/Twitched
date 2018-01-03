@@ -23,6 +23,10 @@
 		
 		<Irc
 			id="irc" />
+			
+		<KeyboardDialog 
+			id="keyboard"
+			visible="false" />
 
 	</children>
 
@@ -33,6 +37,7 @@
 		<field id="do_input" type="boolean" alwaysNotify="true" />
 		<field id="token" type="string" alwaysNotify="true" />
 		<field id="user_name" type="string" alwaysNotify="true" />
+		<field id="blur" type="boolean" alwaysNotify="true" />
 	</interface>
 
 	<script type="text/brightscript" uri="pkg:/components/Chat.brs" />

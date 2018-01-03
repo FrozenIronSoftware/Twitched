@@ -268,6 +268,10 @@
            		<source>twitched</source>
            		<target>Twitched</target>
            	</trans-unit>
+           	<trans-unit id="65">
+           		<source>title_chat</source>
+           		<target>Chat</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

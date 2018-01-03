@@ -7,6 +7,7 @@ function init() as void
     ' Components
     m.irc = m.top.findNode("irc")
     m.chat_list = m.top.findNode("chat_list")
+    m.keyboard = m.top.findNode("keyboard")
     ' Init
     init_logging()
     init_chat_list()
@@ -15,9 +16,18 @@ function init() as void
     m.top.observeField("disconnect", "disconnect")
     m.top.observeField("token", "set_token")
     m.top.observeField("user_name", "set_user_name")
+    m.top.observeField("do_input", "activate_input")
+    m.top.observeField("visible", "on_visibility_change")
     m.irc.observeField("chat_message", "on_chat_message")
+    m.keyboard.observeField("buttonSelected", "on_keyboard_button_selected")
 end function
 
+' Handle key events
+function onKeyEvent(key as string, press as boolean) as boolean
+    return false
+end function
+
+' Add chat items
 function init_chat_list() as void
     for item_index = 0 to m.CHAT_ITEMS - 1
         chat_item = m.chat_list.content.createChild("ChatItemData")
@@ -76,4 +86,37 @@ end function
 ' Set user name
 function set_user_name(event as object) as void
     m.irc.user_name = event.getData()
+end function
+
+' Handle an input request
+' Expects a sgnode event with the field data being a boolean
+function activate_input(event as object) as void
+    if event.getData()
+        m.keyboard.title = tr("title_chat")
+        m.keyboard.buttons = [tr("button_confirm"), tr("button_cancel")]
+        m.keyboard.keyboard.text = ""
+        m.keyboard.visible = true
+        m.keyboard.setFocus(true)
+    else
+        m.keyboard.visible = false
+    end if
+end function
+
+' Handle a button press on the keyboard dialog
+' 0 confirm, 1 cancel
+function on_keyboard_button_selected(event as object) as void
+    input = m.keyboard.keyboard.text
+    confirm = event.getData() = 0
+    if confirm
+        if input <> invalid and input <> ""
+            m.irc.send_chat_message = input
+        end if
+    end if
+    m.keyboard.visible = false
+    m.top.setField("blur", true)
+end function
+
+' Hide keyboard on visibility change
+function on_visibility_change(event as object) as void
+    m.keyboard.visible = false
 end function

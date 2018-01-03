@@ -92,6 +92,7 @@ function init() as void
     m.dialog.observeField("wasClosed", "on_dialog_closed")
     m.settings_panel.observeField("sign_out_in", "on_settings_authentication_request")
     m.search_panel.observeField("search", "on_search")
+    m.chat.observeField("blur", "on_chat_blur")
     ' Init
     init_main_menu()
     show_message("message_loading")
@@ -500,22 +501,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     else if m.info_screen.isInFocusChain()
         ' Back button - hide/go back
         if press and key = "back"
-            set_saved_stage_info(m.INFO)
-            ' Poster
-            if stage_contains_poster_grid()
-                m.poster_grid.setFocus(true)
-            ' Video
-            else if stage_contains_video_grid()
-                m.content_grid.setFocus(true)
-            ' Search
-            else if m.stage = m.SEARCH
-                m.content_grid.setFocus(true)
-            ' Other
-            else
-                m.main_menu.setFocus(true)
-            end if
-            m.info_screen.visible = false
-            m.video.control = "stop" ' Stop any pre-buffering
+            hide_video_info_screen()
         end if
     ' Video
     else if m.video.hasFocus()
@@ -546,7 +532,14 @@ function onKeyEvent(key as string, press as boolean) as boolean
             m.chat.disconnect = true
         ' Show chat keyboard
         else if m.chat.visible and press and key = "up"
-            m.chat.do_input = true
+            if (is_authenticated())
+                m.chat.setFocus(true)
+                m.chat.do_input = true
+            else
+                hide_video()
+                hide_video_info_screen()
+                show_link_screen()
+            end if
         end if
     ' Link screen
     else if m.link_screen.isInFocusChain()
@@ -570,12 +563,32 @@ function onKeyEvent(key as string, press as boolean) as boolean
     ' Chat
     else if m.chat.isInFocusChain()
         ' Back
-        if press and (key = "back" or key = "left" or key = "down")
-            m.chat.do_input = false
+        if (press and (key = "back" or key = "left" or key = "down")) or (not press and key = "back")
             m.video.setFocus(true)
+            m.chat.do_input = false
         end if
     end if
     return false
+end function
+
+' Hide the video info screen and focus whatever content is under it
+function hide_video_info_screen() as void
+    set_saved_stage_info(m.INFO)
+    ' Poster
+    if stage_contains_poster_grid()
+        m.poster_grid.setFocus(true)
+    ' Video
+    else if stage_contains_video_grid()
+        m.content_grid.setFocus(true)
+    ' Search
+    else if m.stage = m.SEARCH
+        m.content_grid.setFocus(true)
+    ' Other
+    else
+        m.main_menu.setFocus(true)
+    end if
+    m.info_screen.visible = false
+    m.video.control = "stop" ' Stop any pre-buffering
 end function
 
 ' Checks if the current stage's content is a video grid
@@ -1079,4 +1092,11 @@ function log_in(token as string, do_start = true as boolean) as void
         m.twitch_api.get_user_info = [{}, "on_twitch_user_info_reload"]
     end if
     print("Twitch user token set")
+end function
+
+' Handle chat blur event
+' Set focus back to video
+function on_chat_blur(event as object) as void
+    m.video.setFocus(true)
+    m.chat.do_input = false
 end function

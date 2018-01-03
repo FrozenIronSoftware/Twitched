@@ -16,6 +16,7 @@
 		<field id="chat_message" type="assocarray" alwaysNotify="true" />
 		<field id="token" type="string" />
 		<field id="user_name" type="string" />
+		<field id="send_chat_message" type="string" alwaysNotify="true" />
 	    <!-- Functions -->
 	</interface>
 	
