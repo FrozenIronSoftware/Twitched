@@ -172,10 +172,14 @@ end function
 ' Loads a menu item and sets the stage passed
 ' @param stage stage to load/set
 function load_menu_item(stage as integer, force = false as boolean) as void
+    ' Set header state
+    m.header.showOptions = true
+    m.header.optionsAvailable = true
+    m.header.optionsText = tr("title_search")
     ' Ignore if the item is already active
     if m.stage = stage and not force then return
     ' Reset
-    reset()
+    reset(false, false)
     ' Handle selection
     ' Popular
     if stage = m.POPULAR
@@ -259,13 +263,18 @@ function on_community_data(event as object) as void
 end function
 
 ' Resets the stage, hiding all content components and resetting variables
-function reset(only_hide = false as boolean) as void
+function reset(only_hide = false as boolean, reset_header_options = true as boolean) as void
     if not only_hide
         m.page = 0
         m.content_grid.content = invalid
         m.poster_grid.content = invalid
     end if
     m.header.title = invalid
+    if reset_header_options
+        m.header.showOptions = false
+        m.header.optionsAvailable = false
+        m.header.optionsText = ""
+    end if
     m.content_grid.visible = false
     m.poster_grid.visible = false
     m.info_screen.visible = false
@@ -408,6 +417,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if m.main_menu.hasFocus() 
         ' Menu item selected
         if press and (key = "right" or key = "OK")
+            m.header.showOptions = false
             ' Show login/link prompt
             if stage_requires_authentication() and not is_authenticated()
                 show_link_screen()
@@ -444,6 +454,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
             m.dialog.visible = true
             m.top.dialog = m.dialog
             return true
+        ' Search
+        else if press and key = "options"
+            m.header.showOptions = false
+            m.main_menu.jumpToItem = m.SEARCH
+            load_menu_item(m.SEARCH)
         end if
     ' Video/Poster Grid
     else if m.content_grid.hasFocus() or m.poster_grid.hasFocus()
