@@ -34,49 +34,57 @@
     		maxWidth="500"
     		translation="[650,140]" />
     		
-    	<Label
-			id="viewers"
-			width="300"
-			height="100"
-			translation="[300, 330]"
-			horizAlign="left"
-			vertAlign="center"
-			wrap="false"
-			numLines="1"
-			maxLines="1" />
+    	<Group
+    		id="stream_info"
+    		width="850"
+    		height="200"
+    		translation="[300,330]" >
+    		
+	    	<Label
+				id="viewers"
+				width="300"
+				height="100"
+				translation="[0,0]"
+				horizAlign="left"
+				vertAlign="center"
+				wrap="false"
+				numLines="1"
+				maxLines="1" />
+				
+			<Label
+				id="start_time"
+				width="500"
+				height="100"
+				translation="[350,0]"
+				horizAlign="left"
+				vertAlign="center"
+				wrap="false"
+				numLines="1"
+				maxLines="1" />
+				
+			<Label
+				id="language"
+				width="300"
+				height="100"
+				translation="[0,55]"
+				horizAlign="left"
+				vertAlign="center"
+				wrap="false"
+				numLines="1"
+				maxLines="1" />
+				
+			<Label
+				id="stream_type"
+				width="300"
+				height="100"
+				translation="[350,55]"
+				horizAlign="left"
+				vertAlign="center"
+				wrap="false"
+				numLines="1"
+				maxLines="1" />
 			
-		<Label
-			id="start_time"
-			width="500"
-			height="100"
-			translation="[650, 330]"
-			horizAlign="left"
-			vertAlign="center"
-			wrap="false"
-			numLines="1"
-			maxLines="1" />
-			
-		<Label
-			id="language"
-			width="300"
-			height="100"
-			translation="[300, 385]"
-			horizAlign="left"
-			vertAlign="center"
-			wrap="false"
-			numLines="1"
-			maxLines="1" />
-			
-		<Label
-			id="stream_type"
-			width="300"
-			height="100"
-			translation="[650, 385]"
-			horizAlign="left"
-			vertAlign="center"
-			wrap="false"
-			numLines="1"
-			maxLines="1" />
+		</Group>
 
 	</children>
 

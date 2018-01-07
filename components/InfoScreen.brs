@@ -7,10 +7,12 @@ function init() as void
     m.preview = m.top.findNode("preview")
     m.title = m.top.findNode("title")
     m.buttons = m.top.findNode("buttons")
-    m.viewers = m.top.findNode("viewers")
-    m.start_time = m.top.findNode("start_time")
-    m.language = m.top.findNode("language")
-    m.stream_type = m.top.findNode("stream_type")
+    ' Info Group
+    m.info_group = m.top.findNode("stream_info")
+    m.viewers = m.info_group.findNode("viewers")
+    m.start_time = m.info_group.findNode("start_time")
+    m.language = m.info_group.findNode("language")
+    m.stream_type = m.info_group.findNode("stream_type")
     ' Init
     m.buttons.buttons = ["", ""]
     m.button_callbacks = []
