@@ -40,6 +40,7 @@ function init() as void
     m.top.observeField("search", m.port)
     m.top.observeField("get_user_info", m.port)
     m.top.observeField("get_badges", m.port)
+    m.top.observeField("user_token", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -74,6 +75,8 @@ function run() as void
                 get_user_info(msg)
             else if msg.getField() = "get_badges"
                 get_badges(msg)
+            else if msg.getField() = "user_token"
+                m.http.addHeader("Twitch-Token", msg.getData())
             end if
         end if
     end while
@@ -273,7 +276,6 @@ function get_followed_streams(params as object) as void
     if passed_params.offset <> invalid
         url_params.push("offset=" + m.http.escape(passed_params.offset.toStr()))
     end if
-    url_params.push("token=" + m.http.escape(m.top.getField("user_token")))
     request("GET", request_url, url_params, params.getData()[1])
 end function
 
@@ -319,7 +321,6 @@ function get_user_info(params as object) as void
     if passed_params.id <> invalid
         url_params.push("id=" + m.http.escape(passed_params.id.toStr()))
     end if
-    url_params.push("token=" + m.http.escape(m.top.getField("user_token")))
     request("GET", request_url, url_params, params.getData()[1])
 end function
 
