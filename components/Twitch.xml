@@ -20,7 +20,7 @@
 
     	<LabelList
     		id="main_menu"
-    		translation="[120,155]"
+    		translation="[90,155]"
     		itemSize="[300,48]"
     		focusBitmapUri="pkg:/locale/default/images/list_selection.9.png"
     		focusBitmapBlendColor="0x6441a4"
@@ -36,14 +36,14 @@
     	<PosterGrid
     		id="content_grid"
     		visible="false"
-    		translation="[440,155]"
-    		basePosterSize="[195,120]"
-    		itemSpacing="[4,8]"
-    		numColumns="4"
-    		numRows="4"
+    		translation="[410,155]"
+    		basePosterSize="[260,160]"
+    		itemSpacing="[20,40]"
+    		numColumns="3"
+    		numRows="3"
     		caption1NumLines="1"
     		caption1Color="0xffffff"
-    		caption2NumLines="1"
+    		caption2NumLines="2"
     		caption2Color="0xffffff"
     		caption2Font="font:SmallestSystemFont"
     		captionBackgroundBitmapUri=
