@@ -110,8 +110,8 @@ function deep_link_or_start() as void
     args = m.global.args
     ' Deep link
     twitch_stream_regex = createObject("roRegex", "twitch_stream(?:_*)(.*)", "")
+    twitch_video_regex = createObject("roRegex", "twitch_video(?:_*)(.*)", "")
     if args.contentId <> invalid and args.mediaType <> invalid
-        print twitch_stream_regex.isMatch(args.contentId)
         ' Go to a live stream
         if twitch_stream_regex.isMatch(args.contentId) and args.mediaType = "live"
             ' Additional parameters launch (twitch_user_name or twitch_user_id supplied)
@@ -133,6 +133,19 @@ function deep_link_or_start() as void
                     }, "on_stream_info"]
                     return
                 end if
+            end if
+        ' Go to a video
+        else if twitch_video_regex.isMatch(args.contentId) and args.mediaType = "special"
+            video_id = args.twitch_video_id
+            if video_id = invalid
+                video_id = twitch_video_regex.match(args.contentId)[1]
+            end if
+            if video_id <> invalid and video_id <> ""
+                m.twitch_api.get_videos = [{
+                    limit: 1,
+                    id: video_id
+                }, "on_stream_info"]
+                return
             end if
         end if
     end if
@@ -684,18 +697,29 @@ function show_video_info_screen() as void
         return
     end if
     video_item = m.video_data[selected_index]
+    if video_item = invalid
+        print("show_video_info_screen: invalid video_item")
+        return
+    end if
     ' Calculate valid name
     name = clean(video_item.user_name.display_name)
     if len(name) <> len(video_item.user_name.display_name)
         name = clean(video_item.user_name.login)
     end if
     ' Set info screen data
-    m.info_screen.preview_image = video_item.thumbnail_url.replace("{width}", "292").replace("{height}", "180")
+    m.info_screen.preview_image = video_item.thumbnail_url.replace("%{width}", "292").replace("%{height}", "180").replace("{width}", "292").replace("{height}", "180")
     m.info_screen.title = clean(video_item.title)
     m.info_screen.streamer = [name, video_item.user_name.login, video_item.user_id]
     m.info_screen.game = [clean(video_item.game_name), video_item.game_id]
     m.info_screen.viewers = video_item.viewer_count
-    m.info_screen.start_time = video_item.started_at
+    if video_item.view_count > 0
+        m.info_screen.viewers = video_item.view_count
+    end if
+    if video_item.published_at <> invalid and video_item.published_at <> ""
+        m.info_screen.start_time = video_item.published_at
+    else
+        m.info_screen.start_time = video_item.started_at
+    end if
     m.info_screen.language = video_item.language
     m.info_screen.stream_type = video_item.type
     ' Show info screen
@@ -884,12 +908,27 @@ function on_stream_info(event as object) as void
         m.main_menu.setFocus(true)
         return
     end if
-    ' Play the video
+    ' Show info screen
     set_content_grid(event)
     m.content_grid.jumpToItem = 0
     m.content_grid.itemSelected = 0
     show_video_info_screen()
-    play_video()
+    ' Play
+    video_data = event.getData().result[0]
+    if type(video_data) = "roAssociativeArray"
+        ' Add VOD info
+        if video_data.duration <> invalid and video_data.duration <> ""
+            video = createObject("roSGNode", "VodItemData")
+            video.image_url = video_data.thumbnail_url.replace("%{width}", "195").replace("%{height}", "120")
+            video.title = clean(video_data.title)
+            video.id = video_data.id
+            video.duration = video_data.duration_seconds
+            m.info_screen.video_selected = video
+        ' Play
+    else
+        play_video()
+        end if
+    end if
 end function
 
 ' Show the message label

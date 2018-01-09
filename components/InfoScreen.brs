@@ -26,6 +26,7 @@ function init() as void
     m.language = m.info_group.findNode("language")
     m.stream_type = m.info_group.findNode("stream_type")
     ' Init
+    m.video_selected = invalid
     init_logging()
     m.video_type = tr("title_videos")
     m.buttons.buttons = ["", "", "", ""]
@@ -44,6 +45,7 @@ function init() as void
     m.top.observeField("language", "on_set_field")
     m.top.observeField("stream_type", "on_set_field")
     m.top.observeField("token", "on_set_field")
+    m.top.observeField("video_selected", "on_set_field")
     m.buttons.observeField("buttonSelected", "on_button_selected")
     m.twitch_api.observeField("result", "on_callback")
     m.vods.observeField("rowItemSelected", "on_video_selected")
@@ -107,8 +109,24 @@ function reset(button = 0 as integer, focus_vods = false as boolean) as void
     m.info_group.visible = not focus_vods
     m.message.text = ""
     m.top.video_selected = invalid
+    if (not focus_vods) and (not is_video())
+        print "video_selected reset"
+        m.video_selected = invalid
+    end if
     m.top.setField("options", false)
     m.video_type = tr("title_videos")
+end function
+
+' Check if the info screen is displaying info about a video
+function is_video() as boolean
+    stream_type = m.top.getField("stream_type")
+    return stream_type = "upload" or stream_type = "archive" or stream_type = "highlight"
+end function
+
+' Check if the info screen is displaying a user
+function is_user() as boolean
+    stream_type = m.top.getField("stream_type")
+    return stream_type = "user"
 end function
 
 ' Handle a button selection
@@ -139,7 +157,7 @@ function on_set_field(event as object) as void
         on_set_visible(event)
     ' Viewers
     else if field = "viewers"
-        if m.top.getField("stream_type") = "user"
+        if is_user() or is_video()
             m.viewers.text = tr("title_views") + ": " + event.getData().toStr()
         else
             m.viewers.text = tr("title_viewers") + ": " + event.getData().toStr()
@@ -158,6 +176,11 @@ function on_set_field(event as object) as void
     ' Token
     else if field = "token"
         m.twitch_api.user_token = event.getData()
+    ' Video selected
+    else if field = "video_selected"
+        if event.getData() <> invalid and m.video_selected = invalid
+            m.video_selected = event.getData()
+        end if
     end if
 end function
 
@@ -168,9 +191,14 @@ function set_time(time_string as string) as void
     time = createObject("roDateTime")
     time.fromISO8601String(time_string)
     ' Show time created if the type is a user
-    if m.top.getField("stream_type") = "user"
+    if is_user()
         time.toLocalTime()
         m.start_time.text = tr("title_joined") + ": " + time.asDateString("short-month-no-weekday")
+        return
+    ' Show published at if the type is a VOD
+    else if is_video()
+        time.toLocalTime()
+        m.start_time.text = tr("title_published_at") + ": " + time.asDateString("short-month-no-weekday")
         return
     end if
     ' Show the up time of a stream
@@ -200,7 +228,18 @@ end function
 
 ' Handle play button
 function on_play_button_pressed() as void
-    m.top.setField("play_selected", true)
+    ' Stream play
+    if not is_video()
+        m.top.setField("play_selected", true)
+    ' Video play
+    else
+        print "video_selected: " + type(m.video_selected)
+        if m.video_selected <> invalid
+            m.top.setField("video_selected", m.video_selected)
+        else
+            m.top.setField("play_selected", true)
+        end if
+    end if
 end function
 
 ' Handle follow button press
@@ -210,6 +249,8 @@ end function
 
 ' Handle vods button press
 function on_vods_button_pressed(video_type = 0 as integer) as void
+    ' Clear VODs
+    m.vods.content.removeChildrenIndex(m.vods.content.getChildCount(), 0)
     ' Show loading message
     m.info_group.visible = false
     m.message.text = tr("message_loading")

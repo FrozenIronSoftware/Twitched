@@ -316,6 +316,10 @@
            		<source>title_video_type_highlight</source>
            		<target>Highlights</target>
            	</trans-unit>
+           	<trans-unit id="77">
+           		<source>title_published_at</source>
+           		<target>Published</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>
