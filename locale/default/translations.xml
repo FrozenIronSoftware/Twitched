@@ -272,6 +272,50 @@
            		<source>title_chat</source>
            		<target>Chat</target>
            	</trans-unit>
+           	<trans-unit id="66">
+           		<source>title_videos</source>
+           		<target>Videos</target>
+           	</trans-unit>
+           	<trans-unit id="67">
+           		<source>button_vods</source>
+           		<target>Videos</target>
+           	</trans-unit>
+           	<trans-unit id="68">
+           		<source>button_all</source>
+           		<target>All</target>
+           	</trans-unit>
+           	<trans-unit id="69">
+           		<source>button_upload</source>
+           		<target>Upload</target>
+           	</trans-unit>
+           	<trans-unit id="70">
+           		<source>button_highlight</source>
+           		<target>Highlight</target>
+           	</trans-unit>
+           	<trans-unit id="71">
+           		<source>button_archive</source>
+           		<target>Archive</target>
+           	</trans-unit>
+           	<trans-unit id="72">
+           		<source>title_video_type</source>
+           		<target>Video Type</target>
+           	</trans-unit>
+           	<trans-unit id="73">
+           		<source>title_video_type_all</source>
+           		<target>All</target>
+           	</trans-unit>
+           	<trans-unit id="74">
+           		<source>title_video_type_upload</source>
+           		<target>Uploads</target>
+           	</trans-unit>
+           	<trans-unit id="75">
+           		<source>title_video_type_archive</source>
+           		<target>Archive</target>
+           	</trans-unit>
+           	<trans-unit id="76">
+           		<source>title_video_type_highlight</source>
+           		<target>Highlights</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

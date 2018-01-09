@@ -16,8 +16,10 @@
 		<field id="search" type="array" alwaysNotify="true" />
 		<field id="get_user_info" type="array" alwaysNotify="true" />
 		<field id="get_badges" type="string" alwaysNotify="true" />
+		<field id="get_videos" type="array" alwaysNotify="true" />
 		<!-- Functions -->
 		<function name="get_stream_url" />
+		<function name="get_video_url" />
 	</interface>
 	
 	<script type="text/brightscript" uri="pkg:/components/TwitchApi.brs" />

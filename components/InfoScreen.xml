@@ -32,12 +32,10 @@
     		id="buttons"
     		minWidth="250"
     		maxWidth="500"
-    		translation="[650,140]" />
+    		translation="[650,120]" />
     		
     	<Group
     		id="stream_info"
-    		width="850"
-    		height="200"
     		translation="[300,330]" >
     		
 	    	<Label
@@ -85,6 +83,51 @@
 				maxLines="1" />
 			
 		</Group>
+		
+		<RowList
+			id="vods_list"
+			visible="false"
+			translation="[140,350]"
+			itemComponentName="VodItem"
+			itemSize="[1000,200]"
+			itemSpacing="[0,0]"
+			numRows="1"
+			rowItemSize="[[195,150]]"
+			rowItemSpacing="[[20,0]]"
+			showRowLabel="[true]"
+			showRowCounter="[true]"
+			rowFocusAnimationStyle="floatingFocus"
+			vertFocusAnimationStyle="fixedFocusWrap"
+			rowLabelColor="0xffffff"
+			rowLabelFont="font:MediumSystemFont"
+			rowLabelOffset="[[0,20]]"
+			drawFocusFeedbackOnTop="false"
+			drawFocusFeedback="true"
+			imageWellBitmapUri=
+    			"pkg:/locale/default/images/transparent.png"
+    		focusFootprintBitmapUri=""
+    		loadingBitmapUri="pkg:/locale/default/images/poster_loading.png"
+    		failedBitmapUri="pkg:/locale/default/images/poster_error.png" >
+			<ContentNode role="content" />
+		</RowList>
+		
+		<TwitchApi 
+    		id="twitch_api" />
+    		
+    	<Label
+			id="message"
+			width="1000"
+			height="295"
+			translation="[140, 310]"
+			horizAlign="center"
+			vertAlign="center"
+			wrap="true"
+			numLines="3"
+			maxLines="3" />
+			
+		<Dialog 
+			id="dialog"
+			visible="false" />
 
 	</children>
 
@@ -100,7 +143,11 @@
 		<field id="stream_type" type="string" alwaysNotify="true" />
 		<field id="game_selected" type="string" alwaysNotify="true" />
 		<field id="play_selected" type="string" alwaysNotify="true" />
-		<field id="focus" type="boolean" alwaysNotify="true" />
+		<field id="focus" type="string" alwaysNotify="true" />
+		<field id="token" type="string" alwaysNotify="true" />
+		<field id="video_selected" type="node" alwaysNotify="true" />
+		<field id="options" type="boolean" alwaysNotify="true" />
+		<field id="dialog" type="node" alwaysNotify="true" />
 	</interface>
 
 	<script type="text/brightscript" uri="pkg:/components/InfoScreen.brs" />

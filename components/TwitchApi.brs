@@ -41,6 +41,7 @@ function init() as void
     m.top.observeField("get_user_info", m.port)
     m.top.observeField("get_badges", m.port)
     m.top.observeField("user_token", m.port)
+    m.top.observeField("get_videos", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -77,6 +78,8 @@ function run() as void
                 get_badges(msg)
             else if msg.getField() = "user_token"
                 m.http.addHeader("Twitch-Token", msg.getData())
+            else if msg.getField() = "get_videos"
+                get_videos(msg)
             end if
         end if
     end while
@@ -238,6 +241,11 @@ function get_stream_url(params as object) as string
     return m.API + "/twitch/hls/" + params.encodeUri() + ".m3u8"
 end function
 
+' Get video HLS URL for a video id
+function get_video_url(params as object) as string
+    return m.API + "/twitch/vod/" + params.encodeUri() + ".m3u8"
+end function
+
 ' Request a link code from the API
 ' @param params is expected to be an event with data being a string callback
 function get_link_code(params as object) as void
@@ -329,4 +337,46 @@ end function
 function get_badges(params as object) as void
     request_url = "https://badges.twitch.tv/v1/badges/global/display"
     request("GET", request_url, [], params.getData())
+end function
+
+' Request videos from the API
+' @param array of parameters [associative request_params, string callback]
+function get_videos(params as object) as void
+    request_url = m.API_HELIX + "/videos"
+    passed_params = params.getData()[0]
+    url_params = []
+    if passed_params.id <> invalid
+        url_params.push("id=" + m.http.escape(passed_params.id.toStr()))
+    end if
+    if passed_params.user_id <> invalid
+        url_params.push("user_id=" + m.http.escape(passed_params.user_id.toStr()))
+    end if
+    if passed_params.after <> invalid
+        url_params.push("after=" + m.http.escape(passed_params.after.toStr()))
+    end if
+    if passed_params.before <> invalid
+        url_params.push("before=" + m.http.escape(passed_params.before.toStr()))
+    end if
+    if passed_params.first <> invalid
+        url_params.push("first=" + m.http.escape(passed_params.first.toStr()))
+    end if
+    if passed_params.language <> invalid
+        url_params.push("language=" + m.http.escape(passed_params.language.toStr()))
+    end if
+    if passed_params.period <> invalid
+        url_params.push("period=" + m.http.escape(passed_params.period.toStr()))
+    end if
+    if passed_params.sort <> invalid
+        url_params.push("sort=" + m.http.escape(passed_params.sort.toStr()))
+    end if
+    if passed_params.type <> invalid and passed_params.type <> ""
+        url_params.push("type=" + m.http.escape(passed_params.type.toStr()))
+    end if
+    if passed_params.game_id <> invalid
+        url_params.push("game_id=" + m.http.escape(passed_params.game_id.toStr()))
+    end if
+    if passed_params.limit <> invalid
+        url_params.push("limit=" + m.http.escape(passed_params.limit.toStr()))
+    end if
+    request("GET", request_url, url_params, params.getData()[1])
 end function

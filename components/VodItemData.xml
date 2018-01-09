@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="VodItemData" extends="ContentNode">
+    <interface> 
+        <field id="image_url" type="string" alwaysNotify="true" />
+        <field id="title" type="string" alwaysNotify="true" />
+        <field id="duration" type="float" alwaysNotify="true" />
+    </interface>
+</component>

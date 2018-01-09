@@ -84,6 +84,9 @@ function init() as void
     m.twitch_api.observeField("result", "on_callback")
     m.info_screen.observeField("play_selected", "play_video")
     m.info_screen.observeField("game_selected", "load_dynamic_grid_for_game")
+    m.info_screen.observeField("video_selected", "on_vod_video_selected")
+    m.info_screen.observeField("dialog", "on_info_screen_dialog")
+    m.info_screen.observeField("options", "on_info_screen_options")
     m.dialog.observeField("buttonSelected", "on_dialog_button_selected")
     m.link_screen.observeField("linked_token", "on_link_token")
     m.link_screen.observeField("error", "on_link_error")
@@ -522,7 +525,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     else if m.video.hasFocus()
         ' Stop playing and hide video node
         if press and key = "back"
-            hide_video()
+            hide_video(false)
             ' Preload again on the info screen
             preload_video()
         ' Play/Pause
@@ -689,7 +692,7 @@ function show_video_info_screen() as void
     ' Set info screen data
     m.info_screen.preview_image = video_item.thumbnail_url.replace("{width}", "292").replace("{height}", "180")
     m.info_screen.title = clean(video_item.title)
-    m.info_screen.streamer = [name, video_item.user_name.login]
+    m.info_screen.streamer = [name, video_item.user_name.login, video_item.user_id]
     m.info_screen.game = [clean(video_item.game_name), video_item.game_id]
     m.info_screen.viewers = video_item.viewer_count
     m.info_screen.start_time = video_item.started_at
@@ -732,7 +735,13 @@ end function
 ' Initialize video node and set it to preload
 ' Should only be called after info_screen is populated with video data
 function preload_video() as void
-    master_playlist = m.twitch_api.callFunc("get_stream_url", m.info_screen.streamer[1])
+    vod = m.info_screen.video_selected
+    master_playlist = ""
+    if vod = invalid
+        master_playlist = m.twitch_api.callFunc("get_stream_url", m.info_screen.streamer[1])
+    else
+        master_playlist = m.twitch_api.callFunc("get_video_url", vod.id)
+    end if
     ' Setup video data
     video = createObject("roSGNode", "ContentNode")
     video.streams = [{
@@ -742,18 +751,24 @@ function preload_video() as void
     }]
     video.adaptiveMaxStartBitrate = 800
     video.switchingStrategy = "full-adaptation"
-    video.title = m.info_screen.title
     video.titleSeason = m.info_screen.streamer[0]
-    if m.info_screen.game[0] <> invalid and m.info_screen.game[0] <> ""
-        video.titleSeason += " " + tr("inline_playing") + " " + m.info_screen.game[0]
+    if vod <> invalid
+        video.title = vod.title
+        video.description = vod.description
+        video.sdPosterUrl = vod.thumbnail_url
+    else
+        video.title = m.info_screen.title
+        if m.info_screen.game[0] <> invalid and m.info_screen.game[0] <> ""
+            video.titleSeason += " " + tr("inline_playing") + " " + m.info_screen.game[0]
+        end if
+        video.description = m.info_screen.streamer[0]
+        video.sdPosterUrl = m.info_screen.preview
+        video.shortDescriptionLine1 = m.info_screen.title
+        video.shortDescriptionLine2 = m.info_screen.game[0]
     end if
-    video.description = m.info_screen.streamer[0]
-    video.sdPosterUrl = m.info_screen.preview
-    video.shortDescriptionLine1 = m.info_screen.title
-    video.shortDescriptionLine2 = m.info_screen.game[0]
     video.actors = m.info_screen.streamer[0]
     video.streamFormat = "hls"
-    video.live = true
+    video.live = (vod = invalid)
     ' Set HTTP Agent
     http_agent = createObject("roHttpAgent")
     video.setHttpAgent(http_agent)
@@ -767,6 +782,7 @@ function preload_video() as void
     m.video_title.findNode("title").text = video.title
     m.video_title.findNode("streamer").text = video.titleSeason
     ' Preload
+    m.video.enableTrickPlay = (vod <> invalid)
     m.video.content = video
     m.video.control = "prebuffer"
 end function
@@ -963,11 +979,15 @@ function on_video_state_change(event as object) as void
 end function
 
 ' Hide the video and show the info screen
-function hide_video() as void
+function hide_video(reset_info_screen = true as boolean) as void
     set_saved_stage_info(m.VIDEO_PLAYER)
     m.info_screen.setFocus(true)
     m.info_screen.visible = true
-    m.info_screen.focus = true
+    if reset_info_screen
+        m.info_screen.focus = "reset"
+    else
+        m.info_screen.focus = "true"
+    end if
     m.video.control = "stop"
     m.video.visible = false
     m.video_title.visible = false
@@ -1095,12 +1115,14 @@ function log_out(do_show_message = true as boolean) as void
         "on_token_write"]
     m.chat.token = ""
     m.chat.user_name = "justinfan" + rnd(&h7fffffff).toStr()
+    m.info_screen.token = ""
 end function
 
 ' Add the token to objects that expect it and request user info
 function log_in(token as string, do_start = true as boolean) as void
     m.twitch_api.user_token = token
     m.chat.token = m.twitch_api.user_token
+    m.info_screen.token = m.twitch_api.user_token
     if do_start
         m.twitch_api.get_user_info = [{}, "on_twitch_user_info_start"]
     else
@@ -1114,4 +1136,24 @@ end function
 function on_chat_blur(event as object) as void
     m.video.setFocus(true)
     m.chat.do_input = false
+end function
+
+' Handle vod video being selected
+function on_vod_video_selected(event as object) as void
+    id = event.getData()
+    if id = invalid 
+        return
+    end if
+    preload_video()
+    play_video()
+end function
+
+' Set the dialog for the info screen
+function on_info_screen_dialog(event as object) as void
+    m.top.dialog = event.getData()
+end function
+
+' Show or hide the options button
+function on_info_screen_options(event as object) as void
+
 end function
