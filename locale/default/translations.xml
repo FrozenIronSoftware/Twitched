@@ -320,6 +320,22 @@
            		<source>title_published_at</source>
            		<target>Published</target>
            	</trans-unit>
+           	<trans-unit id="78">
+           		<source>title_loading</source>
+           		<target>Loading</target>
+           	</trans-unit>
+           	<trans-unit id="79">
+           		<source>title_description</source>
+           		<target>Description</target>
+           	</trans-unit>
+           	<trans-unit id="80">
+           		<source>button_follow</source>
+           		<target>Follow</target>
+           	</trans-unit>
+           	<trans-unit id="81">
+           		<source>button_unfollow</source>
+           		<target>Unfollow</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

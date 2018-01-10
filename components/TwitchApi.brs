@@ -42,6 +42,9 @@ function init() as void
     m.top.observeField("get_badges", m.port)
     m.top.observeField("user_token", m.port)
     m.top.observeField("get_videos", m.port)
+    m.top.observeField("get_follows", m.port)
+    m.top.observeField("follow_channel", m.port)
+    m.top.observeField("unfollow_channel", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -80,6 +83,12 @@ function run() as void
                 m.http.addHeader("Twitch-Token", msg.getData())
             else if msg.getField() = "get_videos"
                 get_videos(msg)
+            else if msg.getField() = "get_follows"
+                get_follows(msg)
+            else if msg.getField() = "follow_channel"
+                follow_channel(msg)
+            else if msg.getField() = "unfollow_channel"
+                unfollow_channel(msg)
             end if
         end if
     end while
@@ -377,6 +386,71 @@ function get_videos(params as object) as void
     end if
     if passed_params.limit <> invalid
         url_params.push("limit=" + m.http.escape(passed_params.limit.toStr()))
+    end if
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+
+' Request followed channels from the API for a user
+' @param params array of parameters [associative request_params, string callback]
+function get_follows(params as object) as void
+    request_url = m.API_HELIX + "/users/follows"
+    passed_params = params.getData()[0]
+    url_params = []
+    if passed_params.after <> invalid
+        url_params.push("after=" + m.http.escape(passed_params.after.toStr()))
+    end if
+    if passed_params.before <> invalid
+        url_params.push("before=" + m.http.escape(passed_params.before.toStr()))
+    end if
+    if passed_params.first <> invalid
+        url_params.push("first=" + m.http.escape(passed_params.first.toStr()))
+    end if
+    if passed_params.from_id <> invalid
+        url_params.push("from_id=" + m.http.escape(passed_params.from_id.toStr()))
+    end if
+    if passed_params.to_id <> invalid
+        url_params.push("to_id=" + m.http.escape(passed_params.to_id.toStr()))
+    end if
+    if passed_params.from_login <> invalid and passed_params.from_login <> ""
+        url_params.push("from_login=" + m.http.escape(passed_params.from_login.toStr()))
+    end if
+    if passed_params.to_login <> invalid and passed_params.to_login <> ""
+        url_params.push("to_login=" + m.http.escape(passed_params.to_login.toStr()))
+    end if
+    if passed_params.limit <> invalid
+        url_params.push("limit=" + m.http.escape(passed_params.limit.toStr()))
+    end if
+    if passed_params.offset <> invalid
+        url_params.push("offset=" + m.http.escape(passed_params.offset.toStr()))
+    end if
+    if passed_params.no_cache <> invalid
+        url_params.push("no_cache=" + m.http.escape(passed_params.no_cache.toStr()))
+    end if
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+
+' Request API to follow a channel
+' @param params array of parameters [associative request_params, string callback]
+function follow_channel(params as object) as void
+    print "start"
+    print params
+    request_url = m.API_KRAKEN + "/users/follows/follow"
+    passed_params = params.getData()[0]
+    url_params = []
+    if passed_params.id <> invalid
+        url_params.push("id=" + m.http.escape(passed_params.id.toStr()))
+    end if
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+
+' Request API to unfollow a channel
+' @param params array of parameters [associative request_params, string callback]
+function unfollow_channel(params as object) as void
+    request_url = m.API_KRAKEN + "/users/follows/unfollow"
+    passed_params = params.getData()[0]
+    url_params = []
+    if passed_params.id <> invalid
+        url_params.push("id=" + m.http.escape(passed_params.id.toStr()))
     end if
     request("GET", request_url, url_params, params.getData()[1])
 end function

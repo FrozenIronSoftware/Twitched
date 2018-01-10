@@ -1128,6 +1128,7 @@ function on_twitch_user_info(event as object) as void
         return
     end if
     m.chat.user_name = user.login
+    m.info_screen.user_name = user.login
     print("Twitch user name set")
 end function
 
@@ -1155,6 +1156,7 @@ function log_out(do_show_message = true as boolean) as void
     m.chat.token = ""
     m.chat.user_name = "justinfan" + rnd(&h7fffffff).toStr()
     m.info_screen.token = ""
+    m.info_screen.user_name = ""
 end function
 
 ' Add the token to objects that expect it and request user info
@@ -1189,6 +1191,7 @@ end function
 
 ' Set the dialog for the info screen
 function on_info_screen_dialog(event as object) as void
+    m.top.dialog = invalid
     m.top.dialog = event.getData()
 end function
 

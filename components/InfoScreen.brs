@@ -11,6 +11,8 @@ function init() as void
     m.TYPE_UPLOAD = 1
     m.TYPE_HIGHLIGHT = 2
     m.TYPE_ARCHIVE = 3
+    m.BUTTON_FOLLOW_UNFOLLOW = 0
+    m.BUTTON_ERROR_CONFIRM = 0
     ' Components
     m.preview = m.top.findNode("preview")
     m.title = m.top.findNode("title")
@@ -27,6 +29,9 @@ function init() as void
     m.stream_type = m.info_group.findNode("stream_type")
     ' Init
     m.video_selected = invalid
+    m.dialog_type = "video_type"
+    m.user_info = invalid
+    m.is_following = false
     init_logging()
     m.video_type = tr("title_videos")
     m.buttons.buttons = ["", "", "", ""]
@@ -65,12 +70,14 @@ function onKeyEvent(key as string, press as boolean) as boolean
         else if press and key = "options"
             m.dialog.optionsDialog = true
             m.dialog.title = tr("title_video_type")
+            m.dialog.message = ""
             m.dialog.buttons = [
                 tr("button_all"),
                 tr("button_upload"),
                 tr("button_highlight"),
                 tr("button_archive")
             ]
+            m.dialog_type = "video_type"
             m.dialog.focusButton = 0
             m.dialog.visible = true
             m.top.setField("dialog", m.dialog)
@@ -81,8 +88,11 @@ end function
 
 ' Check for visibility and focus the buttons
 function on_set_visible(event as object) as void
+    ' Not visible
+    if event.getField() = "visible" and not event.getData()
+        m.twitch_api.cancel = true
     ' Visible event
-    if event.getField() = "visible" and event.getData() = true
+    else if event.getField() = "visible" and event.getData()
         reset()
     ' Focus event
     else if event.getField() = "focus"
@@ -102,6 +112,8 @@ end function
 
 ' Reset the info screen state
 function reset(button = 0 as integer, focus_vods = false as boolean) as void
+    m.dialog.visible = false
+    m.dialog.close = true
     m.buttons.focusButton = button
     m.buttons.setFocus(not focus_vods)
     m.vods.setFocus(focus_vods)
@@ -110,7 +122,6 @@ function reset(button = 0 as integer, focus_vods = false as boolean) as void
     m.message.text = ""
     m.top.video_selected = invalid
     if (not focus_vods) and (not is_video())
-        print "video_selected reset"
         m.video_selected = invalid
     end if
     m.top.setField("options", false)
@@ -217,8 +228,77 @@ end function
 
 ' Handle the streamer button being pressed
 function on_streamer_button_pressed() as void
+    ' Show loading dialog
+    m.dialog.optionsDialog = false
+    m.dialog.title = tr("title_loading")
+    m.dialog.message = tr("title_loading")
+    m.dialog.buttons = []
+    m.dialog.visible = true
+    m.top.setField("dialog", m.dialog)
+    ' Load streamer info
     streamer = m.top.getField("streamer")[1]
-    ' TODO show streamer info screen
+    m.twitch_api.cancel = true
+    m.twitch_api.get_user_info = [{
+        login: streamer
+    }, "on_user_info"]
+end function
+
+' Handle user info
+function on_user_info(event as object) as void
+    ' Validate
+    users = event.getData().result
+    if type(users) <> "roArray" or type(users[0]) <> "roAssociativeArray"
+        error(3000)
+        return
+    end if
+    ' Save user info
+    m.user_info = users[0]
+    ' Request follow info
+    m.twitch_api.cancel = true
+    m.twitch_api.get_follows = [{
+        limit: 1,
+        from_login: m.top.user_name,
+        to_login: m.top.streamer[1],
+        no_cache: "true"
+    }, "on_follow_info"]
+end function
+
+function on_follow_info(event as object) as void
+    ' Validate
+    follows = event.getData().result
+    if type(follows) <> "roArray"
+        error(3001)
+        return
+    end if
+    ' Save follow info
+    m.is_following = follows.count() > 0
+    ' Show user info dialog
+    m.dialog.optionsDialog = false
+    m.dialog.title = m.top.streamer[0]
+    m.dialog.message = clean(m.user_info.description)
+    if m.top.user_name = "" or m.top.token = ""
+        m.dialog.buttons = []
+    else if m.is_following
+        m.dialog.buttons = [tr("button_unfollow")]
+    else
+        m.dialog.buttons = [tr("button_follow")]
+    end if
+    m.dialog.focusButton = 0
+    m.dialog_type = "user_info"
+    m.dialog.visible = true
+    m.top.setField("dialog", m.dialog)
+end function
+
+' Show the dialog error
+function error(code as integer) as void
+    m.optionsDialog = false
+    m.dialog.title = tr("title_error")
+    m.dialog.message = tr("error_api_fail") + chr(10) + tr("title_error_code") + ": " + code.toStr()
+    m.dialog.buttons = [tr("button_confirm")]
+    m.dialog.focusButton = 0
+    m.dialog_type = "error"
+    m.dialog.visible = true
+    m.top.setField("dialog", m.dialog)
 end function
 
 ' Handle the game button being pressed
@@ -233,18 +313,12 @@ function on_play_button_pressed() as void
         m.top.setField("play_selected", true)
     ' Video play
     else
-        print "video_selected: " + type(m.video_selected)
         if m.video_selected <> invalid
             m.top.setField("video_selected", m.video_selected)
         else
             m.top.setField("play_selected", true)
         end if
     end if
-end function
-
-' Handle follow button press
-function on_follow_button_pressed() as void
-    
 end function
 
 ' Handle vods button press
@@ -349,5 +423,52 @@ end function
 function on_dialog_button_selected(event as object) as void
     m.dialog.close = true
     button = event.getData()
-    on_vods_button_pressed(button)
+    if m.dialog_type = "video_type"
+        on_vods_button_pressed(button)
+    else if m.dialog_type = "user_info"
+        on_user_info_button_pressed(button)
+    else if m.dialog_type = "error"
+        on_error_dialog_button_pressed(button)
+    end if
+end function
+
+function on_error_dialog_button_pressed(button as integer) as void
+    if button = m.BUTTON_ERROR_CONFIRM
+        m.dialog.close = true
+    end if
+end function
+
+' Handle a button press on the streamer info dialog
+function on_user_info_button_pressed(button as integer) as void
+    if button = m.BUTTON_FOLLOW_UNFOLLOW
+        if type(m.user_info) <> "roAssociativeArray"
+            printl(m.DEBUG, "Failed to handle follow/unfollow request. No user info.")
+            return
+        end if
+        if not m.is_following
+            m.dialog.buttons = [tr("button_follow")]
+            m.twitch_api.cancel = true
+            m.twitch_api.follow_channel = [{
+                id: m.user_info.id
+            }, "on_follow_channel"]
+        else
+            m.dialog.buttons = [tr("button_unfollow")]
+            m.twitch_api.cancel = true
+            m.twitch_api.unfollow_channel = [{
+                id: m.user_info.id
+            }, "on_unfollow_channel"]
+        end if
+    end if
+end function
+
+' Handle a channel follow
+function on_follow_channel(event as object) as void
+    ' Ignore
+    printl(m.DEBUG, "Followed channel")
+end function
+
+' Handle a channel unfollow
+function on_unfollow_channel(event as object) as void
+    ' Ignore
+    printl(m.DEBUG, "Unfollowed channel")
 end function

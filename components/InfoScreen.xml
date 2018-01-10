@@ -145,6 +145,7 @@
 		<field id="play_selected" type="string" alwaysNotify="true" />
 		<field id="focus" type="string" alwaysNotify="true" />
 		<field id="token" type="string" alwaysNotify="true" />
+		<field id="user_name" type="string" alwaysNotify="true" />
 		<field id="video_selected" type="node" alwaysNotify="true" />
 		<field id="options" type="boolean" alwaysNotify="true" />
 		<field id="dialog" type="node" alwaysNotify="true" />
