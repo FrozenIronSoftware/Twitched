@@ -816,14 +816,14 @@ end function
 ' Show and play video
 ' Only called by info_screen variable event
 ' @param event field update notifier
-function play_video(event = invalid as object) as void
+function play_video(event = invalid as object, ignore_error = false as boolean) as void
     ' Check if the info screen is showing an offline stream
     if m.info_screen.stream_type = "user"
         error("error_stream_offline")
         return
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
-    else if m.video.state = "finished" or m.video.state = "error"
+    else if (m.video.state = "finished" or m.video.state = "error") and not ignore_error
         error("error_video", m.video.errorCode)
         return
     end if
@@ -1188,7 +1188,7 @@ function on_vod_video_selected(event as object) as void
         return
     end if
     preload_video()
-    play_video()
+    play_video(invalid, true)
 end function
 
 ' Set the dialog for the info screen
