@@ -391,8 +391,8 @@ function set_content_grid(event as object) as void
             node.shortdescriptionline2 = name
         ' Stream
         else
-            viewer_string = "{0} {1} on {2}"
-            node.shortdescriptionline2 = substitute(viewer_string, data.viewer_count.toStr(), trs("inline_viewers", data.viewer_count), name, "")
+            viewer_string = "{0} {1} {2} {3}"
+            node.shortdescriptionline2 = substitute(viewer_string, data.viewer_count.toStr(), trs("inline_viewers", data.viewer_count), tr("inline_on"), name)
         end if
     end for
 end function

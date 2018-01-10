@@ -336,6 +336,14 @@
            		<source>button_unfollow</source>
            		<target>Unfollow</target>
            	</trans-unit>
+           	<trans-unit id="82">
+           		<source>inline_on</source>
+           		<target>on</target>
+           	</trans-unit>
+           	<trans-unit id="83">
+           		<source>inline_playing</source>
+           		<target>playing</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>
