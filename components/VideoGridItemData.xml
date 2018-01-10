@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="VideoGridItemData" extends="ContentNode">
+    <interface> 
+        <field id="image_url" type="string" alwaysNotify="true" />
+        <field id="title" type="string" alwaysNotify="true" />
+        <field id="description" type="string" alwaysNotify="true" />
+        <field id="game_image" type="string" alwaysNotify="true" />
+    </interface>
+</component>

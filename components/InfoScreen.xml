@@ -101,7 +101,7 @@
 			rowLabelColor="0xffffff"
 			rowLabelFont="font:MediumSystemFont"
 			rowLabelOffset="[[0,20]]"
-			drawFocusFeedbackOnTop="false"
+			drawFocusFeedbackOnTop="true"
 			drawFocusFeedback="true"
 			imageWellBitmapUri=
     			"pkg:/locale/default/images/transparent.png"

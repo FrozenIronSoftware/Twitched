@@ -33,25 +33,18 @@
     		<ContentNode role="content" />
     	</LabelList>
 
-    	<PosterGrid
+    	<MarkupGrid
     		id="content_grid"
+    		itemComponentName="VideoGridItem"
     		visible="false"
     		translation="[410,155]"
-    		basePosterSize="[260,160]"
+    		itemSize="[260,250]"
     		itemSpacing="[20,40]"
     		numColumns="3"
-    		numRows="3"
-    		caption1NumLines="1"
-    		caption1Color="0xffffff"
-    		caption2NumLines="2"
-    		caption2Color="0xffffff"
-    		caption2Font="font:SmallestSystemFont"
-    		captionBackgroundBitmapUri=
-    			"pkg:/locale/default/images/transparent.png"
+    		numRows="2"
     		imageWellBitmapUri=
     			"pkg:/locale/default/images/transparent.png"
-    		loadingBitmapUri="pkg:/locale/default/images/poster_loading.png"
-    		failedBitmapUri="pkg:/locale/default/images/poster_error.png" />
+    		drawFocusFeedbackOnTop="true" />
     	
     	<PosterGrid
     		id="poster_grid"

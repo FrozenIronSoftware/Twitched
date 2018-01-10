@@ -374,25 +374,27 @@ function set_content_grid(event as object) as void
             return
         end if
         ' Add node
-        node = m.content_grid.content.createChild("ContentNode")
+        node = m.content_grid.content.createChild("VideoGridItemData")
         if data.thumbnail_url <> "null" and data.thumbnail_url <> ""
-            node.hdgridposterurl = data.thumbnail_url.replace("{width}", "195").replace("{height}", "120")
-            node.sdgridposterurl = data.thumbnail_url.replace("{width}", "80").replace("{height}", "45")
+            node.image_url = data.thumbnail_url.replace("{width}", "195").replace("{height}", "120")
         else
-            node.hdgridposterurl = "pkg:/locale/default/images/poster_error.png"
+            node.image_url = "pkg:/locale/default/images/poster_error.png"
         end if
-        node.shortdescriptionline1 = clean(data.title)
+        node.title = clean(data.title)
         name = clean(data.user_name.display_name)
         if len(name) <> len(data.user_name.display_name)
             name = clean(data.user_name.login)
         end if
         ' User
         if data.type = "user"
-            node.shortdescriptionline2 = name
+            node.description = name
         ' Stream
         else
             viewer_string = "{0} {1} {2} {3}"
-            node.shortdescriptionline2 = substitute(viewer_string, data.viewer_count.toStr(), trs("inline_viewers", data.viewer_count), tr("inline_on"), name)
+            node.description = substitute(viewer_string, data.viewer_count.toStr(), trs("inline_viewers", data.viewer_count), tr("inline_on"), name)
+            if data.game_name <> invalid
+                node.game_image = m.twitch_api.callFunc("get_game_thumbnail", [data.game_name, 80, 112])
+            end if
         end if
     end for
 end function

@@ -23,6 +23,7 @@
 		<!-- Functions -->
 		<function name="get_stream_url" />
 		<function name="get_video_url" />
+		<function name="get_game_thumbnail" />
 	</interface>
 	
 	<script type="text/brightscript" uri="pkg:/components/TwitchApi.brs" />

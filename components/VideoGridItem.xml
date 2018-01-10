@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<component name="VideoGridItem" extends="Group">
+	<children>
+	
+		<Poster 
+			id="image"
+			width="260"
+			height="160"
+			loadingBitmapUri="pkg:/locale/default/images/poster_loading.png"
+    		failedBitmapUri="pkg:/locale/default/images/poster_error.png" />
+		
+		<ScrollingLabel 
+			id="title"
+			height="30"
+			maxWidth="260"
+			color="0xffffff"
+			translation="[0,170]"
+			font="font:SmallSystemFont"
+			horizAlign="left" />
+			
+		<Label 
+			id="description"
+			width="260"
+			color="0xffffff"
+			translation="[0,200]"
+			font="font:SmallestSystemFont"
+			horizAlign="center"
+			maxLines="2"
+			wrap="true" />
+			
+		<Poster 
+			id="game"
+			width="80"
+			height="112"
+			translation="[180,48]"
+			loadingBitmapUri="pkg:/locale/default/images/poster_loading_vertical.png"
+    		failedBitmapUri="pkg:/locale/default/images/poster_error_vertical.png" />
+		
+	</children>
+	
+	<interface>
+		<!-- Fields -->
+		<field id="itemContent" type="node" alwaysNotify="true" />
+		<field id="itemHasFocus" type="boolean" alwaysNotify="true" />
+	</interface>
+
+	<script type="text/brightscript" uri="pkg:/components/VideoGridItem.brs" />
+	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
+</component>

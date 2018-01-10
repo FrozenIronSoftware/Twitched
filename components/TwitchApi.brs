@@ -20,6 +20,7 @@ function init() as void
     if m.global.secret.api_kraken <> invalid or m.global.secret.api_helix <> invalid or m.global.secret.api <> invalid
         print "== USING DEV API! =="
     end if
+    m.GAME_THUMBNAIL_URL = "https://static-cdn.jtvnw.net/ttv-boxart/{name}-{width}x{height}.jpg"
     ' HTTP Api
     m.http = createObject("roUrlTransfer")
     m.http.setMessagePort(m.port)
@@ -453,4 +454,14 @@ function unfollow_channel(params as object) as void
         url_params.push("id=" + m.http.escape(passed_params.id.toStr()))
     end if
     request("GET", request_url, url_params, params.getData()[1])
+end function
+
+' Return a game thumbnail url
+' @param params array [string game_name, int width, int height]
+function get_game_thumbnail(params as object) as string
+    game_name = params[0]
+    if game_name = invalid or (type(game_name) <> "roString" and type(game_name) <> "String" and type(game_name) <> "string")
+        return ""
+    end if
+    return m.GAME_THUMBNAIL_URL.replace("{name}", game_name.encodeUri()).replace("{width}", params[1].toStr()).replace("{height}", params[2].toStr())
 end function
