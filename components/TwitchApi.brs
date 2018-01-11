@@ -248,12 +248,24 @@ end function
 
 ' Get stream HLS URL for a streamer
 function get_stream_url(params as object) as string
-    return m.API + "/twitch/hls/" + params.encodeUri() + ".m3u8"
+    return m.API + "/twitch/hls/" + get_stream_fps() + "/" + params.encodeUri() + ".m3u8"
 end function
 
 ' Get video HLS URL for a video id
 function get_video_url(params as object) as string
-    return m.API + "/twitch/vod/" + params.encodeUri() + ".m3u8"
+    return m.API + "/twitch/vod/" + get_stream_fps() + "/" + params.encodeUri() + ".m3u8"
+end function
+
+' Get max supported FPS for a stream
+function get_stream_fps() as string
+    info = createObject("roDeviceInfo")
+    model = info.getModel()
+    ' Liberty (Roku TV 5000X)
+    if model = "5000X"
+        ' Liberty fails to play 60 FPS streams
+        return "30"
+    end if
+    return "60"
 end function
 
 ' Request a link code from the API
