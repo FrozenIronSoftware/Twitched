@@ -229,7 +229,9 @@ function load_menu_item(stage as integer, force = false as boolean) as void
         else
             show_message("message_loading")
             m.content_grid.visible = true
-            m.twitch_api.get_followed_streams = [{limit: m.MAX_LIMIT}, "set_content_grid"]
+            m.twitch_api.get_followed_streams = [{
+                limit: m.MAX_LIMIT * 5,
+            }, "set_content_grid"]
         end if
     ' Search
     else if stage = m.SEARCH
