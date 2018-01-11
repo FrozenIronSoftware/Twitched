@@ -55,6 +55,7 @@ function init() as void
     m.twitch_api.observeField("result", "on_callback")
     m.vods.observeField("rowItemSelected", "on_video_selected")
     m.dialog.observeField("buttonSelected", "on_dialog_button_selected")
+    m.dialog.observeField("wasClosed", "on_dialog_closed")
 end function
 
 ' Handle keys
@@ -126,6 +127,7 @@ function reset(button = 0 as integer, focus_vods = false as boolean) as void
     end if
     m.top.setField("options", false)
     m.video_type = tr("title_videos")
+    m.dialog_type = ""
 end function
 
 ' Check if the info screen is displaying info about a video
@@ -234,6 +236,7 @@ function on_streamer_button_pressed() as void
     m.dialog.message = tr("title_loading")
     m.dialog.buttons = []
     m.dialog.visible = true
+    m.dialog_type = "loading"
     m.top.setField("dialog", m.dialog)
     ' Load streamer info
     streamer = m.top.getField("streamer")[1]
@@ -423,12 +426,15 @@ end function
 function on_dialog_button_selected(event as object) as void
     m.dialog.close = true
     button = event.getData()
+    printl(m.DEBUG, "InfoScreen dialog button: " + button.toStr())
     if m.dialog_type = "video_type"
         on_vods_button_pressed(button)
     else if m.dialog_type = "user_info"
         on_user_info_button_pressed(button)
     else if m.dialog_type = "error"
         on_error_dialog_button_pressed(button)
+    else if m.dialog_type = "loading"
+        ' Ignore
     end if
 end function
 
@@ -471,4 +477,20 @@ end function
 function on_unfollow_channel(event as object) as void
     ' Ignore
     printl(m.DEBUG, "Unfollowed channel")
+end function
+
+' Handle dialog closing
+function on_dialog_closed(event as object) as void
+    printl(m.DEBUG, "InfoScreen: dialog closed")
+    if m.dialog_type = "video_type" and not m.vods.hasFocus()
+        m.vods.setFocus(true)
+    else if m.dialog_type = "user_info" and not m.buttons.hasFocus()
+        m.buttons.setFocus(true)
+    else if m.dialog_type = "error" and not m.buttons.hasFocus()
+        m.buttons.setFocus(true)
+    else if m.dialog_type = "loading" and not m.buttons.hasFocus()
+        m.twitch_api.cancel = true
+        m.buttons.setFocus(true)
+    end if
+    m.dialog_type = ""
 end function
