@@ -1199,5 +1199,8 @@ end function
 
 ' Show or hide the options button
 function on_info_screen_options(event as object) as void
-
+    show = event.getData()
+    m.header.showOptions = show
+    m.header.optionsAvailable = show
+    m.header.optionsText = ""
 end function
