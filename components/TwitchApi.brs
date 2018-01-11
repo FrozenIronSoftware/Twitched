@@ -445,8 +445,6 @@ end function
 ' Request API to follow a channel
 ' @param params array of parameters [associative request_params, string callback]
 function follow_channel(params as object) as void
-    print "start"
-    print params
     request_url = m.API_KRAKEN + "/users/follows/follow"
     passed_params = params.getData()[0]
     url_params = []
