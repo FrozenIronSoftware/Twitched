@@ -79,6 +79,7 @@ function init() as void
     m.search_panel = m.top.findNode("search")
     m.video_title = m.top.findNode("video_title")
     m.chat = m.top.findNode("chat")
+    m.stream_info_timer = m.top.findNode("stream_info_timer")
     ' Events
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
@@ -96,11 +97,13 @@ function init() as void
     m.settings_panel.observeField("sign_out_in", "on_settings_authentication_request")
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
+    m.stream_info_timer.observeField("fire", "update_stream_info")
     ' Init
     init_main_menu()
     show_message("message_loading")
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
         "set_twitch_user_token"]
+    m.stream_info_timer.control = "start"
 end function
 
 ' Parse deep links (if any) and start at the specified state or do a normal
@@ -1205,4 +1208,13 @@ function on_info_screen_options(event as object) as void
     m.header.showOptions = show
     m.header.optionsAvailable = show
     m.header.optionsText = ""
+end function
+
+' Update stream info
+' Ignores event
+function update_stream_info(event = invalid as object) as void
+    if type(m.video.streamingSegment) <> "roAssociativeArray" or m.video.streamingSegment.segBitrateBps = invalid
+        return
+    end if
+    print "Bitrate: " + m.video.streamingSegment.segBitrateBps.toStr()
 end function

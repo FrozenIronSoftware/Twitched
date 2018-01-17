@@ -122,6 +122,11 @@
 		<Dialog 
     		id="dialog"
     		visible="false" />
+    		
+    	<Timer
+    		id="stream_info_timer"
+    		repeat="true"
+    		duration="5" />
 
 	</children>
 	
