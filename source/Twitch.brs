@@ -387,7 +387,7 @@ function set_content_grid(event as object) as void
         end if
         node.title = clean(data.title)
         name = clean(data.user_name.display_name)
-        if len(name) <> len(data.user_name.display_name)
+        if data.user_name.display_name = invalid or len(name) <> len(data.user_name.display_name)
             name = clean(data.user_name.login)
         end if
         ' User
@@ -710,7 +710,7 @@ function show_video_info_screen() as void
     end if
     ' Calculate valid name
     name = clean(video_item.user_name.display_name)
-    if len(name) <> len(video_item.user_name.display_name)
+    if video_item.user_name.display_name = invalid or len(name) <> len(video_item.user_name.display_name)
         name = clean(video_item.user_name.login)
     end if
     ' Set info screen data
