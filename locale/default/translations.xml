@@ -344,6 +344,14 @@
            		<source>inline_playing</source>
            		<target>playing</target>
            	</trans-unit>
+           	<trans-unit id="84">
+           		<source>title_language</source>
+           		<target>Language</target>
+           	</trans-unit>
+           	<trans-unit id="85">
+           		<source>error_language_write_fail</source>
+           		<target>Failed to save language data.</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

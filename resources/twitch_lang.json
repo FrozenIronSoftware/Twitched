@@ -1,0 +1,142 @@
+[
+    {
+        "code": "en",
+        "name_en": "English",
+        "name": "English"
+    },
+    {
+        "code": "da",
+        "name_en": "Danish",
+        "name": "Dansk"
+    },
+    {
+        "code": "de",
+        "name_en": "German",
+        "name": "Deutsch"
+    },
+    {
+        "code": "es",
+        "name_en": "Spanish",
+        "name": "Español"
+    },
+    {
+        "code": "fr",
+        "name_en": "French",
+        "name": "Français"
+    },
+    {
+        "code": "it",
+        "name_en": "Italian",
+        "name": "Italiano"
+    },
+    {
+        "code": "hu",
+        "name_en": "Hungarian",
+        "name": "Magyar"
+    },
+    {
+        "code": "nl",
+        "name_en": "Dutch",
+        "name": "Nederlands"
+    },
+    {
+        "code": "no",
+        "name_en": "Norwegian",
+        "name": "Norsk"
+    },
+    {
+        "code": "pl",
+        "name_en": "Polish",
+        "name": "Polski"
+    },
+    {
+        "code": "pt",
+        "name_en": "Portuguese",
+        "name": "Português"
+    },
+    {
+        "code": "sk",
+        "name_en": "Slovak",
+        "name": "Slovenčina"
+    },
+    {
+        "code": "fi",
+        "name_en": "Finnish",
+        "name": "Suomi"
+    },
+    {
+        "code": "sv",
+        "name_en": "Swedish",
+        "name": "Svenska"
+    },
+    {
+        "code": "vi",
+        "name_en": "Vietnamese",
+        "name": "Tiếng Việt"
+    },
+    {
+        "code": "tr",
+        "name_en": "Turkish",
+        "name": "Türkçe"
+    },
+    {
+        "code": "cs",
+        "name_en": "Czech",
+        "name": "Čeština"
+    },
+    {
+        "code": "el",
+        "name_en": "Greek",
+        "name": "Ελληνικά"
+    },
+    {
+        "code": "bg",
+        "name_en": "Bulgarian",
+        "name": "Български"
+    },
+    {
+        "code": "ru",
+        "name_en": "Russian",
+        "name": "Русский"
+    },
+    {
+        "code": "ar",
+        "name_en": "Arabic",
+        "name": "العربية"
+    },
+    {
+        "code": "th",
+        "name_en": "Thai",
+        "name": "ภาษาไทย"
+    },
+    {
+        "code": "zh",
+        "name_en": "Chinese",
+        "name": "中文"
+    },
+    {
+        "code": "zh-hk",
+        "name_en": "Chinese (Cantonese)",
+        "name": "中文(粵語)"
+    },
+    {
+        "code": "ja",
+        "name_en": "Japanese",
+        "name": "日本語"
+    },
+    {
+        "code": "ko",
+        "name_en": "Korean",
+        "name": "한국어"
+    },
+    {
+        "code": "asl",
+        "name_en": "American Sign Language",
+        "name": "American Sign Language"
+    },
+    {
+        "code": "other",
+        "name_en": "Other",
+        "name": "Other"
+    }
+]

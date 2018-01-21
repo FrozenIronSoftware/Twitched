@@ -137,6 +137,10 @@ function get_streams(params as object) as void
     if passed_params.limit <> invalid
         url_params.push("limit=" + m.http.escape(passed_params.limit.toStr()))
     end if
+    ' Add globally defined language
+    for each lang in m.global.language
+        url_params.push("language=" + m.http.escape(lang.toStr()))
+    end for
     request("GET", request_url, url_params, params.getData()[1])
 end function
 

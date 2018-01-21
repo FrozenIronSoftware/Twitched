@@ -17,8 +17,10 @@ function main(args as dynamic) as void
 	m.global.addFields({
 	   args: args,
 	   secret: secret,
+	   language: [],
 	   REG_TWITCH: "TWITCH",
-	   REG_TOKEN: "TOKEN"
+	   REG_TOKEN: "TOKEN",
+	   REG_LANGUAGUE: "LANG"
 	})
 	' Events
 	screen.show()
@@ -95,15 +97,16 @@ function init() as void
     m.video.observeField("state", "on_video_state_change")
     m.dialog.observeField("wasClosed", "on_dialog_closed")
     m.settings_panel.observeField("sign_out_in", "on_settings_authentication_request")
+    m.settings_panel.observeField("language", "on_language_change")
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
     ' Init
     init_main_menu()
     show_message("message_loading")
-    m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
-        "set_twitch_user_token"]
     m.stream_info_timer.control = "start"
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, 
+        "on_twitch_language"]
 end function
 
 ' Parse deep links (if any) and start at the specified state or do a normal
@@ -1217,4 +1220,54 @@ function update_stream_info(event = invalid as object) as void
         return
     end if
     print "Bitrate: " + m.video.streamingSegment.segBitrateBps.toStr()
+end function
+
+' Handle registry language data
+' Defaults to the system language if there are no set languages
+' @param event registry callback associative array
+' @param do_load specifies if the registry should load the twitch token
+function on_twitch_language(event as object, do_load_token = true as boolean) as void
+    language = invalid
+    if event.getData().result <> invalid and event.getData().result <> ""
+        language = parseJson(event.getData().result)
+    end if
+    if language = invalid or language.count() = 0
+        print "Using system default language"
+        language = []
+        device_info = createObject("roDeviceInfo")
+        system_lang = device_info.getCurrentLocale()
+        if system_lang = "en_US" or system_lang = "en_GB"
+            language.push("en")
+        else if system_lang = "fr_CA"
+            language.push("fr")
+        else if system_lang = "es_ES"
+            language.push("es")
+        else if system_lang = "de_DE"
+            language.push("de")
+        end if
+    end if
+    m.global.language = language
+    ' Load the user token from the registry / start the main application flow
+    if do_load_token
+        m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
+            "set_twitch_user_token"]
+    end if
+end function
+
+' Handle language field change from settings
+function on_language_change(event as object) as void
+    if type(event.getData()) <> "roArray"
+        return
+    end if
+    m.global.language = event.getData()
+    json = formatJson(event.getData())
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, json, 
+        "on_language_write"]
+end function
+
+' Handle language being written to the registry
+function on_language_write(event as object) as void
+    if not event.getData().result
+        error("error_language_write_fail", 1014)
+    end if
 end function

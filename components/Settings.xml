@@ -15,6 +15,7 @@
     		focusedColor="0xffffff"
     		color="0xffffff" >
     		<ContentNode role="content" />
+    	</LabelList>
     	
     	<Label
 			id="title"
@@ -39,8 +40,15 @@
 			numLines="6"
 			maxLines="6"
 			font="font:SmallSystemFont" />
-
-    	</LabelList>
+			
+		<CheckList
+			id="checklist"
+			visible="false"
+			translation="[400,100]"
+			itemSize="[300,48]"
+			textHorizAlign="left" >
+			<ContentNode role="content" />
+		</CheckList>
 
 	</children>
 
@@ -49,7 +57,9 @@
 		<field id="focus" type="boolean" alwaysNotify="true" />
 		<field id="authenticated" type="boolean" />
 		<field id="sign_out_in" type="string" alwaysNotify="true" />
+		<field id="language" type="array" alwaysNotify="true" />
 	</interface>
 
 	<script type="text/brightscript" uri="pkg:/components/Settings.brs" />
+	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
 </component>
