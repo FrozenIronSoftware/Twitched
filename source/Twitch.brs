@@ -65,6 +65,12 @@ function init() as void
     m.SETTINGS = 6
     m.MENU_ITEMS = ["title_popular", "title_games", "title_creative", 
         "title_communities", "title_followed", "title_search", "title_settings"]
+    ' Quality
+    m.P1080 = "1080p"
+    m.P720 = "720p"
+    m.P480 = "480p"
+    m.P360 = "360p"
+    m.P240 = "240p"
     ' Components
     m.header = m.top.findNode("header")
     m.main_menu = m.top.findNode("main_menu")
@@ -95,13 +101,20 @@ function init() as void
     m.link_screen.observeField("error", "on_link_error")
     m.link_screen.observeField("timeout", "on_link_timeout")
     m.video.observeField("state", "on_video_state_change")
+    m.video.observeField("bufferingStatus", "on_buffer_status")
     m.dialog.observeField("wasClosed", "on_dialog_closed")
     m.settings_panel.observeField("sign_out_in", "on_settings_authentication_request")
     m.settings_panel.observeField("language", "on_language_change")
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
+    ' Vars
+    m.video_quality = m.P720
+    m.last_underrun = 0
+    m.did_scale_up = false
+    m.last_upscale = 0
     ' Init
+    init_logging()
     init_main_menu()
     show_message("message_loading")
     m.stream_info_timer.control = "start"
@@ -739,6 +752,8 @@ function show_video_info_screen() as void
     m.info_screen.visible = true
     m.stage = m.INFO
     ' Start video preload
+    m.did_scale_down = false
+    m.video_quality = m.P720
     preload_video()
 end function
 
@@ -772,9 +787,15 @@ function preload_video() as void
     vod = m.info_screen.video_selected
     master_playlist = ""
     if vod = invalid
-        master_playlist = m.twitch_api.callFunc("get_stream_url", m.info_screen.streamer[1])
+        streamer = m.info_screen.streamer[1]
+        ' Fallback to ID in the event the client does not have the streamer 
+        ' login name
+        if streamer = invalid or streamer = ""
+            streamer = ":" + m.info_screen.streamer[2]
+        end if
+        master_playlist = m.twitch_api.callFunc("get_stream_url", [streamer, m.video_quality])
     else
-        master_playlist = m.twitch_api.callFunc("get_video_url", vod.id)
+        master_playlist = m.twitch_api.callFunc("get_video_url", [vod.id, m.video_quality])
     end if
     ' Setup video data
     video = createObject("roSGNode", "ContentNode")
@@ -1216,10 +1237,26 @@ end function
 ' Update stream info
 ' Ignores event
 function update_stream_info(event = invalid as object) as void
-    if type(m.video.streamingSegment) <> "roAssociativeArray" or m.video.streamingSegment.segBitrateBps = invalid
+    if type(m.video.streamingSegment) <> "roAssociativeArray" or m.video.streamingSegment.segBitrateBps = invalid or type(m.video.streamInfo) <> "roAssociativeArray" or m.video.streamInfo.measuredBitrate = invalid or m.video.streamInfo.isUnderrun = invalid
         return
     end if
-    print "Bitrate: " + m.video.streamingSegment.segBitrateBps.toStr()
+    printl(m.EXTRA, "========== Stream Info ==========")
+    printl(m.EXTRA, "Bitrate: " + m.video.streamingSegment.segBitrateBps.toStr())
+    printl(m.EXTRA, "Measured: " + m.video.streamInfo.measuredBitrate.toStr())
+    printl(m.EXTRA, "Underrun: " + m.video.streamInfo.isUnderrun.toStr())
+    printl(m.EXTRA, "Screen: " + createObject("roDeviceInfo").getVideoMode())
+    printl(m.EXTRA, "Quality: " + m.video_quality)
+    ' Do not up/down scale if the video is not playing
+    if m.video.state <> "playing"
+        return
+    end if 
+    ' Check if a scale up should be tried
+    if not m.did_scale_down and m.video.streamInfo.measuredBitrate - m.video.streamingSegment.segBitrateBps >= 1000000
+        on_buffer_status(true)
+    ' Check if there is not enough bandwidth and scale down
+    else if m.video.streamingSegment.segBitrateBps > m.video.streamInfo.measuredBitrate
+        on_buffer_status(false)
+    end if
 end function
 
 ' Handle registry language data
@@ -1269,5 +1306,48 @@ end function
 function on_language_write(event as object) as void
     if not event.getData().result
         error("error_language_write_fail", 1014)
+    end if
+end function
+
+' Handle buffer status change
+' Event can be an sgnodeevent or a boolean that represents an underrun status
+function on_buffer_status(event as object) as void
+    if type(event) = "roBoolean" or event.getData() <> invalid
+        ' An underrun occurred. Lower bitrate
+        if (((type(event) = "roBoolean" and not event) or (type(event) = "roSGNodeEvent" and event.getData().isUnderrun))) and createObject("roDateTime").asSeconds() - m.last_underrun >= 30
+            printl(m.INFO, "Stream underrun")
+            m.last_underrun = createObject("roDateTime").asSeconds()
+            m.did_scale_down = true
+            if m.video_quality = m.P1080
+                m.video_quality = m.P720
+            else if m.video_quality = m.P720
+                m.video_quality = m.P480
+            else if m.video_quality = m.P480
+                m.video_quality = m.P360
+            else if m.video_quality = m.P360
+                m.video_quality = m.P240
+            else if m.video_quality = m.P240
+                return
+            end if
+            preload_video()
+            play_video()
+        ' Increase bitrate
+        else if type(event) = "roBoolean" and event and createObject("roDateTime").asSeconds() - m.last_upscale >= 30
+            printl(m.INFO, "Increasing stream quality")
+            m.last_upscale = createObject("roDateTime").asSeconds()
+            if m.video_quality = m.P240
+                m.video_quality = m.P360
+            else if m.video_quality = m.P360
+                m.video_quality = m.P480
+            else if m.video_quality = m.P480
+                m.video_quality = m.P720
+            else if m.video_quality = m.P720
+                m.video_quality = m.P1080
+            else if m.video_quality = m.P1080
+                return
+            end if
+            preload_video()
+            play_video()
+        end if
     end if
 end function

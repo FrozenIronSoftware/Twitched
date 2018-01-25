@@ -251,13 +251,20 @@ function get(request_url as string) as void
 end function
 
 ' Get stream HLS URL for a streamer
+' @param params array [streamer, video_quality]
 function get_stream_url(params as object) as string
-    return m.API + "/twitch/hls/" + get_stream_fps() + "/" + params.encodeUri() + ".m3u8"
+    return m.API + "/twitch/hls/" + get_stream_fps() + "/" + params[1].encodeUri() + "/" + get_device_model() + "/" + params[0].encodeUri() + ".m3u8"
 end function
 
 ' Get video HLS URL for a video id
+' @param params array [video_id, video_quality]
 function get_video_url(params as object) as string
-    return m.API + "/twitch/vod/" + get_stream_fps() + "/" + params.encodeUri() + ".m3u8"
+    return m.API + "/twitch/vod/" + get_stream_fps() + "/" + params[1].encodeUri() + "/" + get_device_model() + "/" + params[0].encodeUri() + ".m3u8"
+end function
+
+' Get the device model info string
+function get_device_model() as string
+    return createObject("roDeviceInfo").getModel()
 end function
 
 ' Get max supported FPS for a stream
