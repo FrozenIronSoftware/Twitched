@@ -783,7 +783,8 @@ end function
 
 ' Initialize video node and set it to preload
 ' Should only be called after info_screen is populated with video data
-function preload_video() as void
+' @param load_vod_at_time boolean should a vod reuse the last seek position
+function preload_video(load_vod_at_time = true as boolean) as void
     vod = m.info_screen.video_selected
     master_playlist = ""
     if vod = invalid
@@ -837,8 +838,13 @@ function preload_video() as void
     m.video_title.findNode("title").text = video.title
     m.video_title.findNode("streamer").text = video.titleSeason
     ' Preload
+    position = 0
+    if load_vod_at_time and vod <> invalid
+        position = m.video.position
+    end if
     m.video.enableTrickPlay = (vod <> invalid)
     m.video.content = video
+    m.video.seek = position
     m.video.control = "prebuffer"
 end function
 
@@ -1329,7 +1335,7 @@ function on_buffer_status(event as object) as void
             else if m.video_quality = m.P240
                 return
             end if
-            preload_video()
+            preload_video(true)
             play_video()
         ' Increase bitrate
         else if type(event) = "roBoolean" and event and createObject("roDateTime").asSeconds() - m.last_upscale >= 30
@@ -1346,7 +1352,7 @@ function on_buffer_status(event as object) as void
             else if m.video_quality = m.P1080
                 return
             end if
-            preload_video()
+            preload_video(true)
             play_video()
         end if
     end if
