@@ -49,6 +49,15 @@
 			textHorizAlign="left" >
 			<ContentNode role="content" />
 		</CheckList>
+		
+		<RadioButtonList
+			id="radiolist"
+			visible="false"
+			translation="[400,100]"
+			itemSize="[300,48]"
+			textHorizAlign="left" >
+			<ContentNode role="content" />
+		</RadioButtonList>
 
 	</children>
 
@@ -58,6 +67,7 @@
 		<field id="authenticated" type="boolean" />
 		<field id="sign_out_in" type="string" alwaysNotify="true" />
 		<field id="language" type="array" alwaysNotify="true" />
+		<field id="quality" type="string" alwaysNotify="true" />
 	</interface>
 
 	<script type="text/brightscript" uri="pkg:/components/Settings.brs" />

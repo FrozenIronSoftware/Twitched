@@ -352,6 +352,18 @@
            		<source>error_language_write_fail</source>
            		<target>Failed to save language data.</target>
            	</trans-unit>
+           	<trans-unit id="86">
+           		<source>title_quality</source>
+           		<target>Quality</target>
+           	</trans-unit>
+           	<trans-unit id="87">
+           		<source>title_video_quality</source>
+           		<target>Video Quality</target>
+           	</trans-unit>
+           	<trans-unit id="88">
+           		<source>title_automatic</source>
+           		<target>Automatic</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

@@ -10,14 +10,16 @@ function init() as void
     m.OSS = 1
     m.PRIVACY = 2
     m.LANGUAGE = 3
-    m.LOG_IN_OUT = 4
-    m.MENU_ITEMS = ["title_info", "title_oss", "title_privacy_policy", "title_language", "title_log_in_out"]
+    m.QUALITY = 4
+    m.LOG_IN_OUT = 5
+    m.MENU_ITEMS = ["title_info", "title_oss", "title_privacy_policy", "title_language", "title_quality", "title_log_in_out"]
     m.LANG_JSON = parseJson(readAsciiFile("pkg:/resources/twitch_lang.json"))
     ' Components
     m.menu = m.top.findNode("menu")
     m.title = m.top.findNode("title")
     m.message = m.top.findNode("message")
     m.checklist = m.top.findNode("checklist")
+    m.radiolist = m.top.findNode("radiolist")
     ' Init
     init_menu()
     ' Events
@@ -26,12 +28,13 @@ function init() as void
     m.menu.observeField("itemSelected", "on_menu_item_selected")
     m.menu.observeField("itemFocused", "on_menu_item_focused")
     m.checklist.observeField("checkedState", "on_checked_state_update")
+    m.radiolist.observeField("checkedItem", "on_checked_Item_update")
 end function
 
 ' Handle keys
 function onKeyEvent(key as string, press as boolean) as boolean
-    ' Checklist
-    if m.checklist.hasFocus()
+    ' Checklist / Radiolist
+    if m.checklist.hasFocus() or m.radiolist.hasFocus()
         ' Set main settings menu focus
         if press and (key = "left" or key = "back")
             m.menu.setFocus(true)
@@ -40,10 +43,15 @@ function onKeyEvent(key as string, press as boolean) as boolean
     ' Menu
     else if m.menu.hasFocus()
         ' Activate 
-        if press and key = "right" and m.menu.itemFocused = m.LANGUAGE
-            m.checklist.setFocus(true)
-            return true
-        end if
+        if press and key = "right"
+            if m.menu.itemFocused = m.LANGUAGE
+                m.checklist.setFocus(true)
+                return true
+            else if m.menu.itemFocused = m.QUALITY
+                m.radiolist.setFocus(true)
+                return true
+            end if
+        end if        
     end if
     return false
 end function
@@ -87,6 +95,9 @@ function select_menu_item(item as integer) as void
     ' Language
     else if item = m.LANGUAGE
         m.checklist.setFocus(true)
+    ' Quality
+    else if item = m.QUALITY
+        m.radiolist.setFocus(true)
     ' Log in/out
     else if item = m.LOG_IN_OUT
         ' Sign out
@@ -145,6 +156,30 @@ function focus_menu_item(item as integer) as void
         ' Set checklist state
         m.checklist.checkedState = checked_state
         m.checklist.visible = true
+    ' Quality
+    else if item = m.QUALITY
+        ' Set title
+        m.title.text = tr("title_video_quality")
+        ' Clear content
+        m.radiolist.content.removeChildrenIndex(m.radiolist.content.getChildCount(), 0)
+        ' Add quality items
+        items = ["title_automatic", "1080p", "720p", "480p", "360p", "240p"]
+        for each quality in items
+            radio_item = m.radiolist.content.createChild("ContentNode")
+            radio_item.title = tr(quality)
+        end for
+        ' Set selected item
+        if m.top.quality = "auto"
+            m.radiolist.checkedItem = 0
+        else
+            for quality = 0 to items.count() - 1
+                if m.top.quality = items[quality]
+                    m.radiolist.checkedItem = quality
+                end if
+            end for
+        end if
+        ' Show radio list
+        m.radiolist.visible = true
     ' Log in/out
     else if item = m.LOG_IN_OUT
     ' Unhandled
@@ -158,6 +193,7 @@ function reset() as void
     m.title.text = ""
     m.message.text = ""
     m.checklist.visible = false
+    m.radiolist.visible = false
 end function
 
 ' Initialize the settings panel list
@@ -181,4 +217,13 @@ function on_checked_state_update(event as object) as void
         end if
     end for
     m.top.setField("language", language)
+end function
+
+' Handle radiolist checked item change
+function on_checked_item_update(event as object) as void
+    if event.getData() = 0
+        m.top.setField("quality", "auto")
+    else if event.getData() > -1
+        m.top.setField("quality", m.radiolist.content.getChild(event.getData()).title)
+    end if
 end function

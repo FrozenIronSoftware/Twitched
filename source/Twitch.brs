@@ -20,7 +20,8 @@ function main(args as dynamic) as void
 	   language: [],
 	   REG_TWITCH: "TWITCH",
 	   REG_TOKEN: "TOKEN",
-	   REG_LANGUAGUE: "LANG"
+	   REG_LANGUAGUE: "LANG",
+	   REG_QUALITY: "QUALITY"
 	})
 	' Events
 	screen.show()
@@ -105,6 +106,7 @@ function init() as void
     m.dialog.observeField("wasClosed", "on_dialog_closed")
     m.settings_panel.observeField("sign_out_in", "on_settings_authentication_request")
     m.settings_panel.observeField("language", "on_language_change")
+    m.settings_panel.observeField("quality", "on_quality_change")
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
@@ -113,6 +115,7 @@ function init() as void
     m.last_underrun = 0
     m.did_scale_up = false
     m.last_upscale = 0
+    m.video_quality_force = "auto"
     ' Init
     init_logging()
     init_main_menu()
@@ -258,6 +261,7 @@ function load_menu_item(stage as integer, force = false as boolean) as void
     ' Settings
     else if stage = m.SETTINGS
         m.settings_panel.authenticated = is_authenticated()
+        m.settings_panel.quality = m.video_quality_force
         m.settings_panel.visible = true
     ' Unhandled
     else
@@ -753,7 +757,11 @@ function show_video_info_screen() as void
     m.stage = m.INFO
     ' Start video preload
     m.did_scale_down = false
-    m.video_quality = m.P720
+    if m.video_quality_force = "auto"
+        m.video_quality = m.P720
+    else
+        m.video_quality = m.video_quality_force
+    end if
     preload_video()
 end function
 
@@ -1269,7 +1277,7 @@ end function
 ' Defaults to the system language if there are no set languages
 ' @param event registry callback associative array
 ' @param do_load specifies if the registry should load the twitch token
-function on_twitch_language(event as object, do_load_token = true as boolean) as void
+function on_twitch_language(event as object) as void
     language = invalid
     if event.getData().result <> invalid and event.getData().result <> ""
         language = parseJson(event.getData().result)
@@ -1290,11 +1298,9 @@ function on_twitch_language(event as object, do_load_token = true as boolean) as
         end if
     end if
     m.global.language = language
-    ' Load the user token from the registry / start the main application flow
-    if do_load_token
-        m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
-            "set_twitch_user_token"]
-    end if
+    ' Load the quality from the registry
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_QUALITY, 
+        "on_twitch_quality"]
 end function
 
 ' Handle language field change from settings
@@ -1318,7 +1324,7 @@ end function
 ' Handle buffer status change
 ' Event can be an sgnodeevent or a boolean that represents an underrun status
 function on_buffer_status(event as object) as void
-    if type(event) = "roBoolean" or event.getData() <> invalid
+    if (type(event) = "roBoolean" or event.getData() <> invalid) and m.video_quality_force = "auto"
         ' An underrun occurred. Lower bitrate
         if (((type(event) = "roBoolean" and not event) or (type(event) = "roSGNodeEvent" and event.getData().isUnderrun))) and createObject("roDateTime").asSeconds() - m.last_underrun >= 30
             printl(m.INFO, "Stream underrun")
@@ -1356,4 +1362,33 @@ function on_buffer_status(event as object) as void
             play_video()
         end if
     end if
+end function
+
+' Handle settings panel quality change event
+function on_quality_change(event as object) as void
+    if event.getData() = invalid or event.getData() = ""
+        return
+    end if
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_QUALITY, 
+        event.getData(), "on_quality_write"]
+    m.video_quality_force = event.getData()
+end function
+
+' Handle quality being written to the registry
+function on_quality_write(event as object) as void
+    if not event.getData().result
+        error("error_language_write_fail", 1015)
+    end if
+end function
+
+' Handle twitch quality loaded from the registry
+function on_twitch_quality(event as object) as void
+    quality = event.getData().result
+    ' Force a quality
+    if quality <> invalid and quality <> ""
+        m.video_quality_force = quality
+    end if
+    ' Load the user token from the registry / start the main application flow
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
+        "set_twitch_user_token"]
 end function
