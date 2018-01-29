@@ -1,7 +1,7 @@
 title=Twitched
 major_version=1
 minor_version=2
-build_version=1842
+build_version=1860
 mm_icon_focus_hd=pkg:/locale/default/images/channel_poster_hd.png
 mm_icon_focus_sd=pkg:/locale/default/images/channel_poster_sd.png
 subtitle=Twitch Unofficial

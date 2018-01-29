@@ -253,13 +253,13 @@ end function
 ' Get stream HLS URL for a streamer
 ' @param params array [streamer, video_quality]
 function get_stream_url(params as object) as string
-    return m.API + "/twitch/hls/60/" + params[1].encodeUri() + "/" + get_device_model() + "/" + params[0].encodeUri() + ".m3u8"
+    return (m.API + "/twitch/hls/60/" + params[1] + "/" + get_device_model() + "/" + params[0] + "+" + params[1] + ".m3u8").encodeUri().replace("+", "%2B")
 end function
 
 ' Get video HLS URL for a video id
 ' @param params array [video_id, video_quality]
 function get_video_url(params as object) as string
-    return m.API + "/twitch/vod/60/" + params[1].encodeUri() + "/" + get_device_model() + "/" + params[0].encodeUri() + ".m3u8"
+    return (m.API + "/twitch/vod/60/" + params[1] + "/" + get_device_model() + "/" + params[0] + "+" + params[1] + ".m3u8").encodeUri().replace("+", "%2B")
 end function
 
 ' Get the device model info string
