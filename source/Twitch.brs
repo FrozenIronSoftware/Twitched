@@ -860,13 +860,9 @@ end function
 ' Only called by info_screen variable event
 ' @param event field update notifier
 function play_video(event = invalid as object, ignore_error = false as boolean) as void
-    ' Check if the info screen is showing an offline stream
-    if m.info_screen.stream_type = "user"
-        error("error_stream_offline")
-        return
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
-    else if (m.video.state = "finished" or m.video.state = "error") and not ignore_error
+    if (m.video.state = "finished" or m.video.state = "error") and not ignore_error
         error("error_video", m.video.errorCode)
         return
     end if
@@ -1055,7 +1051,12 @@ function on_video_state_change(event as object) as void
         print(m.video.errorMsg)
         if m.stage = m.VIDEO_PLAYER
             hide_video()
-            error("error_video", m.video.errorCode)
+            print m.video.content.streams.count().toStr()
+            if m.video.content <> invalid and type(m.video.content.streams) = "roArray" and m.video.content.streams.count() = 1 and len(m.video.content.streams[0].url) - len(m.video.content.streams[0].url.replace("/hls/", "")) <> 0
+                error("error_stream_offline", m.video.errorCode)
+            else
+                error("error_video", m.video.errorCode)
+            end if
         end if
     else if event.getData() = "finished" and m.stage = m.VIDEO_PLAYER
         hide_video()
