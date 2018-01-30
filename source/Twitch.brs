@@ -116,6 +116,7 @@ function init() as void
     m.did_scale_up = false
     m.last_upscale = 0
     m.video_quality_force = "auto"
+    m.deep_link_start_time = invalid
     ' Init
     init_logging()
     init_main_menu()
@@ -163,6 +164,9 @@ function deep_link_or_start() as void
                 video_id = twitch_video_regex.match(args.contentId)[1]
             end if
             if video_id <> invalid and video_id <> ""
+                if args.time <> invalid and args.time <> ""
+                    m.deep_link_start_time = val(args.time)
+                end if
                 m.twitch_api.get_videos = [{
                     limit: 1,
                     id: video_id
@@ -847,8 +851,13 @@ function preload_video(load_vod_at_time = true as boolean) as void
     m.video_title.findNode("streamer").text = video.titleSeason
     ' Preload
     position = 0
-    if load_vod_at_time and vod <> invalid
-        position = m.video.position
+    if (load_vod_at_time or m.deep_link_start_time <> invalid) and vod <> invalid
+        if m.deep_link_start_time <> invalid
+            position = m.deep_link_start_time
+            m.deep_link_start_time = invalid
+        else
+            position = m.video.position
+        end if
     end if
     m.video.enableTrickPlay = (vod <> invalid)
     m.video.content = video
@@ -966,8 +975,8 @@ function on_stream_info(event as object) as void
             video.duration = video_data.duration_seconds
             m.info_screen.video_selected = video
         ' Play
-    else
-        play_video()
+        else
+            play_video()
         end if
     end if
 end function
