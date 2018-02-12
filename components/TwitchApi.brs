@@ -27,6 +27,7 @@ function init() as void
     m.http.setCertificatesFile("common:/certs/ca-bundle.crt")
     m.http.addHeader("X-Roku-Reserved-Dev-Id", "") ' Automatically populated
     m.http.addHeader("Client-ID", m.global.secret.client_id)
+    m.http.addHeader("X-Twitched-Version", m.global.VERSION)
     m.http.initClientCertificates()
     ' Variables
     m.callback = invalid

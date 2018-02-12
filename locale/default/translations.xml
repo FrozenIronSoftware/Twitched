@@ -364,6 +364,14 @@
            		<source>title_automatic</source>
            		<target>Automatic</target>
            	</trans-unit>
+           	<trans-unit id="89">
+           		<source>title_status</source>
+           		<target>Status</target>
+           	</trans-unit>
+           	<trans-unit id="90">
+           		<source>inline_offline</source>
+           		<target>offline</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

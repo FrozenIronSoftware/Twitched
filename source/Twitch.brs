@@ -13,6 +13,7 @@ function main(args as dynamic) as void
 	scene = screen.createScene("Twitch")
 	scene.backExitsScene = false
 	' Set globals
+	app_info = createObject("roAppInfo")
 	m.global = screen.getGlobalNode()
 	m.global.addFields({
 	   args: args,
@@ -21,7 +22,8 @@ function main(args as dynamic) as void
 	   REG_TWITCH: "TWITCH",
 	   REG_TOKEN: "TOKEN",
 	   REG_LANGUAGUE: "LANG",
-	   REG_QUALITY: "QUALITY"
+	   REG_QUALITY: "QUALITY",
+	   VERSION: app_info.getVersion()
 	})
 	' Events
 	screen.show()
@@ -415,7 +417,7 @@ function set_content_grid(event as object) as void
             name = clean(data.user_name.login)
         end if
         ' User
-        if data.type = "user"
+        if data.type = "user" or data.type = "user_follow"
             node.description = name
         ' Stream
         else

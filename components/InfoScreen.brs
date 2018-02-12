@@ -139,7 +139,7 @@ end function
 ' Check if the info screen is displaying a user
 function is_user() as boolean
     stream_type = m.top.getField("stream_type")
-    return stream_type = "user"
+    return stream_type = "user" or stream_type = "user_follow"
 end function
 
 ' Handle a button selection
@@ -203,8 +203,17 @@ function set_time(time_string as string) as void
     ' Time from string
     time = createObject("roDateTime")
     time.fromISO8601String(time_string)
+    ' Check if the time parsed correctly
+    if time.getYear() <= 1970
+        m.start_time.text = tr("title_status") + ": " + tr("inline_offline")
+        return
+    ' This is a user follow
+    else if is_user_follow()
+        time.toLocalTime()
+        m.start_time.text = tr("title_followed") + ": " + time.asDateString("short-month-no-weekday")
+        return
     ' Show time created if the type is a user
-    if is_user()
+    else if is_user()
         time.toLocalTime()
         m.start_time.text = tr("title_joined") + ": " + time.asDateString("short-month-no-weekday")
         return
@@ -226,6 +235,13 @@ function set_time(time_string as string) as void
         m.start_time.text += hours.toStr() + " " + trs("inline_hours", hours) + " "
     end if
     m.start_time.text += minutes.toStr() + " " + trs("inline_minutes", minutes)
+end function
+
+' Check if the type is a user_follow. User is_user() for a general
+' user/user_follow check
+function is_user_follow()
+    stream_type = m.top.getField("stream_type")
+    return stream_type = "user_follow"
 end function
 
 ' Handle the streamer button being pressed
