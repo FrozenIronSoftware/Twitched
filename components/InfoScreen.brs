@@ -171,9 +171,9 @@ function on_set_field(event as object) as void
     ' Viewers
     else if field = "viewers"
         if is_user() or is_video()
-            m.viewers.text = tr("title_views") + ": " + event.getData().toStr()
+            m.viewers.text = tr("title_views") + ": " + pretty_number(event.getData())
         else
-            m.viewers.text = tr("title_viewers") + ": " + event.getData().toStr()
+            m.viewers.text = tr("title_viewers") + ": " + pretty_number(event.getData())
         end if
     ' Start time
     else if field = "start_time"

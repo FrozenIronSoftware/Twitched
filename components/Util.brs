@@ -92,3 +92,48 @@ function init_logging() as void
     end if
     m.log_level = log_level
 end function
+
+' Returns a string representation of a number, with delimiters added for
+' readability
+function pretty_number(ugly_number as dynamic) as string
+    ' Check if the number is large enough for a delimiter
+    if ugly_number < 1000
+        return ugly_number.toStr()
+    end if
+    ' Determine delimiter
+    delimiter = get_regional_number_delimiter()
+    ' Construct the string with the delimiter
+    ugly = ugly_number.toStr().split("")
+    ugly_reversed = []
+    for digit = ugly.count() - 1 to 0 step -1
+        ugly_reversed.Push(ugly[digit])
+    end for
+    ugly = ugly_reversed
+    pretty = ""
+    digit_count = 0
+    for each digit in ugly
+        if digit_count = 3
+            pretty = delimiter + pretty
+            digit_count = 0
+        end if
+        pretty = digit + pretty
+        digit_count++
+    end for
+    return pretty
+end function
+
+' Return the character used to delimit thousands in a number
+function get_regional_number_delimiter() as string
+    device_info = createObject("roDeviceInfo")
+    country_code = device_info.getCountryCode()
+    if country_code = "US" or country_code = "GB" or country_code = "IE"
+        return ","
+    else if country_code = "CA" or country_code = "FR"
+        return " "
+    else if country_code = "MX"
+        return "."
+    else if country_code = "OT"
+        return " "
+    end if
+    return " "
+end function

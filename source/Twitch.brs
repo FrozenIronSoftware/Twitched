@@ -376,7 +376,7 @@ function set_poster_grid(event as object) as void
         node.shortdescriptionline1 = clean(data.name)
         if data.viewers <> invalid
             viewer_string = "{0} {1}"
-            node.shortdescriptionline2 = substitute(viewer_string, data.viewers.toStr(), trs("inline_viewers", data.viewers), "", "")
+            node.shortdescriptionline2 = substitute(viewer_string, pretty_number(data.viewers), trs("inline_viewers", data.viewers), "", "")
         end if
     end for
 end function
@@ -422,7 +422,7 @@ function set_content_grid(event as object) as void
         ' Stream
         else
             viewer_string = "{0} {1} {2} {3}"
-            node.description = substitute(viewer_string, data.viewer_count.toStr(), trs("inline_viewers", data.viewer_count), tr("inline_on"), name)
+            node.description = substitute(viewer_string, pretty_number(data.viewer_count), trs("inline_viewers", data.viewer_count), tr("inline_on"), name)
             if data.game_name <> invalid
                 node.game_image = m.twitch_api.callFunc("get_game_thumbnail", [data.game_name, 80, 112])
             end if
