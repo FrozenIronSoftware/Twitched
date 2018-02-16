@@ -43,11 +43,12 @@ end function
 ' @param params array [string section, string key, string value, string callback]
 function write(params as object) as void
     reg = createObject("roRegistrySection", params.getData()[0])
+    write_status = reg.write(params.getData()[1], params.getData()[2]) and reg.flush()
     m.top.setField("result", {
         type: "write",
         section: params.getData()[0],
         key: params.getData()[1],
         callback: params.getData()[3],
-        result: reg.write(params.getData()[1], params.getData()[2])
+        result: write_status
     })
 end function

@@ -9,12 +9,17 @@ function init() as void
     m.INFO = 0
     m.OSS = 1
     m.PRIVACY = 2
-    m.LOG_IN_OUT = 3
-    m.MENU_ITEMS = ["title_info", "title_oss", "title_privacy_policy", "title_log_in_out"]
+    m.LANGUAGE = 3
+    m.QUALITY = 4
+    m.LOG_IN_OUT = 5
+    m.MENU_ITEMS = ["title_info", "title_oss", "title_privacy_policy", "title_language", "title_quality", "title_log_in_out"]
+    m.LANG_JSON = parseJson(readAsciiFile("pkg:/resources/twitch_lang.json"))
     ' Components
     m.menu = m.top.findNode("menu")
     m.title = m.top.findNode("title")
     m.message = m.top.findNode("message")
+    m.checklist = m.top.findNode("checklist")
+    m.radiolist = m.top.findNode("radiolist")
     ' Init
     init_menu()
     ' Events
@@ -22,16 +27,39 @@ function init() as void
     m.top.observeField("focus", "on_set_visible")
     m.menu.observeField("itemSelected", "on_menu_item_selected")
     m.menu.observeField("itemFocused", "on_menu_item_focused")
+    m.checklist.observeField("checkedState", "on_checked_state_update")
+    m.radiolist.observeField("checkedItem", "on_checked_Item_update")
 end function
 
 ' Handle keys
 function onKeyEvent(key as string, press as boolean) as boolean
+    ' Checklist / Radiolist
+    if m.checklist.hasFocus() or m.radiolist.hasFocus()
+        ' Set main settings menu focus
+        if press and (key = "left" or key = "back")
+            m.menu.setFocus(true)
+            return true
+        end if
+    ' Menu
+    else if m.menu.hasFocus()
+        ' Activate 
+        if press and key = "right"
+            if m.menu.itemFocused = m.LANGUAGE
+                m.checklist.setFocus(true)
+                return true
+            else if m.menu.itemFocused = m.QUALITY
+                m.radiolist.setFocus(true)
+                return true
+            end if
+        end if        
+    end if
     return false
 end function
 
 ' Check for visibility and focus the menu
 function on_set_visible(event as object) as void
     if event.getData()
+        reset()
         if event.getField() = "focus"
             m.menu.setFocus(true)
         end if
@@ -64,6 +92,12 @@ function select_menu_item(item as integer) as void
     else if item = m.OSS
     ' Privacy Policy
     else if item = m.PRIVACY
+    ' Language
+    else if item = m.LANGUAGE
+        m.checklist.setFocus(true)
+    ' Quality
+    else if item = m.QUALITY
+        m.radiolist.setFocus(true)
     ' Log in/out
     else if item = m.LOG_IN_OUT
         ' Sign out
@@ -94,6 +128,58 @@ function focus_menu_item(item as integer) as void
     else if item = m.PRIVACY
         m.title.text = tr("title_privacy_policy")
         m.message.text = tr("message_settings_privacy_policy").replace("{1}", m.URL_PRIVACY)
+    ' Language
+    else if item = m.LANGUAGE
+        checked_state = []
+        ' Set title
+        m.title.text = tr("title_language")
+        ' Clear content
+        m.checklist.content.removeChildrenIndex(m.checklist.content.getChildCount(), 0)
+        ' Add lang items
+        for each lang_item in m.LANG_JSON
+            lang_enabled = false
+            for each lang in m.global.language
+                if lang_item.code = lang
+                    lang_enabled = true
+                end if
+            end for
+            checked_state.push(lang_enabled)
+            ' Add lang to checklist
+            check_item = m.checklist.content.createChild("ContentNode")
+            name = clean(lang_item.name)
+            if len(name) <> len(lang_item.name)
+                name = lang_item.name_en
+            end if
+            check_item.title = name
+            check_item.hideicon = false
+        end for
+        ' Set checklist state
+        m.checklist.checkedState = checked_state
+        m.checklist.visible = true
+    ' Quality
+    else if item = m.QUALITY
+        ' Set title
+        m.title.text = tr("title_video_quality")
+        ' Clear content
+        m.radiolist.content.removeChildrenIndex(m.radiolist.content.getChildCount(), 0)
+        ' Add quality items
+        items = ["title_automatic", "1080p", "720p", "480p", "360p", "240p"]
+        for each quality in items
+            radio_item = m.radiolist.content.createChild("ContentNode")
+            radio_item.title = tr(quality)
+        end for
+        ' Set selected item
+        if m.top.quality = "auto"
+            m.radiolist.checkedItem = 0
+        else
+            for quality = 0 to items.count() - 1
+                if m.top.quality = items[quality]
+                    m.radiolist.checkedItem = quality
+                end if
+            end for
+        end if
+        ' Show radio list
+        m.radiolist.visible = true
     ' Log in/out
     else if item = m.LOG_IN_OUT
     ' Unhandled
@@ -106,6 +192,8 @@ end function
 function reset() as void
     m.title.text = ""
     m.message.text = ""
+    m.checklist.visible = false
+    m.radiolist.visible = false
 end function
 
 ' Initialize the settings panel list
@@ -115,4 +203,27 @@ function init_menu() as void
         item = m.menu.content.createChild("ContentNode")
         item.title = "   " + tr(title)
     end for
+end function
+
+' Handle checklist checked state change
+function on_checked_state_update(event as object) as void
+    if m.LANG_JSON.count() <> m.checklist.checkedState.count()
+        return
+    end if
+    language = []
+    for index = 0 to m.LANG_JSON.count() - 1
+        if m.checklist.checkedState[index]
+            language.push(m.LANG_JSON[index].code)
+        end if
+    end for
+    m.top.setField("language", language)
+end function
+
+' Handle radiolist checked item change
+function on_checked_item_update(event as object) as void
+    if event.getData() = 0
+        m.top.setField("quality", "auto")
+    else if event.getData() > -1
+        m.top.setField("quality", m.radiolist.content.getChild(event.getData()).title)
+    end if
 end function

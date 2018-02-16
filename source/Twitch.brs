@@ -13,12 +13,17 @@ function main(args as dynamic) as void
 	scene = screen.createScene("Twitch")
 	scene.backExitsScene = false
 	' Set globals
+	app_info = createObject("roAppInfo")
 	m.global = screen.getGlobalNode()
 	m.global.addFields({
 	   args: args,
 	   secret: secret,
+	   language: [],
 	   REG_TWITCH: "TWITCH",
-	   REG_TOKEN: "TOKEN"
+	   REG_TOKEN: "TOKEN",
+	   REG_LANGUAGUE: "LANG",
+	   REG_QUALITY: "QUALITY",
+	   VERSION: app_info.getVersion()
 	})
 	' Events
 	screen.show()
@@ -63,6 +68,12 @@ function init() as void
     m.SETTINGS = 6
     m.MENU_ITEMS = ["title_popular", "title_games", "title_creative", 
         "title_communities", "title_followed", "title_search", "title_settings"]
+    ' Quality
+    m.P1080 = "1080p"
+    m.P720 = "720p"
+    m.P480 = "480p"
+    m.P360 = "360p"
+    m.P240 = "240p"
     ' Components
     m.header = m.top.findNode("header")
     m.main_menu = m.top.findNode("main_menu")
@@ -79,6 +90,7 @@ function init() as void
     m.search_panel = m.top.findNode("search")
     m.video_title = m.top.findNode("video_title")
     m.chat = m.top.findNode("chat")
+    m.stream_info_timer = m.top.findNode("stream_info_timer")
     ' Events
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
@@ -92,15 +104,28 @@ function init() as void
     m.link_screen.observeField("error", "on_link_error")
     m.link_screen.observeField("timeout", "on_link_timeout")
     m.video.observeField("state", "on_video_state_change")
+    m.video.observeField("bufferingStatus", "on_buffer_status")
     m.dialog.observeField("wasClosed", "on_dialog_closed")
     m.settings_panel.observeField("sign_out_in", "on_settings_authentication_request")
+    m.settings_panel.observeField("language", "on_language_change")
+    m.settings_panel.observeField("quality", "on_quality_change")
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
+    m.stream_info_timer.observeField("fire", "update_stream_info")
+    ' Vars
+    m.video_quality = m.P720
+    m.last_underrun = 0
+    m.did_scale_up = false
+    m.last_upscale = 0
+    m.video_quality_force = "auto"
+    m.deep_link_start_time = invalid
     ' Init
+    init_logging()
     init_main_menu()
     show_message("message_loading")
-    m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
-        "set_twitch_user_token"]
+    m.stream_info_timer.control = "start"
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, 
+        "on_twitch_language"]
 end function
 
 ' Parse deep links (if any) and start at the specified state or do a normal
@@ -141,6 +166,9 @@ function deep_link_or_start() as void
                 video_id = twitch_video_regex.match(args.contentId)[1]
             end if
             if video_id <> invalid and video_id <> ""
+                if args.time <> invalid and args.time <> ""
+                    m.deep_link_start_time = val(args.time)
+                end if
                 m.twitch_api.get_videos = [{
                     limit: 1,
                     id: video_id
@@ -239,6 +267,7 @@ function load_menu_item(stage as integer, force = false as boolean) as void
     ' Settings
     else if stage = m.SETTINGS
         m.settings_panel.authenticated = is_authenticated()
+        m.settings_panel.quality = m.video_quality_force
         m.settings_panel.visible = true
     ' Unhandled
     else
@@ -347,7 +376,7 @@ function set_poster_grid(event as object) as void
         node.shortdescriptionline1 = clean(data.name)
         if data.viewers <> invalid
             viewer_string = "{0} {1}"
-            node.shortdescriptionline2 = substitute(viewer_string, data.viewers.toStr(), trs("inline_viewers", data.viewers), "", "")
+            node.shortdescriptionline2 = substitute(viewer_string, pretty_number(data.viewers), trs("inline_viewers", data.viewers), "", "")
         end if
     end for
 end function
@@ -384,16 +413,16 @@ function set_content_grid(event as object) as void
         end if
         node.title = clean(data.title)
         name = clean(data.user_name.display_name)
-        if len(name) <> len(data.user_name.display_name)
+        if data.user_name.display_name = invalid or len(name) <> len(data.user_name.display_name)
             name = clean(data.user_name.login)
         end if
         ' User
-        if data.type = "user"
+        if data.type = "user" or data.type = "user_follow"
             node.description = name
         ' Stream
         else
             viewer_string = "{0} {1} {2} {3}"
-            node.description = substitute(viewer_string, data.viewer_count.toStr(), trs("inline_viewers", data.viewer_count), tr("inline_on"), name)
+            node.description = substitute(viewer_string, pretty_number(data.viewer_count), trs("inline_viewers", data.viewer_count), tr("inline_on"), name)
             if data.game_name <> invalid
                 node.game_image = m.twitch_api.callFunc("get_game_thumbnail", [data.game_name, 80, 112])
             end if
@@ -707,7 +736,7 @@ function show_video_info_screen() as void
     end if
     ' Calculate valid name
     name = clean(video_item.user_name.display_name)
-    if len(name) <> len(video_item.user_name.display_name)
+    if video_item.user_name.display_name = invalid or len(name) <> len(video_item.user_name.display_name)
         name = clean(video_item.user_name.login)
     end if
     ' Set info screen data
@@ -733,6 +762,12 @@ function show_video_info_screen() as void
     m.info_screen.visible = true
     m.stage = m.INFO
     ' Start video preload
+    m.did_scale_down = false
+    if m.video_quality_force = "auto"
+        m.video_quality = m.P720
+    else
+        m.video_quality = m.video_quality_force
+    end if
     preload_video()
 end function
 
@@ -762,13 +797,20 @@ end function
 
 ' Initialize video node and set it to preload
 ' Should only be called after info_screen is populated with video data
-function preload_video() as void
+' @param load_vod_at_time boolean should a vod reuse the last seek position
+function preload_video(load_vod_at_time = true as boolean) as void
     vod = m.info_screen.video_selected
     master_playlist = ""
     if vod = invalid
-        master_playlist = m.twitch_api.callFunc("get_stream_url", m.info_screen.streamer[1])
+        streamer = m.info_screen.streamer[1]
+        ' Fallback to ID in the event the client does not have the streamer 
+        ' login name
+        if streamer = invalid or streamer = ""
+            streamer = ":" + m.info_screen.streamer[2]
+        end if
+        master_playlist = m.twitch_api.callFunc("get_stream_url", [streamer, m.video_quality])
     else
-        master_playlist = m.twitch_api.callFunc("get_video_url", vod.id)
+        master_playlist = m.twitch_api.callFunc("get_video_url", [vod.id, m.video_quality])
     end if
     ' Setup video data
     video = createObject("roSGNode", "ContentNode")
@@ -802,16 +844,28 @@ function preload_video() as void
     video.setHttpAgent(http_agent)
     video.httpCertificatesFile = "common:/certs/ca-bundle.crt"
     video.httpHeaders = [
-        "X-Roku-Reserved-Dev-Id:",
-        "Client-ID:" + m.global.secret.client_id
+        "X-Roku-Reserved-Dev-Id: ",
+        "Client-ID: " + m.global.secret.client_id,
+        "X-Twitched-Version: " + m.global.VERSION,
+        "Twitch-Token: " + m.twitch_api.user_token
     ]
     video.httpSendClientCertificate = true
     ' Set title component
     m.video_title.findNode("title").text = video.title
     m.video_title.findNode("streamer").text = video.titleSeason
     ' Preload
+    position = 0
+    if (load_vod_at_time or m.deep_link_start_time <> invalid) and vod <> invalid
+        if m.deep_link_start_time <> invalid
+            position = m.deep_link_start_time
+            m.deep_link_start_time = invalid
+        else
+            position = m.video.position
+        end if
+    end if
     m.video.enableTrickPlay = (vod <> invalid)
     m.video.content = video
+    m.video.seek = position
     m.video.control = "prebuffer"
 end function
 
@@ -819,14 +873,10 @@ end function
 ' Only called by info_screen variable event
 ' @param event field update notifier
 function play_video(event = invalid as object, ignore_error = false as boolean) as void
-    ' Check if the info screen is showing an offline stream
-    if m.info_screen.stream_type = "user"
-        error("error_stream_offline")
-        return
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
-    else if (m.video.state = "finished" or m.video.state = "error") and not ignore_error
-        error("error_video", m.video.errorCode)
+    if (m.video.state = "finished" or m.video.state = "error") and not ignore_error
+        show_video_error()
         return
     end if
     ' Show video
@@ -929,8 +979,8 @@ function on_stream_info(event as object) as void
             video.duration = video_data.duration_seconds
             m.info_screen.video_selected = video
         ' Play
-    else
-        play_video()
+        else
+            play_video()
         end if
     end if
 end function
@@ -1014,10 +1064,20 @@ function on_video_state_change(event as object) as void
         print(m.video.errorMsg)
         if m.stage = m.VIDEO_PLAYER
             hide_video()
-            error("error_video", m.video.errorCode)
+            show_video_error()
         end if
     else if event.getData() = "finished" and m.stage = m.VIDEO_PLAYER
         hide_video()
+    end if
+end function
+
+' Shows a video error based on the current video source and error code
+function show_video_error()
+    print m.video.content.streams.count().toStr()
+    if m.video.content <> invalid and type(m.video.content.streams) = "roArray" and m.video.content.streams.count() = 1 and len(m.video.content.streams[0].url) - len(m.video.content.streams[0].url.replace("/hls/", "")) <> 0
+        error("error_stream_offline", m.video.errorCode)
+    else
+        error("error_video", m.video.errorCode)
     end if
 end function
 
@@ -1205,4 +1265,151 @@ function on_info_screen_options(event as object) as void
     m.header.showOptions = show
     m.header.optionsAvailable = show
     m.header.optionsText = ""
+end function
+
+' Update stream info
+' Ignores event
+function update_stream_info(event = invalid as object) as void
+    if type(m.video.streamingSegment) <> "roAssociativeArray" or m.video.streamingSegment.segBitrateBps = invalid or type(m.video.streamInfo) <> "roAssociativeArray" or m.video.streamInfo.measuredBitrate = invalid or m.video.streamInfo.isUnderrun = invalid
+        return
+    end if
+    printl(m.EXTRA, "========== Stream Info ==========")
+    printl(m.EXTRA, "Bitrate: " + m.video.streamingSegment.segBitrateBps.toStr())
+    printl(m.EXTRA, "Measured: " + m.video.streamInfo.measuredBitrate.toStr())
+    printl(m.EXTRA, "Underrun: " + m.video.streamInfo.isUnderrun.toStr())
+    printl(m.EXTRA, "Screen: " + createObject("roDeviceInfo").getVideoMode())
+    printl(m.EXTRA, "Quality: " + m.video_quality)
+    ' Do not up/down scale if the video is not playing
+    if m.video.state <> "playing"
+        return
+    end if 
+    ' Check if a scale up should be tried
+    if not m.did_scale_down and m.video.streamInfo.measuredBitrate - m.video.streamingSegment.segBitrateBps >= 1000000
+        on_buffer_status(true)
+    ' Check if there is not enough bandwidth and scale down
+    else if m.video.streamingSegment.segBitrateBps > m.video.streamInfo.measuredBitrate
+        on_buffer_status(false)
+    end if
+end function
+
+' Handle registry language data
+' Defaults to the system language if there are no set languages
+' @param event registry callback associative array
+' @param do_load specifies if the registry should load the twitch token
+function on_twitch_language(event as object) as void
+    language = invalid
+    if event.getData().result <> invalid and event.getData().result <> ""
+        language = parseJson(event.getData().result)
+    end if
+    if language = invalid or language.count() = 0
+        print "Using system default language"
+        language = []
+        device_info = createObject("roDeviceInfo")
+        system_lang = device_info.getCurrentLocale()
+        if system_lang = "en_US" or system_lang = "en_GB"
+            language.push("en")
+        else if system_lang = "fr_CA"
+            language.push("fr")
+        else if system_lang = "es_ES"
+            language.push("es")
+        else if system_lang = "de_DE"
+            language.push("de")
+        end if
+    end if
+    m.global.language = language
+    ' Load the quality from the registry
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_QUALITY, 
+        "on_twitch_quality"]
+end function
+
+' Handle language field change from settings
+function on_language_change(event as object) as void
+    if type(event.getData()) <> "roArray"
+        return
+    end if
+    m.global.language = event.getData()
+    json = formatJson(event.getData())
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, json, 
+        "on_language_write"]
+end function
+
+' Handle language being written to the registry
+function on_language_write(event as object) as void
+    if not event.getData().result
+        error("error_language_write_fail", 1014)
+    end if
+end function
+
+' Handle buffer status change
+' Event can be an sgnodeevent or a boolean that represents an underrun status
+function on_buffer_status(event as object) as void
+    if (type(event) = "roBoolean" or event.getData() <> invalid) and m.video_quality_force = "auto"
+        ' An underrun occurred. Lower bitrate
+        if (((type(event) = "roBoolean" and not event) or (type(event) = "roSGNodeEvent" and event.getData().isUnderrun))) and createObject("roDateTime").asSeconds() - m.last_underrun >= 30
+            printl(m.INFO, "Stream underrun")
+            m.last_underrun = createObject("roDateTime").asSeconds()
+            m.did_scale_down = true
+            if m.video_quality = m.P1080
+                m.video_quality = m.P720
+            else if m.video_quality = m.P720
+                m.video_quality = m.P480
+            else if m.video_quality = m.P480
+                m.video_quality = m.P360
+            else if m.video_quality = m.P360
+                m.video_quality = m.P240
+            else if m.video_quality = m.P240
+                return
+            end if
+            set_saved_stage_info(m.VIDEO_PLAYER)
+            preload_video(true)
+            play_video()
+        ' Increase bitrate
+        else if type(event) = "roBoolean" and event and createObject("roDateTime").asSeconds() - m.last_upscale >= 30
+            printl(m.INFO, "Increasing stream quality")
+            m.last_upscale = createObject("roDateTime").asSeconds()
+            if m.video_quality = m.P240
+                m.video_quality = m.P360
+            else if m.video_quality = m.P360
+                m.video_quality = m.P480
+            else if m.video_quality = m.P480
+                m.video_quality = m.P720
+            else if m.video_quality = m.P720
+                m.video_quality = m.P1080
+            else if m.video_quality = m.P1080
+                return
+            end if
+            set_saved_stage_info(m.VIDEO_PLAYER)
+            preload_video(true)
+            play_video()
+        end if
+    end if
+end function
+
+' Handle settings panel quality change event
+function on_quality_change(event as object) as void
+    if event.getData() = invalid or event.getData() = ""
+        return
+    end if
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_QUALITY, 
+        event.getData(), "on_quality_write"]
+    m.video_quality_force = event.getData()
+end function
+
+' Handle quality being written to the registry
+function on_quality_write(event as object) as void
+    if not event.getData().result
+        error("error_language_write_fail", 1015)
+    end if
+end function
+
+' Handle twitch quality loaded from the registry
+function on_twitch_quality(event as object) as void
+    quality = event.getData().result
+    ' Force a quality
+    if quality <> invalid and quality <> ""
+        m.video_quality_force = quality
+    end if
+    ' Load the user token from the registry / start the main application flow
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
+        "set_twitch_user_token"]
 end function

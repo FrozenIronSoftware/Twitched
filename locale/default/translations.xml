@@ -344,6 +344,34 @@
            		<source>inline_playing</source>
            		<target>playing</target>
            	</trans-unit>
+           	<trans-unit id="84">
+           		<source>title_language</source>
+           		<target>Language</target>
+           	</trans-unit>
+           	<trans-unit id="85">
+           		<source>error_language_write_fail</source>
+           		<target>Failed to save language data.</target>
+           	</trans-unit>
+           	<trans-unit id="86">
+           		<source>title_quality</source>
+           		<target>Quality</target>
+           	</trans-unit>
+           	<trans-unit id="87">
+           		<source>title_video_quality</source>
+           		<target>Video Quality</target>
+           	</trans-unit>
+           	<trans-unit id="88">
+           		<source>title_automatic</source>
+           		<target>Automatic</target>
+           	</trans-unit>
+           	<trans-unit id="89">
+           		<source>title_status</source>
+           		<target>Status</target>
+           	</trans-unit>
+           	<trans-unit id="90">
+           		<source>inline_offline</source>
+           		<target>offline</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

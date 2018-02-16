@@ -27,6 +27,7 @@ function init() as void
     m.http.setCertificatesFile("common:/certs/ca-bundle.crt")
     m.http.addHeader("X-Roku-Reserved-Dev-Id", "") ' Automatically populated
     m.http.addHeader("Client-ID", m.global.secret.client_id)
+    m.http.addHeader("X-Twitched-Version", m.global.VERSION)
     m.http.initClientCertificates()
     ' Variables
     m.callback = invalid
@@ -137,6 +138,10 @@ function get_streams(params as object) as void
     if passed_params.limit <> invalid
         url_params.push("limit=" + m.http.escape(passed_params.limit.toStr()))
     end if
+    ' Add globally defined language
+    for each lang in m.global.language
+        url_params.push("language=" + m.http.escape(lang.toStr()))
+    end for
     request("GET", request_url, url_params, params.getData()[1])
 end function
 
@@ -247,25 +252,20 @@ function get(request_url as string) as void
 end function
 
 ' Get stream HLS URL for a streamer
+' @param params array [streamer, video_quality]
 function get_stream_url(params as object) as string
-    return m.API + "/twitch/hls/" + get_stream_fps() + "/" + params.encodeUri() + ".m3u8"
+    return (m.API + "/twitch/hls/60/" + params[1] + "/" + get_device_model() + "/" + params[0] + "+" + params[1] + ".m3u8").encodeUri().replace("+", "%2B")
 end function
 
 ' Get video HLS URL for a video id
+' @param params array [video_id, video_quality]
 function get_video_url(params as object) as string
-    return m.API + "/twitch/vod/" + get_stream_fps() + "/" + params.encodeUri() + ".m3u8"
+    return (m.API + "/twitch/vod/60/" + params[1] + "/" + get_device_model() + "/" + params[0] + "+" + params[1] + ".m3u8").encodeUri().replace("+", "%2B")
 end function
 
-' Get max supported FPS for a stream
-function get_stream_fps() as string
-    info = createObject("roDeviceInfo")
-    model = info.getModel()
-    ' Liberty (Roku TV 5000X)
-    if model = "5000X"
-        ' Liberty fails to play 60 FPS streams
-        return "30"
-    end if
-    return "60"
+' Get the device model info string
+function get_device_model() as string
+    return createObject("roDeviceInfo").getModel()
 end function
 
 ' Request a link code from the API
@@ -445,8 +445,6 @@ end function
 ' Request API to follow a channel
 ' @param params array of parameters [associative request_params, string callback]
 function follow_channel(params as object) as void
-    print "start"
-    print params
     request_url = m.API_KRAKEN + "/users/follows/follow"
     passed_params = params.getData()[0]
     url_params = []
