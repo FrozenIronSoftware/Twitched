@@ -1360,6 +1360,7 @@ function on_buffer_status(event as object) as void
             else if m.video_quality = m.P240
                 return
             end if
+            set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
             play_video()
         ' Increase bitrate
@@ -1377,6 +1378,7 @@ function on_buffer_status(event as object) as void
             else if m.video_quality = m.P1080
                 return
             end if
+            set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
             play_video()
         end if
