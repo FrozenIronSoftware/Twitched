@@ -847,7 +847,7 @@ function preload_video(load_vod_at_time = true as boolean) as void
         "X-Roku-Reserved-Dev-Id: ",
         "Client-ID: " + m.global.secret.client_id,
         "X-Twitched-Version: " + m.global.VERSION,
-        "Twitch-Token: " + m.twich_api.user_token
+        "Twitch-Token: " + m.twitch_api.user_token
     ]
     video.httpSendClientCertificate = true
     ' Set title component
