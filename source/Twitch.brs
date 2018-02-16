@@ -874,7 +874,7 @@ function play_video(event = invalid as object, ignore_error = false as boolean) 
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
     if (m.video.state = "finished" or m.video.state = "error") and not ignore_error
-        error("error_video", m.video.errorCode)
+        show_video_error()
         return
     end if
     ' Show video
@@ -1062,15 +1062,20 @@ function on_video_state_change(event as object) as void
         print(m.video.errorMsg)
         if m.stage = m.VIDEO_PLAYER
             hide_video()
-            print m.video.content.streams.count().toStr()
-            if m.video.content <> invalid and type(m.video.content.streams) = "roArray" and m.video.content.streams.count() = 1 and len(m.video.content.streams[0].url) - len(m.video.content.streams[0].url.replace("/hls/", "")) <> 0
-                error("error_stream_offline", m.video.errorCode)
-            else
-                error("error_video", m.video.errorCode)
-            end if
+            show_video_error()
         end if
     else if event.getData() = "finished" and m.stage = m.VIDEO_PLAYER
         hide_video()
+    end if
+end function
+
+' Shows a video error based on the current video source and error code
+function show_video_error()
+    print m.video.content.streams.count().toStr()
+    if m.video.content <> invalid and type(m.video.content.streams) = "roArray" and m.video.content.streams.count() = 1 and len(m.video.content.streams[0].url) - len(m.video.content.streams[0].url.replace("/hls/", "")) <> 0
+        error("error_stream_offline", m.video.errorCode)
+    else
+        error("error_video", m.video.errorCode)
     end if
 end function
 
