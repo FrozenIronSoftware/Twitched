@@ -844,8 +844,10 @@ function preload_video(load_vod_at_time = true as boolean) as void
     video.setHttpAgent(http_agent)
     video.httpCertificatesFile = "common:/certs/ca-bundle.crt"
     video.httpHeaders = [
-        "X-Roku-Reserved-Dev-Id:",
-        "Client-ID:" + m.global.secret.client_id
+        "X-Roku-Reserved-Dev-Id: ",
+        "Client-ID: " + m.global.secret.client_id,
+        "X-Twitched-Version: " + m.global.VERSION,
+        "Twitch-Token: " + m.twich_api.user_token
     ]
     video.httpSendClientCertificate = true
     ' Set title component
