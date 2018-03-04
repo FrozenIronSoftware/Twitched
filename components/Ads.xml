@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (C) 2017-2018 Rolando Islas. All Rights Reserved. -->
+<component name="Ads" extends="Task">
+
+	<interface>
+		<!-- Fields -->
+		<field id="status" type="boolean" alwaysNotify="true" />
+		<field id="show_ads" type="array" alwaysNotify="true" />
+		<!-- 
+			 The view field is specified independently because changes to
+			 the node cause field update events.
+		 -->
+		<field id="view" type="node" />
+	</interface>
+	
+	<script type="text/brightscript" uri="pkg:/components/Ads.brs" />
+	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
+	
+</component>

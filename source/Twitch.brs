@@ -59,6 +59,7 @@ function init() as void
     m.VIDEO_PLAYER = 1001
     m.LINK = 1002
     m.EXIT_DIALOG = 1003
+    m.ADS_STAGE = 1004
     m.POPULAR = 0
     m.GAMES = 1
     m.CREATIVE = 2
@@ -75,6 +76,11 @@ function init() as void
     m.P360 = "360p"
     m.P240 = "240p"
     ' Components
+    m.ads = invalid
+    if m.global.secret.enable_ads
+        m.ads = createObject("roSGNode", "Ads")
+    end if
+    m.ad_container = m.top.findNode("ad_container")
     m.header = m.top.findNode("header")
     m.main_menu = m.top.findNode("main_menu")
     m.content_grid = m.top.findNode("content_grid")
@@ -92,6 +98,9 @@ function init() as void
     m.chat = m.top.findNode("chat")
     m.stream_info_timer = m.top.findNode("stream_info_timer")
     ' Events
+    if m.ads <> invalid
+        m.ads.observeField("status", "on_ads_end")
+    end if
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
     m.info_screen.observeField("play_selected", "play_video")
@@ -825,16 +834,16 @@ function preload_video(load_vod_at_time = true as boolean) as void
     if vod <> invalid
         video.title = vod.title
         video.description = vod.description
-        video.sdPosterUrl = vod.thumbnail_url
+        m.video.duration = vod.duration
     else
         video.title = m.info_screen.title
         if m.info_screen.game[0] <> invalid and m.info_screen.game[0] <> ""
             video.titleSeason += " " + tr("inline_playing") + " " + m.info_screen.game[0]
         end if
         video.description = m.info_screen.streamer[0]
-        video.sdPosterUrl = m.info_screen.preview
         video.shortDescriptionLine1 = m.info_screen.title
         video.shortDescriptionLine2 = m.info_screen.game[0]
+        m.video.duration = 0
     end if
     video.actors = m.info_screen.streamer[0]
     video.streamFormat = "hls"
@@ -866,25 +875,56 @@ function preload_video(load_vod_at_time = true as boolean) as void
     m.video.enableTrickPlay = (vod <> invalid)
     m.video.content = video
     m.video.seek = position
-    m.video.control = "prebuffer"
+    if m.ads = invalid
+        m.video.control = "prebuffer"
+    end if
 end function
 
 ' Show and play video
 ' Only called by info_screen variable event
-' @param event field update notifier
-function play_video(event = invalid as object, ignore_error = false as boolean) as void
+' @param event object field update notifier
+' @param ignore_error boolean avoid showing an error screen
+' @param show_ads boolean attempt to show ads before playing
+function play_video(event = invalid as object, ignore_error = false as boolean, show_ads = true as boolean) as void
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
     if (m.video.state = "finished" or m.video.state = "error") and not ignore_error
         show_video_error()
         return
     end if
+    ' Show ads
+    if m.ads <> invalid and show_ads
+        printl(m.DEBUG, "Twitch: Starting ads")
+        save_stage_info(m.ADS_STAGE)
+        m.stage = m.ADS_STAGE
+        m.ads.view = m.ad_container
+        m.ads.show_ads = [m.info_screen.streamer[1], "GV", m.video.duration]
+        m.ad_container.visible = true
     ' Show video
-    save_stage_info(m.VIDEO_PLAYER)
-    m.stage = m.VIDEO_PLAYER
-    m.video.setFocus(true)
-    m.video.visible = true
-    m.video.control = "play"
+    else
+        printl(m.DEBUG, "Twitch: Starting video")
+        save_stage_info(m.VIDEO_PLAYER)
+        m.stage = m.VIDEO_PLAYER
+        m.video.setFocus(true)
+        m.video.visible = true
+        m.video.control = "play"
+    end if
+end function
+
+' Handle ad event finished
+' @param event object roSGNode
+function on_ads_end(event as object) as void
+    if m.stage <> m.ADS_STAGE
+        return
+    end if
+    printl(m.DEBUG, "Twitch: Ads finished: " + event.getData().toStr())
+    set_saved_stage_info(m.ADS_STAGE)
+    m.ad_container.visible = false
+    m.info_screen.setFocus(true)
+    m.info_screen.focus = "true"
+    if event.getData()
+        play_video(invalid, false, false)
+    end if
 end function
 
 ' Load the dynamic grid for a specific game
@@ -1362,7 +1402,7 @@ function on_buffer_status(event as object) as void
             end if
             set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
-            play_video()
+            play_video(invalid, false, false)
         ' Increase bitrate
         else if type(event) = "roBoolean" and event and createObject("roDateTime").asSeconds() - m.last_upscale >= 30
             printl(m.INFO, "Increasing stream quality")
@@ -1380,7 +1420,7 @@ function on_buffer_status(event as object) as void
             end if
             set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
-            play_video()
+            play_video(invalid, false, false)
         end if
     end if
 end function

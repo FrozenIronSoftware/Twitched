@@ -327,6 +327,7 @@ end function
 
 ' Handle play button
 function on_play_button_pressed() as void
+    printl(m.DEBUG, "InfoScreen: Play button pressed")
     ' Stream play
     if not is_video()
         m.top.setField("play_selected", true)
