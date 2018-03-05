@@ -4,9 +4,9 @@
 function init() as void
     m.port = createObject("roMessagePort")
     ' Constants
-    m.API_KRAKEN = "https://twitched.org/api/twitch/kraken" ' API proxy/cacher
-    m.API_HELIX = "https://twitched.org/api/twitch/helix" ' API proxy/cacher
-    m.API = "https://twitched.org/api" ' Direct/unofficial API
+    m.API_KRAKEN = "https://www.twitched.org/api/twitch/kraken" ' API proxy/cacher
+    m.API_HELIX = "https://www.twitched.org/api/twitch/helix" ' API proxy/cacher
+    m.API = "https://www.twitched.org/api" ' Direct/unofficial API
     m.top.setField("AUTH_URL", "https://twitched.org/link") ' User web endpoint
     if m.global.secret.api_kraken <> invalid
         m.API_KRAKEN = m.global.secret.api_kraken
