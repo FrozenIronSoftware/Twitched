@@ -920,10 +920,13 @@ function on_ads_end(event as object) as void
     printl(m.DEBUG, "Twitch: Ads finished: " + event.getData().toStr())
     set_saved_stage_info(m.ADS_STAGE)
     m.ad_container.visible = false
-    m.info_screen.setFocus(true)
-    m.info_screen.focus = "true"
+    ' Play video
     if event.getData()
         play_video(invalid, false, false)
+    ' Go back to info screen
+    else
+        m.info_screen.setFocus(true)
+        m.info_screen.focus = "true"
     end if
 end function
 
@@ -1098,7 +1101,7 @@ end function
 
 ' Handle video state changes
 function on_video_state_change(event as object) as void
-    print "Video State:" + event.getData()
+    print "Video State: " + event.getData()
     ' Handle error
     if event.getData() = "error"
         print(m.video.errorMsg)
@@ -1113,7 +1116,9 @@ end function
 
 ' Shows a video error based on the current video source and error code
 function show_video_error()
-    print m.video.content.streams.count().toStr()
+    for each stream in m.video.content.streams
+        print stream
+    end for
     if m.video.content <> invalid and type(m.video.content.streams) = "roArray" and m.video.content.streams.count() = 1 and len(m.video.content.streams[0].url) - len(m.video.content.streams[0].url.replace("/hls/", "")) <> 0
         error("error_stream_offline", m.video.errorCode)
     else
@@ -1310,7 +1315,7 @@ end function
 ' Update stream info
 ' Ignores event
 function update_stream_info(event = invalid as object) as void
-    if type(m.video.streamingSegment) <> "roAssociativeArray" or m.video.streamingSegment.segBitrateBps = invalid or type(m.video.streamInfo) <> "roAssociativeArray" or m.video.streamInfo.measuredBitrate = invalid or m.video.streamInfo.isUnderrun = invalid
+    if m.stage <> m.VIDEO_PLAYER or type(m.video.streamingSegment) <> "roAssociativeArray" or m.video.streamingSegment.segBitrateBps = invalid or type(m.video.streamInfo) <> "roAssociativeArray" or m.video.streamInfo.measuredBitrate = invalid or m.video.streamInfo.isUnderrun = invalid
         return
     end if
     printl(m.EXTRA, "========== Stream Info ==========")
