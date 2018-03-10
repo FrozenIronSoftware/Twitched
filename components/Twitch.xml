@@ -127,6 +127,13 @@
     		id="stream_info_timer"
     		repeat="true"
     		duration="5" />
+    		
+    	<Rectangle 
+    		id="ad_container"
+    		color="0x000000"
+    		visible="false"
+    		width="1280"
+    		height="720" />
 
 	</children>
 	
