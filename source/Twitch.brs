@@ -1299,7 +1299,7 @@ function on_vod_video_selected(event as object) as void
     if id = invalid 
         return
     end if
-    preload_video()
+    preload_video(false)
     play_video(invalid, true)
 end function
 
