@@ -69,6 +69,7 @@ function init() as void
     m.SETTINGS = 6
     m.MENU_ITEMS = ["title_popular", "title_games", "title_creative", 
         "title_communities", "title_followed", "title_search", "title_settings"]
+    m.AD_INTERVAL = 20 * 60
     ' Quality
     m.P1080 = "1080p"
     m.P720 = "720p"
@@ -128,6 +129,7 @@ function init() as void
     m.last_upscale = 0
     m.video_quality_force = "auto"
     m.deep_link_start_time = invalid
+    m.last_ad_position = 0
     ' Init
     init_logging()
     init_main_menu()
@@ -875,6 +877,9 @@ function preload_video(load_vod_at_time = true as boolean) as void
     m.video.enableTrickPlay = (vod <> invalid)
     m.video.content = video
     m.video.seek = position
+    if not load_vod_at_time
+        m.last_ad_position = position
+    end if
     if m.ads = invalid
         m.video.control = "prebuffer"
     end if
@@ -888,7 +893,7 @@ end function
 function play_video(event = invalid as object, ignore_error = false as boolean, show_ads = true as boolean) as void
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
-    if (m.video.state = "finished" or m.video.state = "error") and not ignore_error
+    if (m.video.state = "finished" or m.video.state = "error") and not ignore_error and m.stage = m.VIDEO_PLAYER
         show_video_error()
         return
     end if
@@ -1328,12 +1333,32 @@ function update_stream_info(event = invalid as object) as void
     if m.video.state <> "playing"
         return
     end if 
+    check_play_ads()
     ' Check if a scale up should be tried
     if not m.did_scale_down and m.video.streamInfo.measuredBitrate - m.video.streamingSegment.segBitrateBps >= 1000000
         on_buffer_status(true)
     ' Check if there is not enough bandwidth and scale down
     else if m.video.streamingSegment.segBitrateBps > m.video.streamInfo.measuredBitrate
         on_buffer_status(false)
+    end if
+end function
+
+' Try to play a mid roll ad
+function check_play_ads() as void
+    if m.ads = invalid or m.video = invalid or m.video.content = invalid or m.video.content.live = invalid or m.video.position = invalid or m.video.duration = invalid
+        return
+    end if
+    printl(m.EXTRA, "Ad Time: " + (m.AD_INTERVAL - (m.video.position - m.last_ad_position)).toStr())
+    ' Check if enough time has passed for an ad
+    if m.video.position - m.last_ad_position >= m.AD_INTERVAL
+        printl(m.DEBUG, "Twitch: Mid-roll ads")
+        m.last_ad_position = m.video.position
+        if m.video.content.live
+            m.last_ad_position = 0
+        end if
+        set_saved_stage_info(m.VIDEO_PLAYER)
+        preload_video(true)
+        play_video(invalid, false, true)
     end if
 end function
 
