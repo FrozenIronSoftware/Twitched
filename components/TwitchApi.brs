@@ -47,6 +47,7 @@ function init() as void
     m.top.observeField("get_follows", m.port)
     m.top.observeField("follow_channel", m.port)
     m.top.observeField("unfollow_channel", m.port)
+    m.top.observeField("get_ad_server", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -91,6 +92,8 @@ function run() as void
                 follow_channel(msg)
             else if msg.getField() = "unfollow_channel"
                 unfollow_channel(msg)
+            else if msg.getField() = "get_ad_server"
+                get_ad_server(msg)
             end if
         end if
     end while
@@ -474,4 +477,15 @@ function get_game_thumbnail(params as object) as string
         return ""
     end if
     return m.GAME_THUMBNAIL_URL.replace("{name}", game_name.encodeUri()).replace("{width}", params[1].toStr()).replace("{height}", params[2].toStr())
+end function
+
+' Request ad server from Twitched's API
+' @param params field event expected to be an event with data being a string callback
+function get_ad_server(params) as void
+    request_url = m.API + "/ad/server"
+    ' Params
+    url_params = [
+        "type=roku"
+    ]
+    request("GET", request_url, url_params, params.getData())
 end function

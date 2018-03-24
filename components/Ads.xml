@@ -2,6 +2,13 @@
 <!-- Copyright (C) 2017-2018 Rolando Islas. All Rights Reserved. -->
 <component name="Ads" extends="Task">
 
+	<children>
+	
+		<TwitchApi 
+    		id="twitch_api" />
+		
+	</children>
+
 	<interface>
 		<!-- Fields -->
 		<field id="status" type="boolean" alwaysNotify="true" />

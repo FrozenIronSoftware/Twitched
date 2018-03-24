@@ -8,17 +8,38 @@ function init() as void
     m.PORT = createObject("roMessagePort")
     ' Ads
     m.ads = Roku_Ads()
-    ad_url = m.global.secret.ad_server
-    m.ads.setAdUrl(m.global.secret.ad_server.replace("ROKU_ADS_TRACKING_ID_OBEY_LIMIT", get_ad_id()))
     m.ads.enableNielsenDar(true)
     m.ads.setNielsenAppId(m.global.secret.ad_nielsen_id)
+    ' Components
+    m.twitch_api = m.top.findNode("twitch_api")
     ' Events
     m.top.observeField("show_ads", m.PORT)
+    m.twitch_api.observeField("result", m.PORT)
     ' Init
     init_logging()
+    m.twitch_api.get_ad_server = "on_ad_server"
+    ' Variables
+    m.did_fetch_server = false
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
+end function
+
+' Set the ad url of the Roku_Ads instance
+function set_ad_url(ad_url as string) as void
+    m.ads.setAdUrl(ad_url.replace("ROKU_ADS_TRACKING_ID_OBEY_LIMIT", get_ad_id()))
+end function
+
+' Handle ad server request data from Twitched's API
+function on_ad_server(event as object) as void
+    ad_server = event.getData().result
+    if type(ad_server) <> "roAssociativeArray" or (type(ad_server.ad_server) <> "roString" and type(ad_server.ad_server) <> "String")
+        printl(m.DEBUG, "Ads: Failed to fetch ad server from Twitched API")
+        return
+    end if
+    printl(m.DEBUG, "Ads: Fetched ad server from Twitched API")
+    m.did_fetch_server = true
+    set_ad_url(ad_server.ad_server)
 end function
 
 ' Get the ad id for the device, obeying limited ad tracking
@@ -40,6 +61,8 @@ function run() as void
         if type(msg) = "roSGNodeEvent"
             if msg.getField() = "show_ads"
                 show_ads(msg.getData())
+            else if msg.getField() = "result"
+                on_callback(msg)
             end if
         end if
     end while
@@ -49,6 +72,9 @@ end function
 ' Sets the status to the result of the ad call
 ' @param params roArray [nielsen_id  as string, genre as string, content_length as integer]
 function show_ads(params as object) as void
+    if not m.did_fetch_server
+        m.twitch_api.get_ad_server = "on_ad_server"
+    end if
     nielsen_id = params[0]
     genre = params[1]
     content_length = params[2]
