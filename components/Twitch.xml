@@ -133,7 +133,21 @@
     		color="0x000000"
     		visible="false"
     		width="1280"
-    		height="720" />
+    		height="720">
+    		<Label
+    			id="ad_loading_message"
+    			font="font:MediumBoldSystemFont"
+    			color="0xffffff"
+	    		width="1280"
+	    		height="720"
+	    		translation="[0, 0]"
+	    		horizAlign="center"
+	    		vertAlign="center"
+	    		wrap="false"
+	    		numLines="1"
+	    		maxLines="1"
+	    		visible="true" />
+    	</Rectangle>
 
 	</children>
 	

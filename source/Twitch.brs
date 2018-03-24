@@ -80,6 +80,8 @@ function init() as void
     m.ads = invalid
     if m.global.secret.enable_ads
         m.ads = createObject("roSGNode", "Ads")
+        ad_loading_message = m.top.findNode("ad_loading_message")
+        ad_loading_message.text = tr("message_loading")
     end if
     m.ad_container = m.top.findNode("ad_container")
     m.header = m.top.findNode("header")
@@ -473,8 +475,11 @@ end function
 ' Handles key events not handled by other components
 function onKeyEvent(key as string, press as boolean) as boolean
     print("Key: " + key + " Press: " + press.toStr())
+    ' Ad stage
+    if m.stage = m.ADS_STAGE
+        ' Ignore. Control logic is handled by the RAF once it has focus.
     ' Main Menu
-    if m.main_menu.hasFocus() 
+    else if m.main_menu.hasFocus() 
         ' Menu item selected
         if press and (key = "right" or key = "OK")
             m.header.showOptions = false
