@@ -6,6 +6,8 @@ function init() as void
     ' Events
     m.top.observeField("read", m.port)
     m.top.observeField("write", m.port)
+    m.top.observeField("write_multi", m.port)
+    m.top.observeField("read_multi", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -21,6 +23,10 @@ function run() as void
                 read(msg)
             else if msg.getField() = "write"
                 write(msg)
+            else if msg.getField() = "write_multi"
+                write_multi(msg)
+            else if msg.getField() = "read_multi"
+                read_multi(msg)
             end if
         end if
     end while
@@ -50,5 +56,39 @@ function write(params as object) as void
         key: params.getData()[1],
         callback: params.getData()[3],
         result: write_status
+    })
+end function
+
+' Write multiple values to the registry
+' @param params array [string section, assocarray key_value_pairs, string callback]
+function write_multi(params as object) as void
+    section_name = params.getData()[0]
+    key_val = params.getData()[1]
+    callback = params.getData()[2]
+    reg = createObject("roRegistrySection", section_name)
+    write_status = reg.writeMulti(key_val) and reg.flush()
+    m.top.setField("result", {
+        type: "write_multi",
+        section: section_name,
+        key: key_val,
+        callback: callback
+        result: write_status
+    })
+end function
+
+' Read multiple values from the registry
+' @param params array [string section, array keys, string callback]
+function read_multi(params as object) as void
+    section_name = params.getData()[0]
+    keys = params.getData()[1]
+    callback = params.getData()[2]
+    reg = createObject("roRegistrySection", section_name)
+    key_val = reg.readMulti(keys)
+    m.top.setField("result", {
+        type: "read_multi",
+        section: section_name,
+        key: keys,
+        callback: callback
+        result: key_val
     })
 end function

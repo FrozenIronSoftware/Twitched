@@ -29,6 +29,7 @@ function do_link(event as object) as void
     m.timer.control = "stop"
     m.twitch_api.cancel = true
     ' Request the link code
+    m.code.text = tr("message_loading")
     m.twitch_api.get_link_code = "on_link_code"
 end function
 
@@ -75,7 +76,13 @@ function on_link_status(event as object) as void
     if status.error <> invalid
         print status.error
         m.top.setField("timeout", true)
-    else if status.complete and status.token <> invalid
-        m.top.setField("linked_token", status.token)
+        m.timer.control = "stop"
+    else if status.complete
+        if status.token <> invalid
+            m.top.setField("linked_token", status)
+        else
+            m.top.setField("error", 2003)
+        end if
+        m.timer.control = "stop"
     end if
 end function

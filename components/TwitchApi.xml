@@ -21,6 +21,7 @@
 		<field id="follow_channel" type="array" alwaysNotify="true" />
 		<field id="unfollow_channel" type="array" alwaysNotify="true" />
 		<field id="get_ad_server" type="string" alwaysNotify="true" />
+		<field id="refresh_twitch_token" type="array" alwaysNotify="true" />
 		<!-- Functions -->
 		<function name="get_stream_url" />
 		<function name="get_video_url" />

@@ -48,6 +48,7 @@ function init() as void
     m.top.observeField("follow_channel", m.port)
     m.top.observeField("unfollow_channel", m.port)
     m.top.observeField("get_ad_server", m.port)
+    m.top.observeField("refresh_twitch_token", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -94,6 +95,8 @@ function run() as void
                 unfollow_channel(msg)
             else if msg.getField() = "get_ad_server"
                 get_ad_server(msg)
+            else if msg.getField() = "refresh_twitch_token"
+                refresh_twitch_token(msg)
             end if
         end if
     end while
@@ -488,4 +491,21 @@ function get_ad_server(params) as void
         "type=roku"
     ]
     request("GET", request_url, url_params, params.getData())
+end function
+
+' Request a token refresh from the Twitch API
+' @param params array [string refresh_token, string token_scope, string callback]
+function refresh_twitch_token(params) as void
+    refresh_token = params.getData()[0]
+    token_scope = params.getData()[1]
+    callback = params.getData()[2]
+    request_url = m.API + "/link/refresh"
+    url_params = []
+    if refresh_token <> invalid
+        url_params.push("refresh_token=" + m.http.escape(refresh_token))
+    end if
+    if token_scope <> invalid
+        url_params.push("scope=" + m.http.escape(token_scope))
+    end if
+    request("GET", request_url, url_params, callback)
 end function
