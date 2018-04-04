@@ -446,7 +446,7 @@ function set_content_grid(event as object) as void
 end function
 
 ' Show an error message and possibly exit
-function error(msg as string, error_code = invalid as object, title = "" as string) as void
+function error(msg as string, error_code = invalid as object, title = "" as string, buttons = [tr("button_confirm")] as object) as void
     msg = tr(msg)
     print(msg)
     if title = ""
@@ -461,7 +461,7 @@ function error(msg as string, error_code = invalid as object, title = "" as stri
         m.dialog.message += chr(10) + tr("title_error_code") + ": " + error_code.toStr()
         print("Error Code: " + error_code.toStr())
     end if
-    m.dialog.buttons = []
+    m.dialog.buttons = buttons
     m.dialog.visible = true
     m.top.dialog = m.dialog
 end function
@@ -974,20 +974,24 @@ end function
 ' Expects the event's getData() function to have the buttonSelected index
 ' The index should be 0 for cancel or 1 for confirm
 function on_dialog_button_selected(event as object) as void
-    ' Canceled
-    if event.getData() = 0
-        set_saved_stage_info(m.EXIT_DIALOG)
-        m.dialog.close = true
-        m.main_menu.setFocus(true)
-    ' Confirmed - call callback
-    else if event.getData() = 1
-        if m.dialog_callback <> invalid
-            eval(m.dialog_callback + "()")
+    if m.stage = m.EXIT_DIALOG
+        ' Canceled
+        if event.getData() = 0
+            set_saved_stage_info(m.EXIT_DIALOG)
+            m.dialog.close = true
+            m.main_menu.setFocus(true)
+        ' Confirmed - call callback
+        else if event.getData() = 1
+            if m.dialog_callback <> invalid
+                eval(m.dialog_callback + "()")
+            else
+                print("Dialog missing callback")
+            end if
         else
-            print("Dialog missing callback")
+            print("Unknown button selected on dialog:" + event.getData().toStr())
         end if
     else
-        print("Unknown button selected on dialog:" + event.getData().toStr())
+        m.dialog.close = true
     end if
 end function
 
