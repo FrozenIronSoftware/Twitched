@@ -6,6 +6,8 @@
 		<field id="read" type="array" alwaysNotify="true" />
 	    <field id="result" type="assocarray" alwaysNotify="true" />
 	    <field id="write" type="array" alwaysNotify="true" />
+	    <field id="write_multi" type="array" alwaysNotify="true" />
+	    <field id="read_multi" type="array" alwaysNotify="true" />
 	    <!-- Functions -->
 	</interface>
 	

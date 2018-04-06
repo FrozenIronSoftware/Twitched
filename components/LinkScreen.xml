@@ -78,7 +78,7 @@
 
 	<interface>
 		<!-- Fields -->
-		<field id="linked_token" type="string" alwaysNotify="true" />
+		<field id="linked_token" type="assocarray" alwaysNotify="true" />
 		<field id="do_link" type="boolean" alwaysNotify="true" />
 		<field id="error" type="integer" alwaysNotify="true" />
 		<field id="timeout" type="boolean" alwaysNotify="true" />

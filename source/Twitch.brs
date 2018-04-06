@@ -21,6 +21,8 @@ function main(args as dynamic) as void
 	   language: [],
 	   REG_TWITCH: "TWITCH",
 	   REG_TOKEN: "TOKEN",
+	   REG_TOKEN_SCOPE: "TOKEN_SCOPE",
+	   REG_REFRESH_TOKEN: "REFRESH_TOKEN"
 	   REG_LANGUAGUE: "LANG",
 	   REG_QUALITY: "QUALITY",
 	   VERSION: app_info.getVersion()
@@ -444,7 +446,7 @@ function set_content_grid(event as object) as void
 end function
 
 ' Show an error message and possibly exit
-function error(msg as string, error_code = invalid as object, title = "" as string) as void
+function error(msg as string, error_code = invalid as object, title = "" as string, buttons = [tr("button_confirm")] as object) as void
     msg = tr(msg)
     print(msg)
     if title = ""
@@ -459,7 +461,7 @@ function error(msg as string, error_code = invalid as object, title = "" as stri
         m.dialog.message += chr(10) + tr("title_error_code") + ": " + error_code.toStr()
         print("Error Code: " + error_code.toStr())
     end if
-    m.dialog.buttons = []
+    m.dialog.buttons = buttons
     m.dialog.visible = true
     m.top.dialog = m.dialog
 end function
@@ -972,20 +974,24 @@ end function
 ' Expects the event's getData() function to have the buttonSelected index
 ' The index should be 0 for cancel or 1 for confirm
 function on_dialog_button_selected(event as object) as void
-    ' Canceled
-    if event.getData() = 0
-        set_saved_stage_info(m.EXIT_DIALOG)
-        m.dialog.close = true
-        m.main_menu.setFocus(true)
-    ' Confirmed - call callback
-    else if event.getData() = 1
-        if m.dialog_callback <> invalid
-            eval(m.dialog_callback + "()")
+    if m.stage = m.EXIT_DIALOG
+        ' Canceled
+        if event.getData() = 0
+            set_saved_stage_info(m.EXIT_DIALOG)
+            m.dialog.close = true
+            m.main_menu.setFocus(true)
+        ' Confirmed - call callback
+        else if event.getData() = 1
+            if m.dialog_callback <> invalid
+                eval(m.dialog_callback + "()")
+            else
+                print("Dialog missing callback")
+            end if
         else
-            print("Dialog missing callback")
+            print("Unknown button selected on dialog:" + event.getData().toStr())
         end if
     else
-        print("Unknown button selected on dialog:" + event.getData().toStr())
+        m.dialog.close = true
     end if
 end function
 
@@ -1081,10 +1087,17 @@ end function
 ' Handle a twitch token having been obtain
 function on_link_token(event as object) as void
     hide_link_screen()
-    token = event.getData()
     show_message_dialog("message_link_success")
-    m.registry.write = [m.global.REG_TWITCH, m.global.REG_TOKEN, token, "on_token_write"]
-    log_in(token, false)
+    key_val = {}
+    key_val[m.global.REG_TOKEN] = event.getData().token
+    key_val[m.global.REG_REFRESH_TOKEN] = event.getData().refresh_token
+    key_val[m.global.REG_TOKEN_SCOPE] = event.getData().scope
+    m.registry.write_multi = [
+        m.global.REG_TWITCH
+        key_val,
+        "on_token_write"
+    ]
+    log_in(event.getData().token, false)
 end function
 
 ' Handle a twitch link error
@@ -1220,19 +1233,36 @@ function on_search(event as object) as void
 end function
 
 ' Handle Twitch user info
-function on_twitch_user_info(event as object) as void
+' @param event object field event with result key
+' @param do_start boolean if specified, this function will call deep_link_or_start()
+function on_twitch_user_info(event as object, do_start = false as boolean) as void
     info = event.getData().result
     ' API down
     if type(info) <> "roArray"
         print("on_twitch_user_info: invalid data")
         error("error_api_fail", 1011)
+        if do_start
+            deep_link_or_start()
+        end if
         return
     end if
-    ' Invalid token. Remove it (log user out)
+    ' Invalid token. Try to refresh it
     if info.count() < 1
-        print "Invalid token. Logging user out."
-        log_out(false)
+        print "Invalid token. Attempting to refresh"
+        refresh_callback = "refresh_token"
+        if do_start
+            refresh_callback = "refresh_token_and_start"
+        end if
+        m.registry.read_multi = [
+            m.global.REG_TWITCH, 
+            [m.global.REG_REFRESH_TOKEN, m.global.REG_TOKEN_SCOPE], 
+            refresh_callback
+        ]
         return
+    end if
+    ' Do not call start before refresh attempt
+    if do_start
+        deep_link_or_start()
     end if
     user = info[0]
     if type(user) <> "roAssociativeArray"
@@ -1251,6 +1281,63 @@ function on_twitch_user_info(event as object) as void
     print("Twitch user name set")
 end function
 
+' Attempt to refresh the user token and call deep_link_or_start()
+function refresh_token_and_start(event as object) as void
+    refresh_token(event, true)
+end function
+
+' Attempt to refresh the user token
+' @param event object registry read event
+' @param do_start boolean should the app be started
+function refresh_token(event as object, do_start = false as boolean) as void
+    printl(m.DEBUG, "Fetched refresh token and scope from registry")
+    reg_data = event.getData().result
+    refresh_callback = "on_refreshed_token"
+    if do_start
+        refresh_callback = "on_refreshed_token_start"
+    end if
+    m.twitch_api.refresh_twitch_token = [
+        reg_data[m.global.REG_REFRESH_TOKEN],
+        reg_data[m.global.REG_TOKEN_SCOPE],
+        refresh_callback
+    ]
+end function
+
+' Handle refreshed token data and call deep_link_or_start()
+function on_refreshed_token_start(event as object) as void
+    on_refreshed_token(event, true)
+end function
+
+' Handle refreshed token data
+' @param event object twitch api event
+' @param do_start boolean start app
+function on_refreshed_token(event as object, do_start = false as boolean) as void
+    printl(m.DEBUG, "on_refreshed_token: do_start: " + do_start.toStr())
+    data = event.getData().result
+    if data = invalid or type(data) <> "roAssociativeArray"
+        printl(m.DEBUG, "on_refreshed_token: invalid data")
+        error("error_api_fail", 1016)
+    else if data.error <> invalid and data.error
+        printl(m.DEBUG, "Token could not be refreshed. Logging out")
+        log_out(false)
+    else
+        printl(m.DEBUG, "Received token from refresh")
+        key_val = {}
+        key_val[m.global.REG_TOKEN] = data.token
+        key_val[m.global.REG_REFRESH_TOKEN] = data.refresh_token
+        key_val[m.global.REG_TOKEN_SCOPE] = data.scope
+        m.registry.write_multi = [
+            m.global.REG_TWITCH
+            key_val,
+            "on_token_write"
+        ]
+        log_in(data.token, false)
+    end if
+    if do_start
+        deep_link_or_start()
+    end if
+end function
+
 ' Handle twitch user info and reload the menu
 function on_twitch_user_info_reload(event as object) as void
     load_menu_item(m.stage, true) ' Force a reload of the menu
@@ -1259,8 +1346,7 @@ end function
 
 ' Handle Twitch user info and initialize the app
 function on_twitch_user_info_start(event as object) as void
-    deep_link_or_start()
-    on_twitch_user_info(event)
+    on_twitch_user_info(event, true)
 end function
 
 ' Remove the token from the registry and all object that require it
@@ -1270,8 +1356,15 @@ function log_out(do_show_message = true as boolean) as void
     if do_show_message
         show_message_dialog("message_log_out")
     end if
-    m.registry.write = [m.global.REG_TWITCH, m.global.REG_TOKEN, "", 
-        "on_token_write"]
+    key_val = {}
+    key_val[m.global.REG_TOKEN] = ""
+    key_val[m.global.REG_REFRESH_TOKEN] = ""
+    key_val[m.global.REG_TOKEN_SCOPE] = ""
+    m.registry.write_multi = [
+        m.global.REG_TWITCH
+        key_val,
+        "on_token_write"
+    ]
     m.chat.token = ""
     m.chat.user_name = "justinfan" + rnd(&h7fffffff).toStr()
     m.info_screen.token = ""
