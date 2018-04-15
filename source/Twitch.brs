@@ -102,6 +102,7 @@ function init() as void
     m.video_title = m.top.findNode("video_title")
     m.chat = m.top.findNode("chat")
     m.stream_info_timer = m.top.findNode("stream_info_timer")
+    m.video_background = m.top.findNode("video_background")
     ' Events
     if m.ads <> invalid
         m.ads.observeField("status", "on_ads_end")
@@ -134,6 +135,7 @@ function init() as void
     m.video_quality_force = "auto"
     m.deep_link_start_time = invalid
     m.last_ad_position = 0
+    m.theater_mode_enabled = false
     ' Init
     init_logging()
     init_main_menu()
@@ -608,6 +610,14 @@ function onKeyEvent(key as string, press as boolean) as boolean
         else if (not m.chat.visible) and press and key = "right"
             m.chat.visible = true
             m.chat.connect = m.info_screen.streamer[1]
+        ' Theater mode
+        else if (not m.theater_mode_enabled) and m.chat.visible and press and key = "right" and (m.video.state = "paused" or m.video.state = "playing")
+            m.theater_mode_enabled = true
+            resize_video_theater_mode()
+        ' Disable theater mode
+        else if m.theater_mode_enabled and press and key = "left"
+            m.theater_mode_enabled = false
+            reset_video_size()
         ' Hide chat
         else if m.chat.visible and press and key = "left"
             m.chat.visible = false
@@ -919,6 +929,7 @@ function play_video(event = invalid as object, ignore_error = false as boolean, 
         m.stage = m.VIDEO_PLAYER
         m.video.setFocus(true)
         m.video.visible = true
+        m.video_background.visible = true
         m.video.control = "play"
     end if
 end function
@@ -1132,9 +1143,32 @@ function on_video_state_change(event as object) as void
             hide_video()
             show_video_error()
         end if
+    ' Video ended
     else if event.getData() = "finished" and m.stage = m.VIDEO_PLAYER
         hide_video()
+    ' Video is buffering
+    else if event.getData() = "buffering" and m.stage = m.VIDEO_PLAYER
+        reset_video_size()
+    ' Video is playing
+    else if event.getData() = "playing" and m.stage = m.VIDEO_PLAYER
+        if m.theater_mode_enabled
+            resize_video_theater_mode()
+        end if
     end if
+end function
+
+' Resize the video to the normal fullscreen dimensions
+function reset_video_size() as void
+    m.video.width = 0
+    m.video.height = 0
+    m.video.translation = [0, 0]
+end function
+
+' Resize the video so it is small enough to fix next to the open chat window
+function resize_video_theater_mode() as void
+    m.video.width = 780
+    m.video.height = 438
+    m.video.translation = [500, 141]
 end function
 
 ' Shows a video error based on the current video source and error code
@@ -1164,6 +1198,9 @@ function hide_video(reset_info_screen = true as boolean) as void
     m.video_title.visible = false
     m.chat.visible = false
     m.chat.disconnect = true
+    m.theater_mode_enabled = false
+    m.video_background.visible = false
+    reset_video_size()
 end function
 
 ' Handle the close event for the dialog

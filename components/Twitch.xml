@@ -100,6 +100,13 @@
     		id="info_screen"
     		visible="false"
     		translation="[0,115]" />
+    		
+    	<Rectangle 
+    		id="video_background"
+    		color="0x000000"
+    		visible="false"
+    		width="1280"
+    		height="720" />
 			
 		<Video 
     		id="video"
