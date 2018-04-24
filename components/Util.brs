@@ -14,6 +14,7 @@ end function
 ' The callback should expect the event passed to it with the result in the 
 ' result field of the data assocarray
 function on_callback(event as object) as void
+    ' TODO remove all calls to this method since eval is unstable in scene graph
     callback = event.getData().callback
     error_code = eval(callback + "(event)")
     ' Compile error
