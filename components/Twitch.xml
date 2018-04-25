@@ -73,6 +73,9 @@
     		
     	<TwitchApi 
     		id="twitch_api" />
+    	
+    	<TwitchApi
+    		id="twitch_api_auth" />
     		
     	<Label
     		id="status_message"

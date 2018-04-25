@@ -53,6 +53,19 @@ function init() as void
     m.top.control = "RUN"
 end function
 
+' Handle callback
+function on_callback(event as object) as void
+    callback = event.getData().callback
+    if callback = "on_badges"
+        on_badges(event)
+    else
+        if callback = invalid
+            callback = ""
+        end if
+        printl(m.WARN, "on_callback: Unhandled callback: " + callback)
+    end if
+end function
+
 ' Initialize the socket
 function init_socket() as void
     ' Create socket

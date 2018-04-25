@@ -22,13 +22,7 @@ function init() as void
     end if
     m.GAME_THUMBNAIL_URL = "https://static-cdn.jtvnw.net/ttv-boxart/{name}-{width}x{height}.jpg"
     ' HTTP Api
-    m.http = createObject("roUrlTransfer")
-    m.http.setMessagePort(m.port)
-    m.http.setCertificatesFile("common:/certs/ca-bundle.crt")
-    m.http.addHeader("X-Roku-Reserved-Dev-Id", "") ' Automatically populated
-    m.http.addHeader("Client-ID", m.global.secret.client_id)
-    m.http.addHeader("X-Twitched-Version", m.global.VERSION)
-    m.http.initClientCertificates()
+    initialize_http_agent()
     ' Variables
     m.callback = invalid
     ' Events
@@ -49,6 +43,7 @@ function init() as void
     m.top.observeField("unfollow_channel", m.port)
     m.top.observeField("get_ad_server", m.port)
     m.top.observeField("refresh_twitch_token", m.port)
+    m.top.observeField("validate_token", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -73,8 +68,7 @@ function run() as void
             else if msg.getField() = "get_link_status"
                 get_link_status(msg)
             else if msg.getField() = "cancel"
-                m.http.asyncCancel()
-                m.callback = invalid
+                initialize_http_agent()
             else if msg.getField() = "get_followed_streams"
                 get_followed_streams(msg)
             else if msg.getField() = "search"
@@ -84,7 +78,7 @@ function run() as void
             else if msg.getField() = "get_badges"
                 get_badges(msg)
             else if msg.getField() = "user_token"
-                m.http.addHeader("Twitch-Token", msg.getData())
+                initialize_http_agent()
             else if msg.getField() = "get_videos"
                 get_videos(msg)
             else if msg.getField() = "get_follows"
@@ -97,11 +91,28 @@ function run() as void
                 get_ad_server(msg)
             else if msg.getField() = "refresh_twitch_token"
                 refresh_twitch_token(msg)
+            else if msg.getField() = "validate_token"
+                validate_token(msg)
             end if
         end if
     end while
 end function
 
+' Initialize the http agent
+function initialize_http_agent() as void
+    if m.http <> invalid
+        m.http.asyncCancel()
+        m.callback = invalid
+    end if
+    m.http = createObject("roUrlTransfer")
+    m.http.setMessagePort(m.port)
+    m.http.setCertificatesFile("common:/certs/ca-bundle.crt")
+    m.http.addHeader("X-Roku-Reserved-Dev-Id", "") ' Automatically populated
+    m.http.addHeader("Client-ID", m.global.secret.client_id)
+    m.http.addHeader("X-Twitched-Version", m.global.VERSION)
+    m.http.addHeader("Twitch-Token", m.top.user_token)
+    m.http.initClientCertificates()
+end function
 ' Make an API request for a list of streams
 ' @param params array of parameters [associative request_params, string callback]
 ' @return JSON data or invalid on error
@@ -508,4 +519,11 @@ function refresh_twitch_token(params) as void
         url_params.push("scope=" + m.http.escape(token_scope))
     end if
     request("GET", request_url, url_params, callback)
+end function
+
+' Get info for the current token
+' @param array of parameters [associative request_params, string callback]
+function validate_token(params as object) as void
+    request_url = m.API + "/link/validate"
+    request("GET", request_url, [], params.getData()[1])
 end function

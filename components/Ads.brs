@@ -68,6 +68,19 @@ function run() as void
     end while
 end function
 
+' Handle callback
+function on_callback(event as object) as void
+    callback = event.getData().callback
+    if callback = "on_ad_server"
+        on_ad_server(event)
+    else
+        if callback = invalid
+            callback = ""
+        end if
+        printl(m.WARN, "on_callback: Unhandled callback: " + callback)
+    end if
+end function
+
 ' Async show ads call
 ' Sets the status to the result of the ad call
 ' @param params roArray [nielsen_id  as string, genre as string, content_length as integer]

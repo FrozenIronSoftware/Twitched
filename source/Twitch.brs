@@ -94,6 +94,7 @@ function init() as void
     m.dialog = m.top.findNode("dialog")
     m.registry = m.top.findNode("registry")
     m.twitch_api = m.top.findNode("twitch_api")
+    m.twitch_api_auth = m.top.findNode("twitch_api_auth")
     m.video = m.top.findNode("video")
     m.message = m.top.findNode("status_message")
     m.link_screen = m.top.findNode("link_screen")
@@ -109,6 +110,7 @@ function init() as void
     end if
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
+    m.twitch_api_auth.observeField("result", "on_callback")
     m.info_screen.observeField("play_selected", "play_video")
     m.info_screen.observeField("game_selected", "load_dynamic_grid_for_game")
     m.info_screen.observeField("video_selected", "on_vod_video_selected")
@@ -143,6 +145,49 @@ function init() as void
     m.stream_info_timer.control = "start"
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, 
         "on_twitch_language"]
+end function
+
+' Handle callback
+function on_callback(event as object) as void
+    callback = event.getData().callback
+    if callback = "on_twitch_language"
+        on_twitch_language(event)
+    else if callback = "on_token_write"
+        on_token_write(event)
+    else if callback = "refresh_token"
+        refresh_token(event)
+    else if callback = "refresh_token_and_start"
+        refresh_token_and_start(event)
+    else if callback = "on_twitch_quality"
+        on_twitch_quality(event)
+    else if callback = "on_language_write"
+        on_language_write(event)
+    else if callback = "on_quality_write"
+        on_quality_write(event)
+    else if callback = "set_twitch_user_token"
+        set_twitch_user_token(event)
+    else if callback = "on_stream_info"
+        on_stream_info(event)
+    else if callback = "set_content_grid"
+        set_content_grid(event)
+    else if callback = "set_poster_grid"
+        set_poster_grid(event)
+    else if callback = "on_community_data"
+        on_community_data(event)
+    else if callback = "on_refreshed_token"
+        on_refreshed_token(event)
+    else if callback = "on_refreshed_token_start"
+        on_refreshed_token_start(event)
+    else if callback = "on_twitch_user_info_start"
+        on_twitch_user_info_start(event)
+    else if callback = "on_twitch_user_info_reload"
+        on_twitch_user_info_reload(event)
+    else
+        if callback = invalid
+            callback = ""
+        end if
+        printl(m.WARN, "on_callback: Unhandled callback: " + callback)
+    end if
 end function
 
 ' Parse deep links (if any) and start at the specified state or do a normal
@@ -202,6 +247,7 @@ end function
 function set_twitch_user_token(event as object) as void
     if event.getData().result = invalid or event.getData().result = ""
         m.twitch_api.user_token = ""
+        m.twitch_api_auth.user_token = ""
         m.chat.token = ""
         m.chat.user_name = "justinfan" + rnd(&h7fffffff).toStr()
         print("Using generic Twitch chat user name")
@@ -346,6 +392,7 @@ function reset(only_hide = false as boolean, reset_header_options = true as bool
     m.search_panel.visible = false
     ' Cancel any async requests
     m.twitch_api.cancel = true
+    m.twitch_api_auth.cancel = true
     ' Clear message
     show_message("")
 end function
@@ -993,8 +1040,8 @@ function on_dialog_button_selected(event as object) as void
             m.main_menu.setFocus(true)
         ' Confirmed - call callback
         else if event.getData() = 1
-            if m.dialog_callback <> invalid
-                eval(m.dialog_callback + "()")
+            if m.dialog_callback = "do_exit"
+                do_exit()
             else
                 print("Dialog missing callback")
             end if
@@ -1333,7 +1380,7 @@ function refresh_token(event as object, do_start = false as boolean) as void
     if do_start
         refresh_callback = "on_refreshed_token_start"
     end if
-    m.twitch_api.refresh_twitch_token = [
+    m.twitch_api_auth.refresh_twitch_token = [
         reg_data[m.global.REG_REFRESH_TOKEN],
         reg_data[m.global.REG_TOKEN_SCOPE],
         refresh_callback
@@ -1356,7 +1403,7 @@ function on_refreshed_token(event as object, do_start = false as boolean) as voi
         error("error_api_fail", 1016)
     else if data.error <> invalid and data.error
         printl(m.DEBUG, "Token could not be refreshed. Logging out")
-        log_out(false)
+        log_out(false, false)
     else
         printl(m.DEBUG, "Received token from refresh")
         key_val = {}
@@ -1387,9 +1434,15 @@ function on_twitch_user_info_start(event as object) as void
 end function
 
 ' Remove the token from the registry and all object that require it
-function log_out(do_show_message = true as boolean) as void
+' @param do_show_message roBoolean should a log out message be shown to the user
+' @param refresh_menu roBoolean should the menu be refreshed
+function log_out(do_show_message = true as boolean, refresh_menu = true as boolean) as void
+    m.twitch_api.cancel = true
     m.twitch_api.user_token = ""
-    load_menu_item(m.stage, true) ' Force a reload of the menu
+    m.twitch_api_auth.user_token = ""
+    if refresh_menu
+        load_menu_item(m.stage, true) ' Force a reload of the menu
+    end if
     if do_show_message
         show_message_dialog("message_log_out")
     end if
@@ -1410,13 +1463,21 @@ end function
 
 ' Add the token to objects that expect it and request user info
 function log_in(token as string, do_start = true as boolean) as void
+    old_token = ""
+    if m.twitch_api.user_token <> invalid
+        old_token = m.twitch_api.user_token
+    end if
+    printl(m.VERBOSE, "Old token: " + old_token)
+    printl(m.VERBOSE, "New token: " + token)
+    m.twitch_api.cancel = true
     m.twitch_api.user_token = token
+    m.twitch_api_auth.user_token = token
     m.chat.token = m.twitch_api.user_token
     m.info_screen.token = m.twitch_api.user_token
     if do_start
-        m.twitch_api.get_user_info = [{}, "on_twitch_user_info_start"]
+        m.twitch_api_auth.validate_token = [{}, "on_twitch_user_info_start"]
     else
-        m.twitch_api.get_user_info = [{}, "on_twitch_user_info_reload"]
+        m.twitch_api_auth.validate_token = [{}, "on_twitch_user_info_reload"]
     end if
     print("Twitch user token set")
 end function

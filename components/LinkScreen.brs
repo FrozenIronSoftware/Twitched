@@ -22,6 +22,21 @@ function init() as void
     m.timer.observeField("fire", "on_timer")
 end function
 
+' Handle callback
+function on_callback(event as object) as void
+    callback = event.getData().callback
+    if callback = "on_link_code"
+        on_link_code(event)
+    else if callback = "on_link_status"
+        on_link_status(event)
+    else
+        if callback = invalid
+            callback = ""
+        end if
+        printl(m.WARN, "on_callback: Unhandled callback: " + callback)
+    end if
+end function
+
 ' Begin the link process
 ' Ignores event
 function do_link(event as object) as void

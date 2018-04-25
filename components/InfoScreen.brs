@@ -58,6 +58,27 @@ function init() as void
     m.dialog.observeField("wasClosed", "on_dialog_closed")
 end function
 
+' Handle callback
+function on_callback(event as object) as void
+    callback = event.getData().callback
+    if callback = "on_user_info"
+        on_user_info(event)
+    else if callback = "on_follow_info"
+        on_follow_info(event)
+    else if callback = "on_video_data"
+        on_video_data(event)
+    else if callback = "on_follow_channel"
+        on_follow_channel(event)
+    else if callback = "on_unfollow_channel"
+        on_unfollow_channel(event)
+    else
+        if callback = invalid
+            callback = ""
+        end if
+        printl(m.WARN, "on_callback: Unhandled callback: " + callback)
+    end if
+end function
+
 ' Handle keys
 function onKeyEvent(key as string, press as boolean) as boolean
     printl(m.DEBUG, "InfoScreen - Key: " + key + " Press: " + press.toStr())
@@ -145,8 +166,14 @@ end function
 ' Handle a button selection
 function on_button_selected(event as object) as void
     callback = m.button_callbacks[event.getData()]
-    if type(callback) = "String"
-        eval(callback + "()")
+    if callback = "on_play_button_pressed"
+        on_play_button_pressed()
+    else if callback = "on_vods_button_pressed"
+        on_vods_button_pressed()
+    else if callback = "on_streamer_button_pressed"
+        on_streamer_button_pressed()
+    else if callback = "on_game_button_pressed"
+        on_game_button_pressed()
     end if
 end function
 
@@ -266,7 +293,7 @@ end function
 function on_user_info(event as object) as void
     ' Validate
     users = event.getData().result
-    if type(users) <> "roArray" or type(users[0]) <> "roAssociativeArray"
+    if type(users) <> "roArray" or users.count() < 1 or type(users[0]) <> "roAssociativeArray"
         error(3000)
         return
     end if
@@ -286,6 +313,7 @@ function on_follow_info(event as object) as void
     ' Validate
     follows = event.getData().result
     if type(follows) <> "roArray"
+        print follows
         error(3001)
         return
     end if
