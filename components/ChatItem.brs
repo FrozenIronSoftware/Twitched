@@ -7,11 +7,33 @@ function init() as void
     m.message = m.top.findNode("message")
     m.name = m.top.findNode("name")
     m.badges = m.top.findNode("badges")
+    m.emotes = m.top.findNode("emotes")
+    m.font_util = m.top.findNode("font_util")
     ' Variables
+    m.emote_indices = invalid
+    m.emote_index = 0
+    m.message_characters_removed = 0
+    m.emote_size = 0
     ' Init
     init_logging()
     ' Events
     m.top.observeField("itemContent", "on_item_content_change")
+    m.font_util.observeField("result", "on_callback")
+end function
+
+' Handle callback
+function on_callback(event as object) as void
+    callback = event.getData().callback
+    if callback = "on_text_size"
+        on_text_size(event)
+    else if callback = "on_space_size"
+        on_space_size(event)
+    else
+        if callback = invalid
+            callback = ""
+        end if
+        printl(m.WARN, "ChatItem: Unhandled callback: " + callback)
+    end if
 end function
 
 ' Handle a content change
@@ -45,12 +67,8 @@ function on_item_content_change(event as object) as void
     else
         m.name.color = "0x00ff00"
     end if
-    ' TODO handle emotes
-    if type(message.emotes) = "roArray"
-        for each emote in message.emotes
-            printl(m.VERBOSE, emote)
-        end for
-    end if
+    ' Emotes
+    add_emotes(message.emotes)
     ' Add badges
     m.name.width = 400
     m.name.translation = [0, 0]
@@ -77,4 +95,86 @@ function on_item_content_change(event as object) as void
             end for
         end if
     end if
+end function
+
+' Handle adding emotes for a message
+function add_emotes(emotes) as void
+    ' TODO Ignore on old devices
+    ' Reset emotes
+    m.emotes.removeChildrenIndex(m.emotes.getChildCount(), 0)
+    m.emote_indices = emotes
+    m.emote_index = 0
+    m.message_characters_removed = 0
+    ' Request the size of the space characters
+    m.font_util.get_size = ["  ", m.message.font.size, "on_space_size"]
+end function
+
+' Handle the size of the emote space being calculated
+function on_space_size(event as object) as void
+    size = m.message.font.size
+    if event.getData().result.width < size
+        size = event.getData().result.width
+    end if
+    m.emote_size = size
+    add_emote()
+end function
+
+' Parse one emote and handle removing the text and adding the poster
+function add_emote() as void
+    emotes = m.emote_indices
+    if type(emotes) = "roArray"
+        if emotes.count() > m.emote_index
+            emote = emotes[m.emote_index]
+            if type(emote) = "roAssociativeArray"
+                if type(emote.start) = "roInt" and type(emote.end) = "roInt"
+                    ' Remove emote text
+                    'print "ORIGINAL: " + m.message.text
+                    message = left(m.message.text, emote.start - m.message_characters_removed)
+                    left_message = message
+                    'print "LEFT: " + left_message 
+                    message += "  "
+                    message += mid(m.message.text, emote.end - m.message_characters_removed + 2)
+                    m.message.text = message
+                    m.message_characters_removed += emote.end - emote.start + 1 - 2
+                    'print "EMOTE: " + m.message.text
+                    ' Request text size
+                    m.font_util.get_size = [left_message, m.message.font.size, "on_text_size"]
+                end if
+            end if
+        end if
+    end if
+end function
+
+' Handle text size event for the text to the left of the emote
+function on_text_size(event as object) as void
+    size = event.getData().result
+    if size.width >= m.message.width
+        ' FIXME Handle more than the first line
+        m.emote_index++
+        add_emote()
+        return
+    end if
+    emotes = m.emote_indices
+    if type(emotes) = "roArray"
+        if emotes.count() > m.emote_index
+            emote = emotes[m.emote_index]
+            if type(emote) = "roAssociativeArray"
+                if type(emote.url, 3) = "roString"
+                    emote = emotes[m.emote_index]
+                    emoteComponent = m.emotes.createChild("Poster")
+                    emoteComponent.uri = emote.url
+                    emoteComponent.width = m.emote_size
+                    emoteComponent.height = m.emote_size
+                    x = size.width
+                    y = m.message.translation[1] + (fix(x / m.message.width) * size.height)
+                    if fix(x / m.message.width) > 0
+                        x -= m.message.width * fix(x / m.message.width)
+                    end if
+                    emoteComponent.translation = [x + 5, y + 5]
+                end if
+            end if
+        end if
+    end if
+    m.emote_index++
+    add_emote()
 end function

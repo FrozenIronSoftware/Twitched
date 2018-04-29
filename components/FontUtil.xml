@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (C) 2018 Rolando Islas. All Rights Reserved. -->
+<component name="FontUtil" extends="Task">
+
+	<interface>
+		<!-- Fields -->
+		<field id="get_size" type="array" alwaysNotify="true" />
+		<field id="result" type="assocarray" alwaysNotify="true" />
+	</interface>
+	
+	<script type="text/brightscript" uri="pkg:/components/FontUtil.brs" />
+	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
+	
+</component>
