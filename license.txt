@@ -1,17 +1,15 @@
-Copyright (C) 2017 Rolando Islas
+"Twitched" Copyright (C) 2017 Rolando Islas, 2018 Frozen Iron Software LLC. All Rights Reserved.
 
-This file is part of the Twitched, an unofficial Roku channel for the Twitch
-streaming service.
+Twitched is a Roku/Apple TV (media player) app for connecting to Twitch (live streaming service)
+and watching live streams. The Twitched website/API serves as a proxy/cache for all request to
+Twitch.
 
-Twitched is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or
-(at your option) any later version.
+Twitched is not affiliated with Twitch Interactive, Inc., Roku, Inc., or Apple, Inc.
 
-Twitched is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+                        TWITCHED LICENSE
+                    Version 1, December 2017
 
-You should have received a copy of the GNU General Public License
-along with The Twitched extension.  If not, see <http://www.gnu.org/licenses/>.
+   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+
+  0. Do not distribute, copy, or modify any source files, resources, or binary
+     files.
