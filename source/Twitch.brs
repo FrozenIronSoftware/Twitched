@@ -1670,7 +1670,7 @@ end function
 ' Handle buffer status change
 ' Event can be an sgnodeevent or a boolean that represents an underrun status
 function on_buffer_status(event as object) as void
-    if (type(event) = "roBoolean" or event.getData() <> invalid) and m.video_quality_force = "auto"
+    if (type(event) = "roBoolean" or event.getData() <> invalid) and m.video_quality_force = "auto" and m.stage = m.VIDEO_PLAYER
         ' An underrun occurred. Lower bitrate
         if (((type(event) = "roBoolean" and not event) or (type(event) = "roSGNodeEvent" and event.getData().isUnderrun))) and createObject("roDateTime").asSeconds() - m.last_underrun >= 30
             m.last_underrun = createObject("roDateTime").asSeconds()
