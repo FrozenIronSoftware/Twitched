@@ -138,6 +138,11 @@
     		repeat="true"
     		duration="5" />
     		
+    	<Timer
+    		id="play_check_timer"
+    		repeat="false"
+    		duration="0.001" />
+    		
     	<Rectangle 
     		id="ad_container"
     		color="0x000000"

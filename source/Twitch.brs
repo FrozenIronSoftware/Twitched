@@ -25,7 +25,12 @@ function main(args as dynamic) as void
 	   REG_REFRESH_TOKEN: "REFRESH_TOKEN"
 	   REG_LANGUAGUE: "LANG",
 	   REG_QUALITY: "QUALITY",
-	   VERSION: app_info.getVersion()
+	   VERSION: app_info.getVersion(),
+	   P1080: "1080p",
+	   P720: "720p",
+	   P480: "480p",
+	   P360: "360p",
+	   P240: "240p"
 	})
 	' Events
 	screen.show()
@@ -72,12 +77,6 @@ function init() as void
     m.MENU_ITEMS = ["title_popular", "title_games", "title_creative", 
         "title_communities", "title_followed", "title_search", "title_settings"]
     m.AD_INTERVAL = 20 * 60
-    ' Quality
-    m.P1080 = "1080p"
-    m.P720 = "720p"
-    m.P480 = "480p"
-    m.P360 = "360p"
-    m.P240 = "240p"
     ' Components
     m.ads = invalid
     if m.global.secret.enable_ads
@@ -104,6 +103,7 @@ function init() as void
     m.chat = m.top.findNode("chat")
     m.stream_info_timer = m.top.findNode("stream_info_timer")
     m.video_background = m.top.findNode("video_background")
+    m.play_check_timer = m.top.findNode("play_check_timer")
     ' Events
     if m.ads <> invalid
         m.ads.observeField("status", "on_ads_end")
@@ -129,8 +129,9 @@ function init() as void
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
+    m.play_check_timer.observeField("fire", "check_play_video")
     ' Vars
-    m.video_quality = m.P720
+    m.video_quality = m.global.P720
     m.last_underrun = 0
     m.did_scale_up = false
     m.last_upscale = 0
@@ -138,6 +139,7 @@ function init() as void
     m.deep_link_start_time = invalid
     m.last_ad_position = 0
     m.theater_mode_enabled = false
+    m.is_video_preloaded = false
     ' Init
     init_logging()
     init_main_menu()
@@ -182,6 +184,8 @@ function on_callback(event as object) as void
         on_twitch_user_info_start(event)
     else if callback = "on_twitch_user_info_reload"
         on_twitch_user_info_reload(event)
+    else if callback = "on_hls_data"
+        on_hls_data(event)
     else
         if callback = invalid
             callback = ""
@@ -839,7 +843,7 @@ function show_video_info_screen() as void
     ' Start video preload
     m.did_scale_down = false
     if m.video_quality_force = "auto"
-        m.video_quality = m.P720
+        m.video_quality = m.global.P720
     else
         m.video_quality = m.video_quality_force
     end if
@@ -874,26 +878,57 @@ end function
 ' Should only be called after info_screen is populated with video data
 ' @param load_vod_at_time boolean should a vod reuse the last seek position
 function preload_video(load_vod_at_time = true as boolean) as void
+    m.is_video_preloaded = false
     vod = m.info_screen.video_selected
-    master_playlist = ""
     if vod = invalid
         streamer = m.info_screen.streamer[1]
         ' Fallback to ID in the event the client does not have the streamer 
         ' login name
         if streamer = invalid or streamer = ""
-            streamer = ":" + m.info_screen.streamer[2]
+            streamer = m.info_screen.streamer[2]
         end if
-        master_playlist = m.twitch_api.callFunc("get_stream_url", [streamer, m.video_quality])
+        m.twitch_api.get_hls_url = [m.twitch_api.HLS_TYPE_STREAM, streamer, 
+            m.video_quality, "on_hls_data"]
     else
-        master_playlist = m.twitch_api.callFunc("get_video_url", [vod.id, m.video_quality])
+        m.twitch_api.get_hls_url = [m.twitch_api.HLS_TYPE_VIDEO, vod.id, 
+            m.video_quality, "on_hls_data"]
+    end if
+end function
+
+' Handle HLS data (a m3u8 link).
+' @param event
+function on_hls_data(event = invalid as object, load_vod_at_time = true as boolean) as void
+    vod = m.info_screen.video_selected
+    master_playlist = ""
+    headers = []
+    ' User direct Twitch HLS m3u8 URL
+    if event <> invalid and type(event.getData().result) = "roAssociativeArray"
+        hls_data = event.getData().result
+        master_playlist = hls_data.url
+        headers.append(hls_data.headers)
+    ' User Twitched proxy HLS URL
+    else
+        headers.append([
+            "X-Roku-Reserved-Dev-Id: ",
+            "Client-ID: " + m.global.secret.client_id,
+            "X-Twitched-Version: " + m.global.VERSION,
+            "Twitch-Token: " + m.twitch_api.user_token
+        ])
+        if vod = invalid
+            streamer = m.info_screen.streamer[1]
+            ' Fallback to ID in the event the client does not have the streamer 
+            ' login name
+            if streamer = invalid or streamer = ""
+                streamer = ":" + m.info_screen.streamer[2]
+            end if
+            master_playlist = m.twitch_api.callFunc("get_stream_url", [streamer, m.video_quality])
+        else
+            master_playlist = m.twitch_api.callFunc("get_video_url", [vod.id, m.video_quality])
+        end if
     end if
     ' Setup video data
     video = createObject("roSGNode", "ContentNode")
-    video.streams = [{
-        url: master_playlist,
-        bitrate: 0,
-        quality: false
-    }]
+    video.url = master_playlist
     video.adaptiveMaxStartBitrate = 800
     video.switchingStrategy = "full-adaptation"
     video.titleSeason = m.info_screen.streamer[0]
@@ -918,12 +953,7 @@ function preload_video(load_vod_at_time = true as boolean) as void
     http_agent = createObject("roHttpAgent")
     video.setHttpAgent(http_agent)
     video.httpCertificatesFile = "common:/certs/ca-bundle.crt"
-    video.httpHeaders = [
-        "X-Roku-Reserved-Dev-Id: ",
-        "Client-ID: " + m.global.secret.client_id,
-        "X-Twitched-Version: " + m.global.VERSION,
-        "Twitch-Token: " + m.twitch_api.user_token
-    ]
+    video.httpHeaders = headers
     video.httpSendClientCertificate = true
     ' Set title component
     m.video_title.findNode("title").text = video.title
@@ -947,6 +977,24 @@ function preload_video(load_vod_at_time = true as boolean) as void
     if m.ads = invalid
         m.video.control = "prebuffer"
     end if
+    m.is_video_preloaded = true
+end function
+
+' Set params for the play check timer
+function play_video(event = invalid as object, ignore_error = false as boolean, show_ads = true as boolean) as void
+    m.play_params = [event, ignore_error, show_ads]
+    m.play_check_timer.control = "start"
+end function
+
+' Check if the video is preloaded and play call do_play_video if true
+function check_play_video(event as object) as void
+    if m.play_params <> invalid and m.is_video_preloaded
+        do_play_video(m.play_params[0], m.play_params[1], m.play_params[2])
+        m.play_params = invalid
+        m.is_video_preloaded = false
+    else
+        m.play_check_timer.control = "start"
+    end if
 end function
 
 ' Show and play video
@@ -954,7 +1002,7 @@ end function
 ' @param event object field update notifier
 ' @param ignore_error boolean avoid showing an error screen
 ' @param show_ads boolean attempt to show ads before playing
-function play_video(event = invalid as object, ignore_error = false as boolean, show_ads = true as boolean) as void
+function do_play_video(event = invalid as object, ignore_error = false as boolean, show_ads = true as boolean) as void
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
     if (m.video.state = "finished" or m.video.state = "error") and not ignore_error and m.stage = m.VIDEO_PLAYER
@@ -1220,10 +1268,10 @@ end function
 
 ' Shows a video error based on the current video source and error code
 function show_video_error()
-    for each stream in m.video.content.streams
-        print stream
-    end for
-    if m.video.content <> invalid and type(m.video.content.streams) = "roArray" and m.video.content.streams.count() = 1 and len(m.video.content.streams[0].url) - len(m.video.content.streams[0].url.replace("/hls/", "")) <> 0
+    if m.video.content <> invalid
+        print m.video.content.url
+    end if
+    if m.video.content <> invalid and type(m.video.content.url, 3) = "roString" and len(m.video.content.url) - len(m.video.content.url.replace("/hls/", "")) <> 0
         error("error_stream_offline", m.video.errorCode)
     else
         error("error_video", m.video.errorCode)
@@ -1615,15 +1663,15 @@ function on_buffer_status(event as object) as void
             printl(m.INFO, "Stream underrun")
             m.last_underrun = createObject("roDateTime").asSeconds()
             m.did_scale_down = true
-            if m.video_quality = m.P1080
-                m.video_quality = m.P720
-            else if m.video_quality = m.P720
-                m.video_quality = m.P480
-            else if m.video_quality = m.P480
-                m.video_quality = m.P360
-            else if m.video_quality = m.P360
-                m.video_quality = m.P240
-            else if m.video_quality = m.P240
+            if m.video_quality = m.global.P1080
+                m.video_quality = m.global.P720
+            else if m.video_quality = m.global.P720
+                m.video_quality = m.global.P480
+            else if m.video_quality = m.global.P480
+                m.video_quality = m.global.P360
+            else if m.video_quality = m.global.P360
+                m.video_quality = m.global.P240
+            else if m.video_quality = m.global.P240
                 return
             end if
             set_saved_stage_info(m.VIDEO_PLAYER)
@@ -1633,15 +1681,15 @@ function on_buffer_status(event as object) as void
         else if type(event) = "roBoolean" and event and createObject("roDateTime").asSeconds() - m.last_upscale >= 30
             printl(m.INFO, "Increasing stream quality")
             m.last_upscale = createObject("roDateTime").asSeconds()
-            if m.video_quality = m.P240
-                m.video_quality = m.P360
-            else if m.video_quality = m.P360
-                m.video_quality = m.P480
-            else if m.video_quality = m.P480
-                m.video_quality = m.P720
-            else if m.video_quality = m.P720
-                m.video_quality = m.P1080
-            else if m.video_quality = m.P1080
+            if m.video_quality = m.global.P240
+                m.video_quality = m.global.P360
+            else if m.video_quality = m.global.P360
+                m.video_quality = m.global.P480
+            else if m.video_quality = m.global.P480
+                m.video_quality = m.global.P720
+            else if m.video_quality = m.global.P720
+                m.video_quality = m.global.P1080
+            else if m.video_quality = m.global.P1080
                 return
             end if
             set_saved_stage_info(m.VIDEO_PLAYER)
