@@ -21,6 +21,7 @@ function init() as void
     m.vods = m.top.findNode("vods_list")
     m.message = m.top.findNode("message")
     m.dialog = m.top.findNode("dialog")
+    m.loading_dialog = m.top.findNode("loading_dialog")
     ' Info Group
     m.info_group = m.top.findNode("stream_info")
     m.viewers = m.info_group.findNode("viewers")
@@ -136,6 +137,8 @@ end function
 function reset(button = 0 as integer, focus_vods = false as boolean) as void
     m.dialog.visible = false
     m.dialog.close = true
+    m.loading_dialog.visible = false
+    m.loading_dialog.close = true
     m.buttons.focusButton = button
     m.buttons.setFocus(not focus_vods)
     m.vods.setFocus(focus_vods)
@@ -367,6 +370,19 @@ function on_play_button_pressed() as void
             m.top.setField("play_selected", true)
         end if
     end if
+    show_loading_dialog()
+end function
+
+' Display the loading dialog
+' This dialog is not dismissible
+function show_loading_dialog()
+    m.optionsDialog = false
+    m.loading_dialog.title = tr("title_loading")
+    m.loading_dialog.visible = true
+    ' This is not set as the dialog on the main scene, otherwise the user would 
+    ' be able to dismiss it via the back button. This is, however, focused so
+    ' the key handler will not be able to perform any actions while it is shown
+    m.loading_dialog.setFocus(true)
 end function
 
 ' Handle vods button press
@@ -465,6 +481,7 @@ function on_video_selected(event as object) as void
         return
     end if
     m.top.setField("video_selected", video)
+    show_loading_dialog()
 end function
 
 ' Handle dialog button

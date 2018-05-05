@@ -111,7 +111,7 @@ function init() as void
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
     m.twitch_api_auth.observeField("result", "on_callback")
-    m.info_screen.observeField("play_selected", "play_video")
+    m.info_screen.observeField("play_selected", "on_info_screen_play_selected")
     m.info_screen.observeField("game_selected", "load_dynamic_grid_for_game")
     m.info_screen.observeField("video_selected", "on_vod_video_selected")
     m.info_screen.observeField("dialog", "on_info_screen_dialog")
@@ -1743,4 +1743,10 @@ function on_twitch_quality(event as object) as void
     ' Load the user token from the registry / start the main application flow
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
         "set_twitch_user_token"]
+end function
+
+' Handle the play button being selected on the info screen
+function on_info_screen_play_selected(event as object) as void
+    preload_video()
+    play_video(event)
 end function
