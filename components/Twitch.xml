@@ -141,7 +141,7 @@
     	<Timer
     		id="play_check_timer"
     		repeat="false"
-    		duration="0.001" />
+    		duration="1" />
     		
     	<Rectangle 
     		id="ad_container"

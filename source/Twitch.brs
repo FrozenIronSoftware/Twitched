@@ -140,6 +140,8 @@ function init() as void
     m.last_ad_position = 0
     m.theater_mode_enabled = false
     m.is_video_preloaded = false
+    m.load_vod_at_time = false
+    m.video_position = -1
     ' Init
     init_logging()
     init_main_menu()
@@ -879,6 +881,7 @@ end function
 ' @param load_vod_at_time boolean should a vod reuse the last seek position
 function preload_video(load_vod_at_time = true as boolean) as void
     m.is_video_preloaded = false
+    m.load_vod_at_time = load_vod_at_time
     vod = m.info_screen.video_selected
     if vod = invalid
         streamer = m.info_screen.streamer[1]
@@ -897,7 +900,7 @@ end function
 
 ' Handle HLS data (a m3u8 link).
 ' @param event
-function on_hls_data(event = invalid as object, load_vod_at_time = true as boolean) as void
+function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at_time as boolean) as void
     vod = m.info_screen.video_selected
     master_playlist = ""
     headers = []
@@ -965,9 +968,15 @@ function on_hls_data(event = invalid as object, load_vod_at_time = true as boole
             position = m.deep_link_start_time
             m.deep_link_start_time = invalid
         else
-            position = m.video.position
+            if m.video_position > -1
+                position = m.video_position
+                m.video_position = -1
+            else
+                position = m.video.position
+            end if
         end if
     end if
+    printl(m.DEBUG, "Video position: " + position.toStr())
     m.video.enableTrickPlay = (vod <> invalid)
     m.video.content = video
     m.video.seek = position
@@ -992,6 +1001,7 @@ function check_play_video(event as object) as void
         do_play_video(m.play_params[0], m.play_params[1], m.play_params[2])
         m.play_params = invalid
         m.is_video_preloaded = false
+        m.play_check_timer.control = "stop"
     else
         m.play_check_timer.control = "start"
     end if
@@ -1012,6 +1022,7 @@ function do_play_video(event = invalid as object, ignore_error = false as boolea
     ' Show ads
     if m.ads <> invalid and show_ads
         printl(m.DEBUG, "Twitch: Starting ads")
+        m.video_position = m.video.position
         save_stage_info(m.ADS_STAGE)
         m.stage = m.ADS_STAGE
         m.ads.view = m.ad_container
@@ -1040,6 +1051,7 @@ function on_ads_end(event as object) as void
     m.ad_container.visible = false
     ' Play video
     if event.getData()
+        preload_video()
         play_video(invalid, false, false)
     ' Go back to info screen
     else
@@ -1145,6 +1157,7 @@ function on_stream_info(event as object) as void
             m.info_screen.video_selected = video
         ' Play
         else
+            preload_video()
             play_video()
         end if
     end if
@@ -1660,7 +1673,6 @@ function on_buffer_status(event as object) as void
     if (type(event) = "roBoolean" or event.getData() <> invalid) and m.video_quality_force = "auto"
         ' An underrun occurred. Lower bitrate
         if (((type(event) = "roBoolean" and not event) or (type(event) = "roSGNodeEvent" and event.getData().isUnderrun))) and createObject("roDateTime").asSeconds() - m.last_underrun >= 30
-            printl(m.INFO, "Stream underrun")
             m.last_underrun = createObject("roDateTime").asSeconds()
             m.did_scale_down = true
             if m.video_quality = m.global.P1080
@@ -1674,12 +1686,12 @@ function on_buffer_status(event as object) as void
             else if m.video_quality = m.global.P240
                 return
             end if
+            printl(m.INFO, "Stream underrun")
             set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
             play_video(invalid, false, false)
         ' Increase bitrate
         else if type(event) = "roBoolean" and event and createObject("roDateTime").asSeconds() - m.last_upscale >= 30
-            printl(m.INFO, "Increasing stream quality")
             m.last_upscale = createObject("roDateTime").asSeconds()
             if m.video_quality = m.global.P240
                 m.video_quality = m.global.P360
@@ -1692,6 +1704,7 @@ function on_buffer_status(event as object) as void
             else if m.video_quality = m.global.P1080
                 return
             end if
+            printl(m.INFO, "Increasing stream quality")
             set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
             play_video(invalid, false, false)
