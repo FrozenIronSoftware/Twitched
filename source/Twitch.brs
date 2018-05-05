@@ -1022,7 +1022,11 @@ function do_play_video(event = invalid as object, ignore_error = false as boolea
     ' Show ads
     if m.ads <> invalid and show_ads
         printl(m.DEBUG, "Twitch: Starting ads")
-        m.video_position = m.video.position
+        if m.load_vod_at_time
+            m.video_position = m.video.position
+        else
+            m.video_position = 0
+        end if
         save_stage_info(m.ADS_STAGE)
         m.stage = m.ADS_STAGE
         m.ads.view = m.ad_container
