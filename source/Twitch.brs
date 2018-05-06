@@ -144,11 +144,33 @@ function init() as void
     m.video_position = -1
     ' Init
     init_logging()
+    init_analytics()
     init_main_menu()
     show_message("message_loading")
     m.stream_info_timer.control = "start"
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, 
         "on_twitch_language"]
+end function
+
+' Initialize Google Analytics
+function init_analytics() as void
+    m.global.addField("analytics", "node", false)
+    m.global.analytics = createObject("roSGNode", "Roku_Analytics:AnalyticsNode")
+    m.global.analytics.debug = false
+    m.global.analytics.init = {
+        google: {
+            trackingID: m.global.secret.google_analytics_id,
+            defaultParams: {
+                t: "event",
+                ec: "Navigation"
+            }
+        }
+    }
+    m.global.analytics.trackEvent = {
+        google: {
+            ea: "App Launch"
+        }
+    }
 end function
 
 ' Handle callback
@@ -214,6 +236,7 @@ function deep_link_or_start() as void
                     user_login: args.twitch_user_name,
                     user_id: args.twitch_user_id
                 }, "on_stream_info"]
+                track_deep_link("stream", args.twitch_user_name, args.twitch_user_id, invalid, args.deep_link_client)
                 return
             ' Extract user name from contentId
             else
@@ -224,6 +247,7 @@ function deep_link_or_start() as void
                         user_login: user_name,
                         user_id: user_name
                     }, "on_stream_info"]
+                    track_deep_link("stream", user_name, user_name, invalid, args.deep_link_client)
                     return
                 end if
             end if
@@ -241,12 +265,36 @@ function deep_link_or_start() as void
                     limit: 1,
                     id: video_id
                 }, "on_stream_info"]
+                track_deep_link("VOD", invalid, invalid, video_id, args.deep_link_client)
                 return
             end if
         end if
     end if
     ' Normal init
     m.main_menu.setFocus(true)
+end function
+
+' Send analytics data for a deep link
+' All parameters are expected to be a string or invalid
+function track_deep_link(link_type as object, streamer_name as object, streamer_id as object, video_id = invalid as object, deep_link_client = invalid as object) as void
+    deep_link_params = ""
+    if streamer_name <> invalid
+        deep_link_params += "Streamer name: " + streamer_name + " "
+    end if
+    if streamer_id <> invalid
+        deep_link_params += "Streamer ID: " + streamer_id + " "
+    end if
+    if video_id <> invalid
+        deep_link_params += "Video ID: " + video_id + " "
+    end if
+    deep_link_params += "Type: " + link_type + " "
+    deep_link_params += "Client: " + deep_link_client
+    m.global.analytics.trackEvent = {
+        google: {
+            ea: "Deep Link",
+            el: deep_link_params
+        }
+    }
 end function
 
 ' Callback function that sets a the twitch API user token read from the registry
@@ -1062,6 +1110,18 @@ function on_ads_end(event as object) as void
         m.info_screen.setFocus(true)
         m.info_screen.focus = "true"
     end if
+    track_ads_end(event.getData())
+end function
+
+' Send analytics data about the success of an ad run
+function track_ads_end(success as boolean) as void
+    m.global.analytics.trackEvent = {
+        google: {
+            ec: "Ad",
+            ea: "Ads Finished",
+            el: "Watched: " + success.toStr()
+        }
+    }
 end function
 
 ' Load the dynamic grid for a specific game

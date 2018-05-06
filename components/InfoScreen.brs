@@ -359,6 +359,8 @@ end function
 ' Handle play button
 function on_play_button_pressed() as void
     printl(m.DEBUG, "InfoScreen: Play button pressed")
+    video_type = "stream"
+    video_id = invalid
     ' Stream play
     if not is_video()
         m.top.setField("play_selected", true)
@@ -366,11 +368,37 @@ function on_play_button_pressed() as void
     else
         if m.video_selected <> invalid
             m.top.setField("video_selected", m.video_selected)
+            video_type = "VOD"
+            video_id = m.video_selected.id
         else
             m.top.setField("play_selected", true)
         end if
     end if
     show_loading_dialog()
+    track_video_play("Play Button", video_type, m.top.streamer[1], m.top.streamer[2], video_id)
+end function
+
+' Send analytics data for a video play
+' All parameters are expected to be a string or invalid
+function track_video_play(event_action as string, video_type as string, streamer_name as object, streamer_id as object, video_id = invalid as object) as void
+    deep_link_params = ""
+    if streamer_name <> invalid
+        deep_link_params += "Streamer name: " + streamer_name + " "
+    end if
+    if streamer_id <> invalid
+        deep_link_params += "Streamer ID: " + streamer_id + " "
+    end if
+    if video_id <> invalid
+        deep_link_params += "Video ID: " + video_id + " "
+    end if
+    deep_link_params += "Type: " + video_type
+    m.global.analytics.trackEvent = {
+        google: {
+            ec: "Video",
+            ea: event_action,
+            el: deep_link_params,
+        }
+    }
 end function
 
 ' Display the loading dialog
@@ -482,6 +510,7 @@ function on_video_selected(event as object) as void
     end if
     m.top.setField("video_selected", video)
     show_loading_dialog()
+    track_video_play("Video Selected", "VOD", m.top.streamer[1], m.top.streamer[2], video.id)
 end function
 
 ' Handle dialog button
