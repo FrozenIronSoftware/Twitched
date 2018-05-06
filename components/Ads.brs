@@ -95,11 +95,27 @@ function show_ads(params as object) as void
     m.ads.setNielsenGenre(genre) ' General variety
     m.ads.setContentLength(content_length) ' Seconds
     ads = m.ads.getAds()
-    if ads = invalid or ads.count() = 0
+    ads_count = 0
+    if ads <> invalid
+        ads_count = ads.count()
+    end if
+    track_ads(ads_count)
+    if ads_count = 0
         printl(m.DEBUG, "Ads: No ads loaded")
         m.top.setField("status", true)
         return
     end if
     printl(m.DEBUG, "Ads: Showing ads")
     m.top.setField("status", m.ads.showAds(ads, invalid, m.top.view))
+end function
+
+' Send analytics data about how many ads were received for playback
+function track_ads(ads_count as integer) as void
+    m.global.analytics.trackEvent = {
+        google: {
+            ec: "Ad",
+            ea: "Ads Started",
+            el: "Count: " + ads_count.toStr()
+        }
+    }
 end function
