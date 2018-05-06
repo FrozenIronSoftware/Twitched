@@ -288,7 +288,9 @@ function track_deep_link(link_type as object, streamer_name as object, streamer_
         deep_link_params += "Video ID: " + video_id + " "
     end if
     deep_link_params += "Type: " + link_type + " "
-    deep_link_params += "Client: " + deep_link_client
+    if deep_link_client <> invalid
+        deep_link_params += "Client: " + deep_link_client
+    end if
     m.global.analytics.trackEvent = {
         google: {
             ea: "Deep Link",
