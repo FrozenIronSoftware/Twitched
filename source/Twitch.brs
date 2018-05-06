@@ -930,6 +930,7 @@ end function
 ' Should only be called after info_screen is populated with video data
 ' @param load_vod_at_time boolean should a vod reuse the last seek position
 function preload_video(load_vod_at_time = true as boolean) as void
+    m.twitch_api.cancel = true
     m.is_video_preloaded = false
     m.load_vod_at_time = load_vod_at_time
     vod = m.info_screen.video_selected
