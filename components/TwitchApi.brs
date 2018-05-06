@@ -263,6 +263,8 @@ function on_http_response(event as object) as void
     json = response
     if m.parse_json
         json = parseJson(json)
+    else if event.getResponseCode() <> 200
+        json = invalid
     end if
     ' Handle internal callback
     callback = m.callback
