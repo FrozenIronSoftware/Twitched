@@ -21,6 +21,7 @@ function init() as void
     m.vods = m.top.findNode("vods_list")
     m.message = m.top.findNode("message")
     m.dialog = m.top.findNode("dialog")
+    m.loading_dialog = m.top.findNode("loading_dialog")
     ' Info Group
     m.info_group = m.top.findNode("stream_info")
     m.viewers = m.info_group.findNode("viewers")
@@ -56,6 +57,27 @@ function init() as void
     m.vods.observeField("rowItemSelected", "on_video_selected")
     m.dialog.observeField("buttonSelected", "on_dialog_button_selected")
     m.dialog.observeField("wasClosed", "on_dialog_closed")
+end function
+
+' Handle callback
+function on_callback(event as object) as void
+    callback = event.getData().callback
+    if callback = "on_user_info"
+        on_user_info(event)
+    else if callback = "on_follow_info"
+        on_follow_info(event)
+    else if callback = "on_video_data"
+        on_video_data(event)
+    else if callback = "on_follow_channel"
+        on_follow_channel(event)
+    else if callback = "on_unfollow_channel"
+        on_unfollow_channel(event)
+    else
+        if callback = invalid
+            callback = ""
+        end if
+        printl(m.WARN, "on_callback: Unhandled callback: " + callback)
+    end if
 end function
 
 ' Handle keys
@@ -115,6 +137,8 @@ end function
 function reset(button = 0 as integer, focus_vods = false as boolean) as void
     m.dialog.visible = false
     m.dialog.close = true
+    m.loading_dialog.visible = false
+    m.loading_dialog.close = true
     m.buttons.focusButton = button
     m.buttons.setFocus(not focus_vods)
     m.vods.setFocus(focus_vods)
@@ -145,8 +169,14 @@ end function
 ' Handle a button selection
 function on_button_selected(event as object) as void
     callback = m.button_callbacks[event.getData()]
-    if type(callback) = "String"
-        eval(callback + "()")
+    if callback = "on_play_button_pressed"
+        on_play_button_pressed()
+    else if callback = "on_vods_button_pressed"
+        on_vods_button_pressed()
+    else if callback = "on_streamer_button_pressed"
+        on_streamer_button_pressed()
+    else if callback = "on_game_button_pressed"
+        on_game_button_pressed()
     end if
 end function
 
@@ -266,7 +296,7 @@ end function
 function on_user_info(event as object) as void
     ' Validate
     users = event.getData().result
-    if type(users) <> "roArray" or type(users[0]) <> "roAssociativeArray"
+    if type(users) <> "roArray" or users.count() < 1 or type(users[0]) <> "roAssociativeArray"
         error(3000)
         return
     end if
@@ -286,6 +316,7 @@ function on_follow_info(event as object) as void
     ' Validate
     follows = event.getData().result
     if type(follows) <> "roArray"
+        print follows
         error(3001)
         return
     end if
@@ -339,6 +370,19 @@ function on_play_button_pressed() as void
             m.top.setField("play_selected", true)
         end if
     end if
+    show_loading_dialog()
+end function
+
+' Display the loading dialog
+' This dialog is not dismissible
+function show_loading_dialog()
+    m.optionsDialog = false
+    m.loading_dialog.title = tr("title_loading")
+    m.loading_dialog.visible = true
+    ' This is not set as the dialog on the main scene, otherwise the user would 
+    ' be able to dismiss it via the back button. This is, however, focused so
+    ' the key handler will not be able to perform any actions while it is shown
+    m.loading_dialog.setFocus(true)
 end function
 
 ' Handle vods button press
@@ -437,6 +481,7 @@ function on_video_selected(event as object) as void
         return
     end if
     m.top.setField("video_selected", video)
+    show_loading_dialog()
 end function
 
 ' Handle dialog button

@@ -9,6 +9,8 @@
 		<field id="get_communities" type="array" alwaysNotify="true" />
 		<field id="user_token" type="string" alwaysNotify="true" />
 		<field id="AUTH_URL" type="string" />
+		<field id="HLS_TYPE_STREAM" type="integer" />
+		<field id="HLS_TYPE_VIDEO" type="integer" />
 		<field id="get_link_code" type="string" alwaysNotify="true" />
 		<field id="get_link_status" type="string" alwaysNotify="true" />
 		<field id="cancel" type="boolean" alwaysNotify="true" />
@@ -22,6 +24,8 @@
 		<field id="unfollow_channel" type="array" alwaysNotify="true" />
 		<field id="get_ad_server" type="string" alwaysNotify="true" />
 		<field id="refresh_twitch_token" type="array" alwaysNotify="true" />
+		<field id="validate_token" type="array" alwaysNotify="true" />
+		<field id="get_hls_url" type="array" alwaysNotify="true" />
 		<!-- Functions -->
 		<function name="get_stream_url" />
 		<function name="get_video_url" />
@@ -29,4 +33,5 @@
 	</interface>
 	
 	<script type="text/brightscript" uri="pkg:/components/TwitchApi.brs" />
+	<script type="text/brightscript" uri="pkg:/components/HlsUtil.brs" />
 </component>

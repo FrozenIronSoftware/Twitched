@@ -53,6 +53,19 @@ function init() as void
     m.top.control = "RUN"
 end function
 
+' Handle callback
+function on_callback(event as object) as void
+    callback = event.getData().callback
+    if callback = "on_badges"
+        on_badges(event)
+    else
+        if callback = invalid
+            callback = ""
+        end if
+        printl(m.WARN, "on_callback: Unhandled callback: " + callback)
+    end if
+end function
+
 ' Initialize the socket
 function init_socket() as void
     ' Create socket
@@ -369,26 +382,47 @@ end function
 ' @return array of associative arrays
 function parse_emotes(emotes_string as string) as object
     emotes = []
-    if emotes_string = ""
+    if emotes_string = "" or emotes_string = invalid
         return emotes
     end if
-    comma_split = emotes_string.split(",")
-    for each emote_string in comma_split
-        colon_split = emote_string.split(":")
-        if colon_split.count() = 2
-            emote_id = colon_split[0]
-            dash_split = colon_split[1].split("-")
-            if dash_split.count() = 2
-                emote = {
-                    url: m.EMOTE_URL.replace("$ID", emote_id.toStr()).replace("$SIZE", "1.0"),
-                    start: dash_split[0],
-                    end: dash_split[1]
-                }
-                emotes.push(emote)
-            end if
+    emote_split = emotes_string.split("/")
+    for each emote_string in emote_split
+        id_index_split = emote_string.split(":")
+        if id_index_split.count() > 1
+            emote_id = id_index_split[0]
+            index_split = id_index_split[1].split(",")
+            for each index in index_split
+                start_end_split = index.split("-")
+                if start_end_split.count() = 2
+                    emote = {
+                        url: m.EMOTE_URL.replace("$ID", emote_id.toStr()).replace("$SIZE", "1.0"),
+                        start: val(start_end_split[0], 0),
+                        end: val(start_end_split[1], 0)
+                    }
+                    emotes.push(emote)
+                end if
+            end for
         end if
     end for
-    return emotes
+    ' Ensure emotes are ordered by their start index
+    ordered = []
+    added_size = -1
+    smallest = invalid
+    for items = 1 to emotes.count()
+        for each emote in emotes
+            if (smallest = invalid or emote.start < smallest.start) and emote.start > added_size
+                smallest = emote
+            endif
+        end for
+        if smallest <> invalid
+            ordered.push(smallest)
+            added_size = smallest.start
+            smallest = invalid
+        else
+            return emotes ' This should not happen.
+        end if
+    end for
+    return ordered
 end function
 
 ' Handle badges data

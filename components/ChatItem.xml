@@ -19,6 +19,12 @@
 			
 		<Group
 			id="badges" />
+			
+		<Group
+			id="emotes" />
+			
+		<FontUtil 
+			id="font_util"/>
 		
 	</children>
 

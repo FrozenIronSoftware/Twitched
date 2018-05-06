@@ -25,7 +25,12 @@ function main(args as dynamic) as void
 	   REG_REFRESH_TOKEN: "REFRESH_TOKEN"
 	   REG_LANGUAGUE: "LANG",
 	   REG_QUALITY: "QUALITY",
-	   VERSION: app_info.getVersion()
+	   VERSION: app_info.getVersion(),
+	   P1080: "1080p",
+	   P720: "720p",
+	   P480: "480p",
+	   P360: "360p",
+	   P240: "240p"
 	})
 	' Events
 	screen.show()
@@ -72,12 +77,6 @@ function init() as void
     m.MENU_ITEMS = ["title_popular", "title_games", "title_creative", 
         "title_communities", "title_followed", "title_search", "title_settings"]
     m.AD_INTERVAL = 20 * 60
-    ' Quality
-    m.P1080 = "1080p"
-    m.P720 = "720p"
-    m.P480 = "480p"
-    m.P360 = "360p"
-    m.P240 = "240p"
     ' Components
     m.ads = invalid
     if m.global.secret.enable_ads
@@ -94,6 +93,7 @@ function init() as void
     m.dialog = m.top.findNode("dialog")
     m.registry = m.top.findNode("registry")
     m.twitch_api = m.top.findNode("twitch_api")
+    m.twitch_api_auth = m.top.findNode("twitch_api_auth")
     m.video = m.top.findNode("video")
     m.message = m.top.findNode("status_message")
     m.link_screen = m.top.findNode("link_screen")
@@ -102,13 +102,16 @@ function init() as void
     m.video_title = m.top.findNode("video_title")
     m.chat = m.top.findNode("chat")
     m.stream_info_timer = m.top.findNode("stream_info_timer")
+    m.video_background = m.top.findNode("video_background")
+    m.play_check_timer = m.top.findNode("play_check_timer")
     ' Events
     if m.ads <> invalid
         m.ads.observeField("status", "on_ads_end")
     end if
     m.registry.observeField("result", "on_callback")
     m.twitch_api.observeField("result", "on_callback")
-    m.info_screen.observeField("play_selected", "play_video")
+    m.twitch_api_auth.observeField("result", "on_callback")
+    m.info_screen.observeField("play_selected", "on_info_screen_play_selected")
     m.info_screen.observeField("game_selected", "load_dynamic_grid_for_game")
     m.info_screen.observeField("video_selected", "on_vod_video_selected")
     m.info_screen.observeField("dialog", "on_info_screen_dialog")
@@ -126,14 +129,19 @@ function init() as void
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
+    m.play_check_timer.observeField("fire", "check_play_video")
     ' Vars
-    m.video_quality = m.P720
+    m.video_quality = m.global.P720
     m.last_underrun = 0
     m.did_scale_up = false
     m.last_upscale = 0
     m.video_quality_force = "auto"
     m.deep_link_start_time = invalid
     m.last_ad_position = 0
+    m.theater_mode_enabled = false
+    m.is_video_preloaded = false
+    m.load_vod_at_time = false
+    m.video_position = -1
     ' Init
     init_logging()
     init_main_menu()
@@ -141,6 +149,51 @@ function init() as void
     m.stream_info_timer.control = "start"
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, 
         "on_twitch_language"]
+end function
+
+' Handle callback
+function on_callback(event as object) as void
+    callback = event.getData().callback
+    if callback = "on_twitch_language"
+        on_twitch_language(event)
+    else if callback = "on_token_write"
+        on_token_write(event)
+    else if callback = "refresh_token"
+        refresh_token(event)
+    else if callback = "refresh_token_and_start"
+        refresh_token_and_start(event)
+    else if callback = "on_twitch_quality"
+        on_twitch_quality(event)
+    else if callback = "on_language_write"
+        on_language_write(event)
+    else if callback = "on_quality_write"
+        on_quality_write(event)
+    else if callback = "set_twitch_user_token"
+        set_twitch_user_token(event)
+    else if callback = "on_stream_info"
+        on_stream_info(event)
+    else if callback = "set_content_grid"
+        set_content_grid(event)
+    else if callback = "set_poster_grid"
+        set_poster_grid(event)
+    else if callback = "on_community_data"
+        on_community_data(event)
+    else if callback = "on_refreshed_token"
+        on_refreshed_token(event)
+    else if callback = "on_refreshed_token_start"
+        on_refreshed_token_start(event)
+    else if callback = "on_twitch_user_info_start"
+        on_twitch_user_info_start(event)
+    else if callback = "on_twitch_user_info_reload"
+        on_twitch_user_info_reload(event)
+    else if callback = "on_hls_data"
+        on_hls_data(event)
+    else
+        if callback = invalid
+            callback = ""
+        end if
+        printl(m.WARN, "on_callback: Unhandled callback: " + callback)
+    end if
 end function
 
 ' Parse deep links (if any) and start at the specified state or do a normal
@@ -200,6 +253,7 @@ end function
 function set_twitch_user_token(event as object) as void
     if event.getData().result = invalid or event.getData().result = ""
         m.twitch_api.user_token = ""
+        m.twitch_api_auth.user_token = ""
         m.chat.token = ""
         m.chat.user_name = "justinfan" + rnd(&h7fffffff).toStr()
         print("Using generic Twitch chat user name")
@@ -344,6 +398,7 @@ function reset(only_hide = false as boolean, reset_header_options = true as bool
     m.search_panel.visible = false
     ' Cancel any async requests
     m.twitch_api.cancel = true
+    m.twitch_api_auth.cancel = true
     ' Clear message
     show_message("")
 end function
@@ -608,6 +663,14 @@ function onKeyEvent(key as string, press as boolean) as boolean
         else if (not m.chat.visible) and press and key = "right"
             m.chat.visible = true
             m.chat.connect = m.info_screen.streamer[1]
+        ' Theater mode
+        else if (not m.theater_mode_enabled) and m.chat.visible and press and key = "right" and (m.video.state = "paused" or m.video.state = "playing")
+            m.theater_mode_enabled = true
+            resize_video_theater_mode()
+        ' Disable theater mode
+        else if m.theater_mode_enabled and press and key = "left"
+            m.theater_mode_enabled = false
+            reset_video_size()
         ' Hide chat
         else if m.chat.visible and press and key = "left"
             m.chat.visible = false
@@ -782,7 +845,7 @@ function show_video_info_screen() as void
     ' Start video preload
     m.did_scale_down = false
     if m.video_quality_force = "auto"
-        m.video_quality = m.P720
+        m.video_quality = m.global.P720
     else
         m.video_quality = m.video_quality_force
     end if
@@ -817,26 +880,58 @@ end function
 ' Should only be called after info_screen is populated with video data
 ' @param load_vod_at_time boolean should a vod reuse the last seek position
 function preload_video(load_vod_at_time = true as boolean) as void
+    m.is_video_preloaded = false
+    m.load_vod_at_time = load_vod_at_time
     vod = m.info_screen.video_selected
-    master_playlist = ""
     if vod = invalid
         streamer = m.info_screen.streamer[1]
         ' Fallback to ID in the event the client does not have the streamer 
         ' login name
         if streamer = invalid or streamer = ""
-            streamer = ":" + m.info_screen.streamer[2]
+            streamer = m.info_screen.streamer[2]
         end if
-        master_playlist = m.twitch_api.callFunc("get_stream_url", [streamer, m.video_quality])
+        m.twitch_api.get_hls_url = [m.twitch_api.HLS_TYPE_STREAM, streamer, 
+            m.video_quality, "on_hls_data"]
     else
-        master_playlist = m.twitch_api.callFunc("get_video_url", [vod.id, m.video_quality])
+        m.twitch_api.get_hls_url = [m.twitch_api.HLS_TYPE_VIDEO, vod.id, 
+            m.video_quality, "on_hls_data"]
+    end if
+end function
+
+' Handle HLS data (a m3u8 link).
+' @param event
+function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at_time as boolean) as void
+    vod = m.info_screen.video_selected
+    master_playlist = ""
+    headers = []
+    ' User direct Twitch HLS m3u8 URL
+    if event <> invalid and type(event.getData().result) = "roAssociativeArray"
+        hls_data = event.getData().result
+        master_playlist = hls_data.url
+        headers.append(hls_data.headers)
+    ' User Twitched proxy HLS URL
+    else
+        headers.append([
+            "X-Roku-Reserved-Dev-Id: ",
+            "Client-ID: " + m.global.secret.client_id,
+            "X-Twitched-Version: " + m.global.VERSION,
+            "Twitch-Token: " + m.twitch_api.user_token
+        ])
+        if vod = invalid
+            streamer = m.info_screen.streamer[1]
+            ' Fallback to ID in the event the client does not have the streamer 
+            ' login name
+            if streamer = invalid or streamer = ""
+                streamer = ":" + m.info_screen.streamer[2]
+            end if
+            master_playlist = m.twitch_api.callFunc("get_stream_url", [streamer, m.video_quality])
+        else
+            master_playlist = m.twitch_api.callFunc("get_video_url", [vod.id, m.video_quality])
+        end if
     end if
     ' Setup video data
     video = createObject("roSGNode", "ContentNode")
-    video.streams = [{
-        url: master_playlist,
-        bitrate: 0,
-        quality: false
-    }]
+    video.url = master_playlist
     video.adaptiveMaxStartBitrate = 800
     video.switchingStrategy = "full-adaptation"
     video.titleSeason = m.info_screen.streamer[0]
@@ -861,12 +956,7 @@ function preload_video(load_vod_at_time = true as boolean) as void
     http_agent = createObject("roHttpAgent")
     video.setHttpAgent(http_agent)
     video.httpCertificatesFile = "common:/certs/ca-bundle.crt"
-    video.httpHeaders = [
-        "X-Roku-Reserved-Dev-Id: ",
-        "Client-ID: " + m.global.secret.client_id,
-        "X-Twitched-Version: " + m.global.VERSION,
-        "Twitch-Token: " + m.twitch_api.user_token
-    ]
+    video.httpHeaders = headers
     video.httpSendClientCertificate = true
     ' Set title component
     m.video_title.findNode("title").text = video.title
@@ -878,9 +968,15 @@ function preload_video(load_vod_at_time = true as boolean) as void
             position = m.deep_link_start_time
             m.deep_link_start_time = invalid
         else
-            position = m.video.position
+            if m.video_position > -1
+                position = m.video_position
+                m.video_position = -1
+            else
+                position = m.video.position
+            end if
         end if
     end if
+    printl(m.DEBUG, "Video position: " + position.toStr())
     m.video.enableTrickPlay = (vod <> invalid)
     m.video.content = video
     m.video.seek = position
@@ -890,6 +986,25 @@ function preload_video(load_vod_at_time = true as boolean) as void
     if m.ads = invalid
         m.video.control = "prebuffer"
     end if
+    m.is_video_preloaded = true
+end function
+
+' Set params for the play check timer
+function play_video(event = invalid as object, ignore_error = false as boolean, show_ads = true as boolean) as void
+    m.play_params = [event, ignore_error, show_ads]
+    m.play_check_timer.control = "start"
+end function
+
+' Check if the video is preloaded and play call do_play_video if true
+function check_play_video(event as object) as void
+    if m.play_params <> invalid and m.is_video_preloaded
+        do_play_video(m.play_params[0], m.play_params[1], m.play_params[2])
+        m.play_params = invalid
+        m.is_video_preloaded = false
+        m.play_check_timer.control = "stop"
+    else
+        m.play_check_timer.control = "start"
+    end if
 end function
 
 ' Show and play video
@@ -897,7 +1012,7 @@ end function
 ' @param event object field update notifier
 ' @param ignore_error boolean avoid showing an error screen
 ' @param show_ads boolean attempt to show ads before playing
-function play_video(event = invalid as object, ignore_error = false as boolean, show_ads = true as boolean) as void
+function do_play_video(event = invalid as object, ignore_error = false as boolean, show_ads = true as boolean) as void
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
     if (m.video.state = "finished" or m.video.state = "error") and not ignore_error and m.stage = m.VIDEO_PLAYER
@@ -907,6 +1022,11 @@ function play_video(event = invalid as object, ignore_error = false as boolean, 
     ' Show ads
     if m.ads <> invalid and show_ads
         printl(m.DEBUG, "Twitch: Starting ads")
+        if m.load_vod_at_time
+            m.video_position = m.video.position
+        else
+            m.video_position = 0
+        end if
         save_stage_info(m.ADS_STAGE)
         m.stage = m.ADS_STAGE
         m.ads.view = m.ad_container
@@ -919,6 +1039,7 @@ function play_video(event = invalid as object, ignore_error = false as boolean, 
         m.stage = m.VIDEO_PLAYER
         m.video.setFocus(true)
         m.video.visible = true
+        m.video_background.visible = true
         m.video.control = "play"
     end if
 end function
@@ -934,6 +1055,7 @@ function on_ads_end(event as object) as void
     m.ad_container.visible = false
     ' Play video
     if event.getData()
+        preload_video()
         play_video(invalid, false, false)
     ' Go back to info screen
     else
@@ -982,8 +1104,8 @@ function on_dialog_button_selected(event as object) as void
             m.main_menu.setFocus(true)
         ' Confirmed - call callback
         else if event.getData() = 1
-            if m.dialog_callback <> invalid
-                eval(m.dialog_callback + "()")
+            if m.dialog_callback = "do_exit"
+                do_exit()
             else
                 print("Dialog missing callback")
             end if
@@ -1039,6 +1161,7 @@ function on_stream_info(event as object) as void
             m.info_screen.video_selected = video
         ' Play
         else
+            preload_video()
             play_video()
         end if
     end if
@@ -1132,17 +1255,40 @@ function on_video_state_change(event as object) as void
             hide_video()
             show_video_error()
         end if
+    ' Video ended
     else if event.getData() = "finished" and m.stage = m.VIDEO_PLAYER
         hide_video()
+    ' Video is buffering
+    else if event.getData() = "buffering" and m.stage = m.VIDEO_PLAYER
+        reset_video_size()
+    ' Video is playing
+    else if event.getData() = "playing" and m.stage = m.VIDEO_PLAYER
+        if m.theater_mode_enabled
+            resize_video_theater_mode()
+        end if
     end if
+end function
+
+' Resize the video to the normal fullscreen dimensions
+function reset_video_size() as void
+    m.video.width = 0
+    m.video.height = 0
+    m.video.translation = [0, 0]
+end function
+
+' Resize the video so it is small enough to fix next to the open chat window
+function resize_video_theater_mode() as void
+    m.video.width = 780
+    m.video.height = 438
+    m.video.translation = [500, 141]
 end function
 
 ' Shows a video error based on the current video source and error code
 function show_video_error()
-    for each stream in m.video.content.streams
-        print stream
-    end for
-    if m.video.content <> invalid and type(m.video.content.streams) = "roArray" and m.video.content.streams.count() = 1 and len(m.video.content.streams[0].url) - len(m.video.content.streams[0].url.replace("/hls/", "")) <> 0
+    if m.video.content <> invalid
+        print m.video.content.url
+    end if
+    if m.video.content <> invalid and type(m.video.content.url, 3) = "roString" and len(m.video.content.url) - len(m.video.content.url.replace("/hls/", "")) <> 0
         error("error_stream_offline", m.video.errorCode)
     else
         error("error_video", m.video.errorCode)
@@ -1164,6 +1310,9 @@ function hide_video(reset_info_screen = true as boolean) as void
     m.video_title.visible = false
     m.chat.visible = false
     m.chat.disconnect = true
+    m.theater_mode_enabled = false
+    m.video_background.visible = false
+    reset_video_size()
 end function
 
 ' Handle the close event for the dialog
@@ -1296,7 +1445,7 @@ function refresh_token(event as object, do_start = false as boolean) as void
     if do_start
         refresh_callback = "on_refreshed_token_start"
     end if
-    m.twitch_api.refresh_twitch_token = [
+    m.twitch_api_auth.refresh_twitch_token = [
         reg_data[m.global.REG_REFRESH_TOKEN],
         reg_data[m.global.REG_TOKEN_SCOPE],
         refresh_callback
@@ -1319,7 +1468,7 @@ function on_refreshed_token(event as object, do_start = false as boolean) as voi
         error("error_api_fail", 1016)
     else if data.error <> invalid and data.error
         printl(m.DEBUG, "Token could not be refreshed. Logging out")
-        log_out(false)
+        log_out(false, false)
     else
         printl(m.DEBUG, "Received token from refresh")
         key_val = {}
@@ -1350,9 +1499,15 @@ function on_twitch_user_info_start(event as object) as void
 end function
 
 ' Remove the token from the registry and all object that require it
-function log_out(do_show_message = true as boolean) as void
+' @param do_show_message roBoolean should a log out message be shown to the user
+' @param refresh_menu roBoolean should the menu be refreshed
+function log_out(do_show_message = true as boolean, refresh_menu = true as boolean) as void
+    m.twitch_api.cancel = true
     m.twitch_api.user_token = ""
-    load_menu_item(m.stage, true) ' Force a reload of the menu
+    m.twitch_api_auth.user_token = ""
+    if refresh_menu
+        load_menu_item(m.stage, true) ' Force a reload of the menu
+    end if
     if do_show_message
         show_message_dialog("message_log_out")
     end if
@@ -1373,13 +1528,21 @@ end function
 
 ' Add the token to objects that expect it and request user info
 function log_in(token as string, do_start = true as boolean) as void
+    old_token = ""
+    if m.twitch_api.user_token <> invalid
+        old_token = m.twitch_api.user_token
+    end if
+    printl(m.VERBOSE, "Old token: " + old_token)
+    printl(m.VERBOSE, "New token: " + token)
+    m.twitch_api.cancel = true
     m.twitch_api.user_token = token
+    m.twitch_api_auth.user_token = token
     m.chat.token = m.twitch_api.user_token
     m.info_screen.token = m.twitch_api.user_token
     if do_start
-        m.twitch_api.get_user_info = [{}, "on_twitch_user_info_start"]
+        m.twitch_api_auth.validate_token = [{}, "on_twitch_user_info_start"]
     else
-        m.twitch_api.get_user_info = [{}, "on_twitch_user_info_reload"]
+        m.twitch_api_auth.validate_token = [{}, "on_twitch_user_info_reload"]
     end if
     print("Twitch user token set")
 end function
@@ -1511,41 +1674,41 @@ end function
 ' Handle buffer status change
 ' Event can be an sgnodeevent or a boolean that represents an underrun status
 function on_buffer_status(event as object) as void
-    if (type(event) = "roBoolean" or event.getData() <> invalid) and m.video_quality_force = "auto"
+    if (type(event) = "roBoolean" or event.getData() <> invalid) and m.video_quality_force = "auto" and m.stage = m.VIDEO_PLAYER
         ' An underrun occurred. Lower bitrate
         if (((type(event) = "roBoolean" and not event) or (type(event) = "roSGNodeEvent" and event.getData().isUnderrun))) and createObject("roDateTime").asSeconds() - m.last_underrun >= 30
-            printl(m.INFO, "Stream underrun")
             m.last_underrun = createObject("roDateTime").asSeconds()
             m.did_scale_down = true
-            if m.video_quality = m.P1080
-                m.video_quality = m.P720
-            else if m.video_quality = m.P720
-                m.video_quality = m.P480
-            else if m.video_quality = m.P480
-                m.video_quality = m.P360
-            else if m.video_quality = m.P360
-                m.video_quality = m.P240
-            else if m.video_quality = m.P240
+            if m.video_quality = m.global.P1080
+                m.video_quality = m.global.P720
+            else if m.video_quality = m.global.P720
+                m.video_quality = m.global.P480
+            else if m.video_quality = m.global.P480
+                m.video_quality = m.global.P360
+            else if m.video_quality = m.global.P360
+                m.video_quality = m.global.P240
+            else if m.video_quality = m.global.P240
                 return
             end if
+            printl(m.INFO, "Stream underrun")
             set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
             play_video(invalid, false, false)
         ' Increase bitrate
         else if type(event) = "roBoolean" and event and createObject("roDateTime").asSeconds() - m.last_upscale >= 30
-            printl(m.INFO, "Increasing stream quality")
             m.last_upscale = createObject("roDateTime").asSeconds()
-            if m.video_quality = m.P240
-                m.video_quality = m.P360
-            else if m.video_quality = m.P360
-                m.video_quality = m.P480
-            else if m.video_quality = m.P480
-                m.video_quality = m.P720
-            else if m.video_quality = m.P720
-                m.video_quality = m.P1080
-            else if m.video_quality = m.P1080
+            if m.video_quality = m.global.P240
+                m.video_quality = m.global.P360
+            else if m.video_quality = m.global.P360
+                m.video_quality = m.global.P480
+            else if m.video_quality = m.global.P480
+                m.video_quality = m.global.P720
+            else if m.video_quality = m.global.P720
+                m.video_quality = m.global.P1080
+            else if m.video_quality = m.global.P1080
                 return
             end if
+            printl(m.INFO, "Increasing stream quality")
             set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
             play_video(invalid, false, false)
@@ -1580,4 +1743,10 @@ function on_twitch_quality(event as object) as void
     ' Load the user token from the registry / start the main application flow
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
         "set_twitch_user_token"]
+end function
+
+' Handle the play button being selected on the info screen
+function on_info_screen_play_selected(event as object) as void
+    preload_video()
+    play_video(event)
 end function

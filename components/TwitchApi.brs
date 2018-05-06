@@ -4,10 +4,14 @@
 function init() as void
     m.port = createObject("roMessagePort")
     ' Constants
-    m.API_KRAKEN = "https://www.twitched.org/api/twitch/kraken" ' API proxy/cacher
-    m.API_HELIX = "https://www.twitched.org/api/twitch/helix" ' API proxy/cacher
-    m.API = "https://www.twitched.org/api" ' Direct/unofficial API
+    m.API_KRAKEN = "https://www.twitched.org/api/twitch/kraken" ' Kraken endpoint
+    m.API_HELIX = "https://www.twitched.org/api/twitch/helix" ' Helix endpoint
+    m.API = "https://www.twitched.org/api" ' Twitched Root API
+    m.API_RAW = "https://api.twitch.tv/api" ' Twitch Raw (undocumented) endpoint [It's bloody raw - Gordon Ramsay]
+    m.API_USHER = "https://usher.ttvnw.net" ' Twitch Raw (undocumented) endpoint
     m.top.setField("AUTH_URL", "https://twitched.org/link") ' User web endpoint
+    m.top.HLS_TYPE_STREAM = 0
+    m.top.HLS_TYPE_VIDEO = 1
     if m.global.secret.api_kraken <> invalid
         m.API_KRAKEN = m.global.secret.api_kraken
     end if
@@ -22,15 +26,13 @@ function init() as void
     end if
     m.GAME_THUMBNAIL_URL = "https://static-cdn.jtvnw.net/ttv-boxart/{name}-{width}x{height}.jpg"
     ' HTTP Api
-    m.http = createObject("roUrlTransfer")
-    m.http.setMessagePort(m.port)
-    m.http.setCertificatesFile("common:/certs/ca-bundle.crt")
-    m.http.addHeader("X-Roku-Reserved-Dev-Id", "") ' Automatically populated
-    m.http.addHeader("Client-ID", m.global.secret.client_id)
-    m.http.addHeader("X-Twitched-Version", m.global.VERSION)
-    m.http.initClientCertificates()
+    initialize_http_agent()
+    initialize_twitch_http_agent()
     ' Variables
     m.callback = invalid
+    m.hls_url_params = invalid
+    m.parse_json = true
+    m.hls_playlist = invalid
     ' Events
     m.top.observeField("get_streams", m.port)
     m.top.observeField("get_games", m.port)
@@ -49,6 +51,8 @@ function init() as void
     m.top.observeField("unfollow_channel", m.port)
     m.top.observeField("get_ad_server", m.port)
     m.top.observeField("refresh_twitch_token", m.port)
+    m.top.observeField("validate_token", m.port)
+    m.top.observeField("get_hls_url", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -73,8 +77,8 @@ function run() as void
             else if msg.getField() = "get_link_status"
                 get_link_status(msg)
             else if msg.getField() = "cancel"
-                m.http.asyncCancel()
-                m.callback = invalid
+                initialize_http_agent()
+                initialize_twitch_http_agent()
             else if msg.getField() = "get_followed_streams"
                 get_followed_streams(msg)
             else if msg.getField() = "search"
@@ -84,7 +88,8 @@ function run() as void
             else if msg.getField() = "get_badges"
                 get_badges(msg)
             else if msg.getField() = "user_token"
-                m.http.addHeader("Twitch-Token", msg.getData())
+                initialize_http_agent()
+                initialize_twitch_http_agent()
             else if msg.getField() = "get_videos"
                 get_videos(msg)
             else if msg.getField() = "get_follows"
@@ -97,9 +102,29 @@ function run() as void
                 get_ad_server(msg)
             else if msg.getField() = "refresh_twitch_token"
                 refresh_twitch_token(msg)
+            else if msg.getField() = "validate_token"
+                validate_token(msg)
+            else if msg.getField() = "get_hls_url"
+                get_hls_url(msg)
             end if
         end if
     end while
+end function
+
+' Initialize the http agent
+function initialize_http_agent() as void
+    if m.http <> invalid
+        m.http.asyncCancel()
+        m.callback = invalid
+    end if
+    m.http = createObject("roUrlTransfer")
+    m.http.setMessagePort(m.port)
+    m.http.setCertificatesFile("common:/certs/ca-bundle.crt")
+    m.http.addHeader("X-Roku-Reserved-Dev-Id", "") ' Automatically populated
+    m.http.addHeader("Client-ID", m.global.secret.client_id)
+    m.http.addHeader("X-Twitched-Version", m.global.VERSION)
+    m.http.addHeader("Twitch-Token", m.top.user_token)
+    m.http.initClientCertificates()
 end function
 
 ' Make an API request for a list of streams
@@ -186,7 +211,7 @@ end function
 ' @param paramas array of string parameters to append in the format "key=value"
 ' @param callback callback string to embed in result
 ' @param data optional post body to send
-function request(req as string, request_url as string, params as object, callback as string, data = "" as string) as void
+function request(req as string, request_url as string, params as object, callback as string, data = "" as string, http_agent = m.http as object, parse_json = true as boolean) as void
     ' Construct URL from parameter array
     separator = "?"
     if not params.isEmpty()
@@ -197,10 +222,11 @@ function request(req as string, request_url as string, params as object, callbac
     end if
     ' Make the HTTP request
     m.callback = callback
+    m.parse_json = parse_json
     if req = "GET"
-        get(request_url)
+        get(request_url, http_agent)
     else if req = "POST"
-        'response = post(request_url, data)
+        'response = post(request_url, data, http_agent)
         ' TODO handle post
     end if
 end function
@@ -215,21 +241,54 @@ function on_http_response(event as object) as void
         return
     ' Fail
     else if event.getResponseCode() <> 200
+        url = "Unknown"
+        if m.http <> invalid and event.getSourceIdentity() = m.http.getIdentity()
+            url = m.http.getUrl()
+        else if m.http_twitch <> invalid and event.getSourceIdentity() = m.http_twitch.getIdentity()
+            url = m.http_twitch.getUrl()
+        end if
         print "HTTP request failed:"
-        print tab(2)"URL: " + m.http.getUrl()
+        print tab(2)"URL: " + url
         print tab(2)"Status Code: " + event.getResponseCode().toStr()
         print tab(2)"Reason: " + event.getFailureReason()
+        print tab(2)"Body: " + event.getString()
+        print tab(2)"Headers: "
+        for each header in event.getResponseHeadersArray()
+            print tab(4)header + ": " + event.getResponseHeadersArray()[header]
+        end for
     end if
     ' Response
     response = event.getString()
     ' Parse
-    json = parseJson(response)
-    ' Send result event
-    m.top.setField("result", {
-        callback: m.callback
-        result: json
-    })
+    json = response
+    if m.parse_json
+        json = parseJson(json)
+    end if
+    ' Handle internal callback
+    callback = m.callback
     m.callback = invalid
+    if callback <> invalid and callback.left(1) = "_"
+        event = {
+            callback: callback,
+            result: json
+        }
+        if callback = "_on_hls_access_token"
+            _on_hls_access_token(event)
+        else if callback = "_on_hls_playlist"
+            _on_hls_playlist(event)
+        else 
+            if callback = invalid
+                callback = ""
+            end if
+            print("TwitchApi: Unhandled callback: " + callback)
+        end if
+    ' Send callback event
+    else
+        m.top.setField("result", {
+            callback: callback
+            result: json
+        })
+    end if
 end function
 
 ' Make an API request for a list of communities
@@ -250,11 +309,11 @@ function get_communities(params as object) as void
 end function
 
 ' Helper function to request a URL in an asynchronous fashion
-function get(request_url as string) as void
+function get(request_url as string, http_agent as object) as void
     print "Get request to " + request_url
-    m.http.setRequest("GET")
-    m.http.setUrl(request_url)
-    m.http.asyncGetToString()
+    http_agent.setRequest("GET")
+    http_agent.setUrl(request_url)
+    http_agent.asyncGetToString()
 end function
 
 ' Get stream HLS URL for a streamer
@@ -508,4 +567,246 @@ function refresh_twitch_token(params) as void
         url_params.push("scope=" + m.http.escape(token_scope))
     end if
     request("GET", request_url, url_params, callback)
+end function
+
+' Get info for the current token
+' @param array of parameters [associative request_params, string callback]
+function validate_token(params as object) as void
+    request_url = m.API + "/link/validate"
+    request("GET", request_url, [], params.getData()[1])
+end function
+
+' Get access data and construct a URL for an HLS endpoint
+' @param event with data containing and array of parameters [integer hls_type, string stream_id, string quality, string callback]
+function get_hls_url(params as object) as void
+    passed_params = params.getData()
+    hls_url_params = {
+        type: passed_params[0],
+        id: passed_params[1],
+        quality: passed_params[2],
+        callback: passed_params[3]
+    }
+    ' If the ID is the same as the stored value use the cached data
+    if m.hls_url_params <> invalid and m.hls_url_params.id = hls_url_params.id
+        if type(m.hls_playlist, 3) = "roString"
+            m.hls_url_params = hls_url_params
+            clean_master_playlist()
+            return
+        end if
+    end if
+    m.hls_url_params = hls_url_params
+    ' Start the access token flow
+    url = invalid
+    ' Stream
+    if m.hls_url_params.type = m.top.HLS_TYPE_STREAM
+        url = m.API_RAW + "/channels/" + m.hls_url_params.id + "/access_token"
+    ' Video
+    else if m.hls_url_params.type = m.top.HLS_TYPE_VIDEO
+        url = m.API_RAW + "/vods/" + m.hls_url_params.id + "/access_token"
+    ' Error
+    else
+        m.top.setField("result", {
+            callback: m.hls_url_params.callback
+            result: invalid
+        })
+        return
+    end if
+    ' Request access token
+    request("GET", url, [], "_on_hls_access_token", "", m.http_twitch)
+end function
+
+' Handle HLS access data
+' @param event roAssociativeArray internal event (not a field event)
+function _on_hls_access_token(event as object) as void
+    data = event.result
+    ' Valid data
+    if type(data) = "roAssociativeArray"
+        url = ""
+        url_params = []
+        ' Stream
+        if m.hls_url_params.type = m.top.HLS_TYPE_STREAM
+            url = m.API_USHER + "/api/channel/hls/" + m.hls_url_params.id + ".m3u8"
+            url_params.push("player=twitched")
+            url_params.push("token=" + m.http_twitch.escape(data.token))
+            url_params.push("sig=" + m.http_twitch.escape(data.sig))
+            url_params.push("p=" + m.http_twitch.escape(rnd(&h7fffffff).toStr()))
+            url_params.push("type=any")
+            url_params.push("allow_audio_only=false")
+            url_params.push("allow_source=true")
+        ' Video
+        else if m.hls_url_params.type = m.top.HLS_TYPE_VIDEO
+            url = m.API_USHER + "/vod/" + m.hls_url_params.id + ".m3u8"
+            url_params.push("player=twitched")
+            url_params.push("nauth=" + m.http_twitch.escape(data.token))
+            url_params.push("nauthsig=" + m.http_twitch.escape(data.sig))
+            url_params.push("p=" + m.http_twitch.escape(rnd(&h7fffffff).toStr()))
+            url_params.push("type=any")
+            url_params.push("allow_audio_only=false")
+            url_params.push("allow_source=true")
+        ' Error
+        else
+            m.top.setField("result", {
+                callback: m.hls_url_params.callback
+                result: invalid
+            })
+            return
+        end if
+        ' Get Playlist
+        request("GET", url, url_params, "_on_hls_playlist", "", m.http_twitch, false)
+    ' Error
+    else
+        m.top.setField("result", {
+            callback: m.hls_url_params.callback
+            result: invalid
+        })
+    end if
+end function
+
+' Handle HLS m3u8 playlist string
+function _on_hls_playlist(event as object) as void
+    data = event.result
+    m.hls_playlist = data
+    clean_master_playlist()
+end function
+
+' Cleans the master playlist saved
+' This function saves the playlist to tmp: and sets the result to
+function clean_master_playlist() as void
+    ' Check if all paramerters are present
+    if type(m.hls_playlist, 3) <> "roString" or type(m.hls_url_params.quality, 3) <> "roString" or type(m.hls_url_params.callback) <> "roString"
+        m.top.setField("result", {
+            callback: m.hls_url_params.callback
+            result: invalid
+        })
+        return
+    end if
+    ' Clean the playlist
+    max_quality = get_max_quality_for_model(m.hls_url_params.quality)
+    new_line_regex = createObject("roRegex", chr(13) + "?" + chr(10), "")
+    lines = new_line_regex.split(m.hls_playlist)
+    master_playlist = []
+    playlists = []
+    for line_index = 0 to lines.count() - 1
+        line = lines[line_index]
+        ' Not media line
+        if instr(0, line, "#EXT-X-MEDIA") = 0
+            master_playlist.push(line)
+        ' Media line
+        else
+            ' EOF - add line but do not force add others
+            if line_index + 2 >= lines.count()
+                master_playlist.push(line)
+            ' Add line and two after it to playlists list
+            else
+                playlists.push({
+                    line_one: line,
+                    line_two: lines[line_index + 1],
+                    line_three: lines[line_index + 2]
+                })
+                line_index += 2
+            end if
+        end if
+    end for
+    ' Add compatible playlists
+    playlists_meeting_quality = []
+    for each playlist in playlists
+        if ((get_stream_fps(playlist) = 30 and is_stream_quality_or_lower(playlist, max_quality.max_30)) or (get_stream_fps(playlist) = 60 and is_stream_quality_or_lower(playlist, max_quality.max_60))) and get_stream_bitrate(playlist) <= max_quality.max_bitrate
+            playlists_meeting_quality.push(playlist)
+        end if
+    end for
+    ' If no playlists match the quality, add the smallest
+    if playlists_meeting_quality.count() = 0
+        smallest = invalid
+        for each playlist in playlists
+            if is_stream_video(playlist)
+                if smallest = invalid or get_stream_quality(smallest) > get_stream_quality(playlist)
+                    if (get_stream_fps(playlist) = 30 and is_stream_quality_or_lower(playlist, max_quality.max_30)) or (get_stream_fps(playlist) = 60 and is_stream_quality_or_lower(playlist, max_quality.max_60))
+                        if get_stream_bitrate(playlist) <= max_quality.max_bitrate
+                            smallest = playlist
+                        end if
+                    end if
+                end if
+            end if
+        end for
+        if smallest <> invalid
+            playlists_meeting_quality.push(smallest)
+        end if
+    end if
+    ' Add streams to the master playlist
+    did_add_playlist = false
+    for each playlist in playlists_meeting_quality
+        if is_stream_video(playlist)
+            master_playlist.append(stream_to_array(playlist))
+            did_add_playlist = true
+        end if
+    end for
+    ' If no playlists were added, add them all
+    if not did_add_playlist
+        for each playlist in playlists
+            master_playlist.append(stream_to_array(playlist))
+        end for
+    end if
+    ' Construct the master playlist file
+    master_playlist_string = ""
+    for each line in master_playlist
+        master_playlist_string += line + chr(13) + chr(10)
+    end for
+    ' Create directories
+    out_dir = ["playlist"]
+    if m.hls_url_params.type = m.top.HLS_TYPE_STREAM
+        out_dir.push("hls")
+    else if m.hls_url_params.type = m.top.HLS_TYPE_VIDEO
+        out_dir.push("vod")
+    else
+        m.top.setField("result", {
+            callback: m.hls_url_params.callback
+            result: invalid
+        })
+        return
+    end if
+    out_path = "tmp:/"
+    for each dir_name in out_dir
+        out_path += dir_name + "/"
+        ' Error if directory creation fails
+        if not createDirectory(out_path)
+            m.top.setField("result", {
+                callback: m.hls_url_params.callback
+                result: invalid
+            })
+            return
+        end if
+    end for
+    ' Write value
+    out_path += "playlist.m3u8"
+    if not writeAsciiFile(out_path, master_playlist_string)
+        m.top.setField("result", {
+            callback: m.hls_url_params.callback
+            result: invalid
+        })
+        return
+    end if
+    ' Set value
+    m.top.setField("result", {
+        callback: m.hls_url_params.callback
+        result: {
+            url: out_path,
+            headers: []
+        }
+    })
+end function
+
+' Initialize the http agent for direct Twitch requests
+function initialize_twitch_http_agent() as void
+    if m.http_twitch <> invalid
+        m.http_twitch.asyncCancel()
+        m.callback = invalid
+    end if
+    m.http_twitch = createObject("roUrlTransfer")
+    m.http_twitch.setMessagePort(m.port)
+    m.http_twitch.setCertificatesFile("common:/certs/ca-bundle.crt")
+    m.http_twitch.addHeader("Accept", "*/*")
+    m.http_twitch.addHeader("Client-ID", m.global.secret.client_id_twitch)
+    'm.http_twitch.addHeader("Authorization", "Bearer " + m.top.user_token) ' This endpoint may change to Helix and require a bearer token
+    m.http_twitch.addHeader("Authorization", "OAuth " + m.top.user_token)
+    m.http_twitch.initClientCertificates()
 end function
