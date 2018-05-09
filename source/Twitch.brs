@@ -960,8 +960,9 @@ function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at
         hls_data = event.getData().result
         master_playlist = hls_data.url
         headers.append(hls_data.headers)
-    ' User Twitched proxy HLS URL
+    ' Use Twitched proxy HLS URL
     else
+        printl(m.DEBUG, "Local HLS get failed. Using Twitched's HLS endpoint.")
         headers.append([
             "X-Roku-Reserved-Dev-Id: ",
             "Client-ID: " + m.global.secret.client_id,

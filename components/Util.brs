@@ -111,3 +111,13 @@ function get_regional_number_delimiter() as string
     end if
     return " "
 end function
+
+' Check if an array contains the given value
+function array_contains(search_array as object, search_item as object) as boolean
+    for each item in search_array
+        if item = search_item
+            return true
+        end if
+    end for
+    return false
+end function
