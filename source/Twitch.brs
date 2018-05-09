@@ -1376,6 +1376,9 @@ function hide_video(reset_info_screen = true as boolean) as void
     m.chat.disconnect = true
     m.theater_mode_enabled = false
     m.video_background.visible = false
+    m.play_params = invalid
+    m.play_check_timer.control = "stop"
+    m.is_video_preloaded = false
     reset_video_size()
 end function
 
