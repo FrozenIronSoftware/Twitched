@@ -581,6 +581,13 @@ end function
 ' Get access data and construct a URL for an HLS endpoint
 ' @param event with data containing and array of parameters [integer hls_type, string stream_id, string quality, string callback]
 function get_hls_url(params as object) as void
+    ' FIXME This returns invalid so the normal server handled playlist is used
+    ' instead of the local implementation. It is buggy.
+    m.top.setField("result", {
+        callback: params.getData()[3]
+        result: invalid
+    })
+    return
     passed_params = params.getData()
     hls_url_params = {
         type: passed_params[0],
