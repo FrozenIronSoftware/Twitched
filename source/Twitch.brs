@@ -1312,6 +1312,7 @@ end function
 ' Handle video state changes
 function on_video_state_change(event as object) as void
     print "Video State: " + event.getData()
+    print tab(2)"Stage: " m.stage.toStr()
     ' Handle error
     if event.getData() = "error"
         print(m.video.errorMsg)
@@ -1323,11 +1324,15 @@ function on_video_state_change(event as object) as void
     else if event.getData() = "finished" and m.stage = m.VIDEO_PLAYER
         hide_video()
     ' Video is buffering
-    else if event.getData() = "buffering" and m.stage = m.VIDEO_PLAYER
+    ' FIXME  Do not check for the video player stage here. During up/down 
+    ' scaling it could be anything.
+    else if event.getData() = "buffering"
+        printl(m.DEBUG, "Resetting video size")
         reset_video_size()
     ' Video is playing
     else if event.getData() = "playing" and m.stage = m.VIDEO_PLAYER
         if m.theater_mode_enabled
+            printl(m.DEBUG, "Setting video size to theater mode")
             resize_video_theater_mode()
         end if
     end if
