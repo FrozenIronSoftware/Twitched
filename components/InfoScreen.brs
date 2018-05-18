@@ -472,7 +472,7 @@ function on_video_data(event as object) as void
         if type(video_data) = "roAssociativeArray"
             if video_data.duration_seconds > 0
                 video = row.createChild("VodItemData")
-                video.image_url = video_data.thumbnail_url.replace("%{width}", "195").replace("%{height}", "120")
+                video.image_url = video_data.thumbnail_url.replace("%{width}", "438").replace("%{height}", "270")
                 video.title = clean(video_data.title)
                 video.id = video_data.id
                 video.duration = video_data.duration_seconds

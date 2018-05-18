@@ -8,9 +8,9 @@
 			
 		<ButtonGroup
     		id="search_buttons"
-    		minWidth="250"
-    		maxWidth="300"
-    		translation="[400,300]" />
+    		minWidth="375"
+    		maxWidth="450"
+    		translation="[600,450]" />
 
 	</children>
 

@@ -491,7 +491,7 @@ function set_poster_grid(event as object) as void
         end if
         ' Add node
         node = m.poster_grid.content.createChild("ContentNode")
-        node.hdgridposterurl = data.box_art_url.replace("{width}", "195").replace("{height}", "120")
+        node.hdgridposterurl = data.box_art_url.replace("{width}", "220").replace("{height}", "315")
         node.sdgridposterurl = data.box_art_url.replace("{width}", "80").replace("{height}", "45")
         node.shortdescriptionline1 = clean(data.name)
         if data.viewers <> invalid
@@ -527,7 +527,7 @@ function set_content_grid(event as object) as void
         ' Add node
         node = m.content_grid.content.createChild("VideoGridItemData")
         if data.thumbnail_url <> "null" and data.thumbnail_url <> ""
-            node.image_url = data.thumbnail_url.replace("{width}", "195").replace("{height}", "120")
+            node.image_url = data.thumbnail_url.replace("{width}", "390").replace("{height}", "240")
         else
             node.image_url = "pkg:/locale/default/images/poster_error.png"
         end if
@@ -544,7 +544,7 @@ function set_content_grid(event as object) as void
             viewer_string = "{0} {1} {2} {3}"
             node.description = substitute(viewer_string, pretty_number(data.viewer_count), trs("inline_viewers", data.viewer_count), tr("inline_on"), name)
             if data.game_name <> invalid
-                node.game_image = m.twitch_api.callFunc("get_game_thumbnail", [data.game_name, 80, 112])
+                node.game_image = m.twitch_api.callFunc("get_game_thumbnail", [data.game_name, 120, 168])
             end if
         end if
     end for
@@ -871,7 +871,7 @@ function show_video_info_screen() as void
         name = clean(video_item.user_name.login)
     end if
     ' Set info screen data
-    m.info_screen.preview_image = video_item.thumbnail_url.replace("%{width}", "292").replace("%{height}", "180").replace("{width}", "292").replace("{height}", "180")
+    m.info_screen.preview_image = video_item.thumbnail_url.replace("%{width}", "438").replace("%{height}", "270").replace("{width}", "438").replace("{height}", "270")
     m.info_screen.title = clean(video_item.title)
     m.info_screen.streamer = [name, video_item.user_name.login, video_item.user_id]
     m.info_screen.game = [clean(video_item.game_name), video_item.game_id]
@@ -1218,7 +1218,7 @@ function on_stream_info(event as object) as void
         ' Add VOD info
         if video_data.duration <> invalid and video_data.duration <> ""
             video = createObject("roSGNode", "VodItemData")
-            video.image_url = video_data.thumbnail_url.replace("%{width}", "195").replace("%{height}", "120")
+            video.image_url = video_data.thumbnail_url.replace("%{width}", "292").replace("%{height}", "180")
             video.title = clean(video_data.title)
             video.id = video_data.id
             video.duration = video_data.duration_seconds
@@ -1347,9 +1347,9 @@ end function
 
 ' Resize the video so it is small enough to fix next to the open chat window
 function resize_video_theater_mode() as void
-    m.video.width = 780
-    m.video.height = 438
-    m.video.translation = [500, 141]
+    m.video.width = 1170
+    m.video.height = 657
+    m.video.translation = [750, 211]
 end function
 
 ' Shows a video error based on the current video source and error code

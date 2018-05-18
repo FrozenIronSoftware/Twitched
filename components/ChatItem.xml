@@ -5,17 +5,17 @@
 		
 		<Label 
 			id="name"
-			width="400"
+			width="600"
 			wrap="false"
-			height="30"
+			height="45"
 			color="0x00ff00" />
 		
 		<Label 
 			id="message"
 			wrap="true"
-			width="400"
-			height="90"
-			translation="[0,30]" />
+			width="600"
+			height="135"
+			translation="[0,45]" />
 			
 		<Group
 			id="badges" />

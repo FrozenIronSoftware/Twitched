@@ -11,17 +11,17 @@
 			
 		<Poster
 			id="preview"
-			width="292"
-			height="180"
-			translation="[300,130]"
+			width="438"
+			height="270"
+			translation="[450,195]"
 			loadingBitmapUri="pkg:/locale/default/images/poster_loading.png"
 			failedBitmapUri="pkg:/locale/default/images/poster_error.png" />
 	
 		<Label
 			id="title"
-			width="600"
-			height="100"
-			translation="[350, 25]"
+			width="900"
+			height="150"
+			translation="[525, 37]"
 			horizAlign="center"
 			vertAlign="center"
 			wrap="true"
@@ -30,18 +30,18 @@
 
     	<ButtonGroup
     		id="buttons"
-    		minWidth="250"
-    		maxWidth="500"
-    		translation="[650,120]" />
+    		minWidth="375"
+    		maxWidth="750"
+    		translation="[975,180]" />
     		
     	<Group
     		id="stream_info"
-    		translation="[300,330]" >
+    		translation="[450,495]" >
     		
 	    	<Label
 				id="viewers"
-				width="300"
-				height="100"
+				width="450"
+				height="150"
 				translation="[0,0]"
 				horizAlign="left"
 				vertAlign="center"
@@ -51,9 +51,9 @@
 				
 			<Label
 				id="start_time"
-				width="500"
-				height="100"
-				translation="[350,0]"
+				width="750"
+				height="150"
+				translation="[525,0]"
 				horizAlign="left"
 				vertAlign="center"
 				wrap="false"
@@ -62,9 +62,9 @@
 				
 			<Label
 				id="language"
-				width="300"
-				height="100"
-				translation="[0,55]"
+				width="450"
+				height="150"
+				translation="[0,82]"
 				horizAlign="left"
 				vertAlign="center"
 				wrap="false"
@@ -73,9 +73,9 @@
 				
 			<Label
 				id="stream_type"
-				width="300"
-				height="100"
-				translation="[350,55]"
+				width="450"
+				height="150"
+				translation="[525,82]"
 				horizAlign="left"
 				vertAlign="center"
 				wrap="false"
@@ -87,20 +87,20 @@
 		<RowList
 			id="vods_list"
 			visible="false"
-			translation="[140,350]"
+			translation="[210,525]"
 			itemComponentName="VodItem"
-			itemSize="[1000,200]"
+			itemSize="[1500,300]"
 			itemSpacing="[0,0]"
 			numRows="1"
-			rowItemSize="[[195,150]]"
-			rowItemSpacing="[[20,0]]"
+			rowItemSize="[[292,225]]"
+			rowItemSpacing="[[30,0]]"
 			showRowLabel="[true]"
 			showRowCounter="[true]"
 			rowFocusAnimationStyle="floatingFocus"
 			vertFocusAnimationStyle="fixedFocusWrap"
 			rowLabelColor="0xffffff"
 			rowLabelFont="font:MediumSystemFont"
-			rowLabelOffset="[[0,20]]"
+			rowLabelOffset="[[0,30]]"
 			drawFocusFeedbackOnTop="true"
 			drawFocusFeedback="true"
 			imageWellBitmapUri=
@@ -116,9 +116,9 @@
     		
     	<Label
 			id="message"
-			width="1000"
-			height="295"
-			translation="[140, 310]"
+			width="1500"
+			height="442"
+			translation="[210, 465]"
 			horizAlign="center"
 			vertAlign="center"
 			wrap="true"
