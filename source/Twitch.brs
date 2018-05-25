@@ -34,6 +34,9 @@ function main(args as dynamic) as void
 	})
 	' Events
 	screen.show()
+	if m.global.secret.safe_area_overlay
+	   display_safe_area(scene)
+	end if
 	scene.observeField("do_exit", port)
 	' Main loop
 	while true
@@ -53,6 +56,20 @@ function main(args as dynamic) as void
 	end while
 end function
 
+' Display the safe area guidelines
+function display_safe_area(scene as object)
+        device_info = createObject("roDeviceInfo")
+        display_size = device_info.getDisplaySize()
+        poster = createObject("roSGNode", "Poster")
+        poster.height = display_size.h
+        poster.width = display_size.w
+        if poster.height = 1080
+            poster.uri = "pkg:/locale/default/images/safe_area_fhd.png"
+        else
+            poster.uri = "pkg:/locale/default/images/safe_area_hd.png"
+        end if
+        scene.appendChild(poster)
+end function
 ' Entry point for the main scene
 function init() as void
     print("Main scene started")
