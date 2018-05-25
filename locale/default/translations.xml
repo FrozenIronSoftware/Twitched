@@ -372,6 +372,14 @@
            		<source>inline_offline</source>
            		<target>offline</target>
            	</trans-unit>
+           	<trans-unit id="91">
+           		<source>title_search_history</source>
+           		<target>Recent Search History</target>
+           	</trans-unit>
+           	<trans-unit id="92">
+           		<source>title_search_history_clear</source>
+           		<target>Clear Recent Search History</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

@@ -25,6 +25,8 @@ function main(args as dynamic) as void
 	   REG_REFRESH_TOKEN: "REFRESH_TOKEN"
 	   REG_LANGUAGUE: "LANG",
 	   REG_QUALITY: "QUALITY",
+	   REG_HISTORY: "HISTORY",
+	   REG_SEARCH: "SEARCH",
 	   VERSION: app_info.getVersion(),
 	   P1080: "1080p",
 	   P720: "720p",
@@ -70,6 +72,7 @@ function display_safe_area(scene as object)
         end if
         scene.appendChild(poster)
 end function
+
 ' Entry point for the main scene
 function init() as void
     print("Main scene started")
