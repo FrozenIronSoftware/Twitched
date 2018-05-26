@@ -9,7 +9,7 @@ function init() as void
     ' Events
     m.top.observeField("get_size", m.PORT)
     ' Variables
-    m.did_fetch_server = false
+    m.cache = {}
     ' Init
     init_logging()
     ' Task init
@@ -36,11 +36,16 @@ end function
 function get_size(params as object) as void
     text = params[0]
     font_size = params[1]
-    font = m.font_registry.getDefaultFont(font_size, false, false)
+    font = m.cache[font_size.toStr()]
+    if font = invalid
+        font = m.font_registry.getDefaultFont(font_size, false, false)
+        m.cache[font_size.toStr()] = font
+    end if
     m.top.result = {
         callback: params[2],
         result: {
-            width: font.getOneLineWidth(text, 3000),
+            ' FIXME font width returned is roughly 6.5% smaller than label text
+            width: font.getOneLineWidth(text, 1920) * 1.065,
             height: font.getOneLineHeight()
         }
     }

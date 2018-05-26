@@ -58,6 +58,92 @@ function main(args as dynamic) as void
 	end while
 end function
 
+' Test function that displays a string and its calculated size
+' Rename actual main method to use
+function main2()
+    reg = CreateObject("roFontRegistry")
+    scr = CreateObject("roSGScreen")
+    port = CreateObject( "roMessagePort" )
+    scr.SetMessagePort( port )
+    usage = "Left/Right chg Face, Up/Dn chg Size, FF/REW chg Fudge Factor"
+    size = 35
+    s = "how now brown cow"
+    loop = true
+    mode = 0
+    fudge = 1.0
+   
+    while loop
+        scr.Clear(&hFF808080)
+
+        bold = Int(mode/2)
+        italic = mode mod 2
+
+        f = reg.GetDefaultFont( size, bold, italic )
+        w = Int( f.GetOneLineWidth( s, 10000 ) * fudge )
+        h = f.GetOneLineHeight()
+
+        txt = "w = "+w.ToStr()+" h = "+h.ToStr()
+
+        scr.DrawRect(100, 200, w, h, &hFFFFFFFF)
+        scr.DrawText(s, 100, 200, &h00FFFFFF, f)
+        scr.DrawText(txt, 100, 40, &h000000FF, f)
+        scr.DrawText(usage, 100, 300, &h000000FF, f)
+        scr.Finish()
+   
+        while true
+            msg = wait(0, port)
+            if msg <> invalid and type(msg) = "roUniversalControlEvent" then
+                i = msg.GetInt()
+                if i =  2 ' up
+                    size = size + 1
+                    exit while
+                else if i =  3 ' down
+                    size = size - 1
+                    exit while
+                else if i =  4 ' left
+                    mode = (mode+1) mod 4
+                    exit while
+                else if i =  5 ' right
+                    mode = (mode-1) mod 4
+                    exit while
+                else if i =  6 ' select
+                    exit while
+                else if i =  8 ' reverse
+                    fudge = fudge * 0.99
+                    exit while
+                else if i =  9 ' forward
+                    fudge = fudge * 1.01
+                    exit while
+                end if
+            end if
+        end while
+    end while
+end function
+
+' Test function that displays a label and its text's calculated size
+' Rename actual main method to use
+function main3()
+    font_registry = CreateObject("roFontRegistry")
+    font_registry.register("pkg:/resources/code_new_roman.otf")
+    screen = createObject("roSGScreen")
+    port = createObject("roMessagePort")
+    screen.setMessagePort(port)
+    scene = screen.createScene("FontTest")
+    screen.show()
+    label = scene.findNode("text")
+    label.text = "How now brown cow How now brown cow How now brown cow How now brown cow"
+    rect = scene.findNode("rect")
+    font = font_registry.getFont("Code New Roman", 35, false, false)
+    label.font = font
+    rect.width = font.getOneLineWidth(label.text, 1920) * 1.065
+    
+    while true
+        while true
+            msg = wait(0, port)
+        end while
+    end while
+end function
+
 ' Display the safe area guidelines
 function display_safe_area(scene as object)
         device_info = createObject("roDeviceInfo")

@@ -8,6 +8,8 @@ function init() as void
     m.irc = m.top.findNode("irc")
     m.chat_list = m.top.findNode("chat_list")
     m.keyboard = m.top.findNode("keyboard")
+    ' Vars
+    
     ' Init
     init_logging()
     init_chat_list()
