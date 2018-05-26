@@ -581,6 +581,13 @@ end function
 ' Get access data and construct a URL for an HLS endpoint
 ' @param event with data containing and array of parameters [integer hls_type, string stream_id, string quality, string callback]
 function get_hls_url(params as object) as void
+    ' FIXME This returns invalid so the normal server handled playlist is used
+    ' instead of the local implementation. It is buggy.
+    m.top.setField("result", {
+        callback: params.getData()[3]
+        result: invalid
+    })
+    return
     passed_params = params.getData()
     hls_url_params = {
         type: passed_params[0],
@@ -590,12 +597,14 @@ function get_hls_url(params as object) as void
     }
     ' If the ID is the same as the stored value use the cached data
     if m.hls_url_params <> invalid and m.hls_url_params.id = hls_url_params.id
+        print "Using cached playlist data. IDs: " + hls_url_params.id + " - " + hls_url_params.id
         if type(m.hls_playlist, 3) = "roString"
             m.hls_url_params = hls_url_params
             clean_master_playlist()
             return
         end if
     end if
+    m.hls_playlist = invalid
     m.hls_url_params = hls_url_params
     ' Start the access token flow
     url = invalid
@@ -675,7 +684,7 @@ end function
 ' This function saves the playlist to tmp: and sets the result to
 function clean_master_playlist() as void
     ' Check if all paramerters are present
-    if type(m.hls_playlist, 3) <> "roString" or type(m.hls_url_params.quality, 3) <> "roString" or type(m.hls_url_params.callback) <> "roString"
+    if type(m.hls_playlist, 3) <> "roString" or type(m.hls_url_params.quality, 3) <> "roString" or type(m.hls_url_params.callback, 3) <> "roString" or type(m.hls_url_params.id, 3) <> "roString"
         m.top.setField("result", {
             callback: m.hls_url_params.callback
             result: invalid
@@ -744,6 +753,7 @@ function clean_master_playlist() as void
     end for
     ' If no playlists were added, add them all
     if not did_add_playlist
+        print "Could not sort playlist, adding them all."
         for each playlist in playlists
             master_playlist.append(stream_to_array(playlist))
         end for
@@ -779,7 +789,14 @@ function clean_master_playlist() as void
         end if
     end for
     ' Write value
-    out_path += "playlist.m3u8"
+    ' The video node seems to cache playlist based on their path. Generate a new
+    ' path each time and delete the old playlist.
+    dir_contents = listDir(out_path)
+    for each file_name in dir_contents
+        print "Deleted playlist file: " + out_path + file_name
+        deleteFile(out_path + file_name)
+    end for
+    out_path += m.hls_url_params.id + m.hls_url_params.quality + ".m3u8"
     if not writeAsciiFile(out_path, master_playlist_string)
         m.top.setField("result", {
             callback: m.hls_url_params.callback
@@ -787,6 +804,7 @@ function clean_master_playlist() as void
         })
         return
     end if
+    print "Generated playlist file: " + out_path
     ' Set value
     m.top.setField("result", {
         callback: m.hls_url_params.callback
@@ -795,6 +813,17 @@ function clean_master_playlist() as void
             headers: []
         }
     })
+end function
+
+' Search a directory for a file
+' @return true if the file is found in the directory
+function directory_contains_file(search_dir as string, file_name as string) as boolean
+    for each file_name_in_dir in listDir(search_dir)
+        if file_name_in_dir = file_name
+            return true
+        end if
+    end for
+    return false
 end function
 
 ' Initialize the http agent for direct Twitch requests

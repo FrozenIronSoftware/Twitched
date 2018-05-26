@@ -960,8 +960,9 @@ function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at
         hls_data = event.getData().result
         master_playlist = hls_data.url
         headers.append(hls_data.headers)
-    ' User Twitched proxy HLS URL
+    ' Use Twitched proxy HLS URL
     else
+        printl(m.DEBUG, "Local HLS get failed. Using Twitched's HLS endpoint.")
         headers.append([
             "X-Roku-Reserved-Dev-Id: ",
             "Client-ID: " + m.global.secret.client_id,
@@ -1375,6 +1376,9 @@ function hide_video(reset_info_screen = true as boolean) as void
     m.chat.disconnect = true
     m.theater_mode_enabled = false
     m.video_background.visible = false
+    m.play_params = invalid
+    m.play_check_timer.control = "stop"
+    m.is_video_preloaded = false
     reset_video_size()
 end function
 

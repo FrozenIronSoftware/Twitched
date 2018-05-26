@@ -34,4 +34,5 @@
 	
 	<script type="text/brightscript" uri="pkg:/components/TwitchApi.brs" />
 	<script type="text/brightscript" uri="pkg:/components/HlsUtil.brs" />
+	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
 </component>
