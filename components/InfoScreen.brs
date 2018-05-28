@@ -315,6 +315,7 @@ function on_user_info(event as object) as void
 end function
 
 function on_follow_info(event as object) as void
+    printl(m.DEBUG, "InfoScreen: on_follow_info")
     ' Validate
     follows = event.getData().result
     if type(follows) <> "roArray"
