@@ -140,6 +140,9 @@ function on_history_read(event as object) as void
             end for
             item = m.history.content.createChild("ContentNode")
             item.title = "   " + tr("title_search_history_clear")
+            if type(history) = "roArray" and history.count() = 0
+                item.title = "   " + tr("message_no_data")
+            end if
         end if
     end if
 end function
