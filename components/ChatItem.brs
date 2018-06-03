@@ -111,10 +111,7 @@ end function
 
 ' Handle the size of the emote space being calculated
 function on_space_size(event as object) as void
-    size = m.message.font.size
-    if event.getData().result.width < size
-        size = event.getData().result.width
-    end if
+    size = event.getData().result.width
     m.emote_size = size
     add_emote()
 end function
@@ -163,8 +160,8 @@ function on_text_size(event as object) as void
                     emote = emotes[m.emote_index]
                     emoteComponent = m.emotes.createChild("Poster")
                     emoteComponent.uri = emote.url
-                    emoteComponent.width = m.emote_size
-                    emoteComponent.height = m.emote_size
+                    emoteComponent.loadWidth = m.emote_size
+                    'emoteComponent.height = m.emote_size
                     x = size.width
                     y = m.message.translation[1] + (fix(x / m.message.width) * size.height)
                     if fix(x / m.message.width) > 0

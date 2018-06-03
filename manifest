@@ -1,7 +1,7 @@
 title=Twitched
 major_version=1
 minor_version=5
-build_version=2587
+build_version=2593
 mm_icon_focus_hd=pkg:/locale/default/images/channel_poster_hd.png
 mm_icon_focus_sd=pkg:/locale/default/images/channel_poster_sd.png
 splash_screen_fhd=pkg:/locale/default/images/splash_fhd.png
