@@ -977,7 +977,7 @@ function show_video_info_screen() as void
         name = clean(video_item.user_name.login)
     end if
     ' Set info screen data
-    m.info_screen.preview_image = video_item.thumbnail_url.replace("%{width}", "438").replace("%{height}", "270").replace("{width}", "438").replace("{height}", "270")
+    m.info_screen.preview_image = video_item.thumbnail_url.replace("{width}", "438").replace("{height}", "270")
     m.info_screen.title = clean(video_item.title)
     m.info_screen.streamer = [name, video_item.user_name.login, video_item.user_id]
     m.info_screen.game = [clean(video_item.game_name), video_item.game_id]
@@ -1324,7 +1324,7 @@ function on_stream_info(event as object) as void
         ' Add VOD info
         if video_data.duration <> invalid and video_data.duration <> ""
             video = createObject("roSGNode", "VodItemData")
-            video.image_url = video_data.thumbnail_url.replace("%{width}", "292").replace("%{height}", "180")
+            video.image_url = video_data.thumbnail_url.replace("{width}", "292").replace("{height}", "180")
             video.title = clean(video_data.title)
             video.id = video_data.id
             video.duration = video_data.duration_seconds
