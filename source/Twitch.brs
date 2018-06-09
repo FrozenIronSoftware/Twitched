@@ -955,6 +955,10 @@ function load_dynamic_grid(game_name = "" as string, game_id = "" as string, com
         if selected_index <> invalid and selected_index < m.poster_data.count()
             ' Set data
             poster_item = m.poster_data[selected_index]
+            if type(poster_item) <> "roAssociativeArray"
+                print("load_dynamic_grid: invalid poster item")
+                return
+            end if
             game_name = poster_item.name
             ' Community
             if poster_item.is_community = true
