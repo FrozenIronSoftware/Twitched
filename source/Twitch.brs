@@ -838,6 +838,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
         end if
     ' Video
     else if m.video.hasFocus()
+        is_vod = (m.info_screen.video_selected <> invalid)
         ' Stop playing and hide video node
         if press and key = "back"
             hide_video(false)
@@ -856,7 +857,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
         else if press and key = "OK" and (m.video.state = "paused" or m.video.state = "playing")
             m.video_title.visible = not m.video_title.visible
         ' Show chat
-        else if (not m.chat.visible) and press and key = "right"
+        else if (not m.chat.visible) and press and key = "right" and not is_vod
             m.chat.visible = true
             m.chat.connect = m.info_screen.streamer[1]
         ' Theater mode
