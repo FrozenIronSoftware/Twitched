@@ -27,12 +27,15 @@ function main(args as dynamic) as void
 	   REG_QUALITY: "QUALITY",
 	   REG_HISTORY: "HISTORY",
 	   REG_SEARCH: "SEARCH",
+	   REG_HLS_LOCAL: "HLS",
 	   VERSION: app_info.getVersion(),
 	   P1080: "1080p",
 	   P720: "720p",
 	   P480: "480p",
 	   P360: "360p",
-	   P240: "240p"
+	   P240: "240p",
+	   use_local_hls_parsing: true,
+	   twitched_config: {}
 	})
 	' Events
 	screen.show()
@@ -232,6 +235,7 @@ function init() as void
     m.settings_panel.observeField("sign_out_in", "on_settings_authentication_request")
     m.settings_panel.observeField("language", "on_language_change")
     m.settings_panel.observeField("quality", "on_quality_change")
+    m.settings_panel.observeField("hls_local", "on_hls_local_change")
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
@@ -254,6 +258,38 @@ function init() as void
     init_main_menu()
     show_message("message_loading")
     m.stream_info_timer.control = "start"
+    ' Load twitched config
+    m.twitch_api.get_twitched_config = "on_twitched_config"
+end function
+
+' Handle twitched config json
+function on_twitched_config(event as object) as void
+    twitched_config = event.getData().result
+    ' Parse config
+    if type(twitched_config) <> "roAssociativeArray"
+        printl(m.DEBUG, "Failed to load Twitched config")
+        twitched_config = {}
+    else
+        printl(m.DEBUG, "Loaded Twitched config")
+    end if
+    if type(twitched_config.force_remote_hls) <> "Boolean" and type(twitched_config.force_remote_hls) <> "roBoolean"
+        printl(m.DEBUG, "Twitched config missing force_remote_hls field. Defaulting to false")
+        twitched_config.force_remote_hls = false
+    end if
+    m.global.twitched_config = twitched_config
+    ' Load registry data that does not need to be acted upon immediatly
+    m.registry.read_multi = [m.global.REG_TWITCH, [
+        m.global.REG_HLS_LOCAL
+    ], "on_registry_multi_read"]
+end function
+
+' Handle the initial multi read of the registry
+function on_registry_multi_read(event as object) as void
+    result = event.getData().result
+    if type(result) = "roAssociativeArray"
+        ' Set use local hls parsing defaults to true
+        m.global.use_local_hls_parsing = (result[m.global.REG_HLS_LOCAL] = "true" or result[m.global.REG_HLS_LOCAL] = invalid)
+    end if
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, 
         "on_twitch_language"]
 end function
@@ -316,6 +352,10 @@ function on_callback(event as object) as void
         on_twitch_user_info_reload(event)
     else if callback = "on_hls_data"
         on_hls_data(event)
+    else if callback = "on_registry_multi_read"
+        on_registry_multi_read(event)
+    else if callback = "on_twitched_config"
+        on_twitched_config(event)
     else
         if callback = invalid
             callback = ""
@@ -1927,4 +1967,19 @@ end function
 function on_info_screen_play_selected(event as object) as void
     preload_video()
     play_video(event)
+end function
+
+' Handle HLS local settings option change
+function on_hls_local_change(event as object) as void
+    enabled = event.getData()
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_HLS_LOCAL, 
+        enabled.toStr(), "on_hls_local_write"]
+    m.global.use_local_hls_parsing = enabled
+end function
+
+' Handle hls local setting being written to the registry
+function on_hls_local_write(event as object) as void
+    if not event.getData().result
+        error("error_hls_local_write_fail", 1017)
+    end if
 end function

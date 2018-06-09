@@ -380,6 +380,26 @@
            		<source>title_search_history_clear</source>
            		<target>Clear Recent Search History</target>
            	</trans-unit>
+           	<trans-unit id="93">
+           		<source>title_hls_local</source>
+           		<target>Local Stream Fetching</target>
+           	</trans-unit>
+           	<trans-unit id="94">
+           		<source>title_enabled</source>
+           		<target>Enabled</target>
+           	</trans-unit>
+           	<trans-unit id="95">
+           		<source>title_disabled</source>
+           		<target>Disabled</target>
+           	</trans-unit>
+           	<trans-unit id="96">
+           		<source>message_hls_local</source>
+           		<target>If enabled, stream data will be parsed locally instead of on Twitched's servers.</target>
+           	</trans-unit>
+           	<trans-unit id="97">
+           		<source>error_hls_local_write_fail</source>
+           		<target>Failed to have stream fetching settings.</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>

@@ -53,6 +53,7 @@ function init() as void
     m.top.observeField("refresh_twitch_token", m.port)
     m.top.observeField("validate_token", m.port)
     m.top.observeField("get_hls_url", m.port)
+    m.top.observeField("get_twitched_config", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -106,6 +107,8 @@ function run() as void
                 validate_token(msg)
             else if msg.getField() = "get_hls_url"
                 get_hls_url(msg)
+            else if msg.getField() = "get_twitched_config"
+                get_twitched_config(msg)
             end if
         end if
     end while
@@ -581,13 +584,14 @@ end function
 ' Get access data and construct a URL for an HLS endpoint
 ' @param event with data containing and array of parameters [integer hls_type, string stream_id, string quality, string callback]
 function get_hls_url(params as object) as void
-    ' FIXME This returns invalid so the normal server handled playlist is used
-    ' instead of the local implementation. It is buggy.
-    m.top.setField("result", {
-        callback: params.getData()[3]
-        result: invalid
-    })
-    return
+    ' Return invalid so the server is called for HLS playlists
+    if (not m.global.use_local_hls_parsing) or m.global.twitched_config.force_remote_hls
+        m.top.setField("result", {
+            callback: params.getData()[3]
+            result: invalid
+        })
+        return
+    end if
     passed_params = params.getData()
     hls_url_params = {
         type: passed_params[0],
@@ -840,4 +844,11 @@ function initialize_twitch_http_agent() as void
     'm.http_twitch.addHeader("Authorization", "Bearer " + m.top.user_token) ' This endpoint may change to Helix and require a bearer token
     m.http_twitch.addHeader("Authorization", "OAuth " + m.top.user_token)
     m.http_twitch.initClientCertificates()
+end function
+
+' Request Twitched's config json
+' @param params node event containing a string callback
+function get_twitched_config(params as object) as void
+    request_url = m.API + "/config"
+    request("GET", request_url, [], params.getData())
 end function

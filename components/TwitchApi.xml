@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
 <component name="TwitchApi" extends="Task">
+
 	<interface>
 		<!-- Fields -->
 		<field id="get_streams" type="array" alwaysNotify="true" />
@@ -26,6 +27,7 @@
 		<field id="refresh_twitch_token" type="array" alwaysNotify="true" />
 		<field id="validate_token" type="array" alwaysNotify="true" />
 		<field id="get_hls_url" type="array" alwaysNotify="true" />
+		<field id="get_twitched_config" type="string" alwaysNotify="true" />
 		<!-- Functions -->
 		<function name="get_stream_url" />
 		<function name="get_video_url" />
