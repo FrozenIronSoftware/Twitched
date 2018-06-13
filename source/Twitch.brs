@@ -563,9 +563,13 @@ function on_community_data(event as object) as void
             return
         end if
         ' Construct item
+        name = community.name
+        if type(community.display_name, 3) = "roString" and community.display_name <> ""
+            name = community.display_name
+        end if
         item = {
             box_art_url: community.avatarImageUrl,
-            name: community.name,
+            name: name,
             id: community.id,
             is_community: true
         }
