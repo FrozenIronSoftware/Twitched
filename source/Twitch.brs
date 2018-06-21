@@ -786,6 +786,12 @@ function onKeyEvent(key as string, press as boolean) as boolean
             m.main_menu.jumpToItem = m.SEARCH
             load_menu_item(m.SEARCH)
         end if
+    ' Search
+    else if m.search_panel.isInFocusChain() or m.stage = m.SEARCH
+        ' Back
+        if press and (key = "back" or key = "left")
+            m.main_menu.setFocus(true)
+        end if
     ' Video/Poster Grid
     else if m.content_grid.hasFocus() or m.poster_grid.hasFocus()
         ' Return to menu
@@ -901,12 +907,6 @@ function onKeyEvent(key as string, press as boolean) as boolean
     ' Settings
     else if m.settings_panel.isInFocusChain()
         ' Back - return focus to main menu
-        if press and (key = "back" or key = "left")
-            m.main_menu.setFocus(true)
-        end if
-    ' Search
-    else if m.search_panel.isInFocusChain()
-        ' Back
         if press and (key = "back" or key = "left")
             m.main_menu.setFocus(true)
         end if
