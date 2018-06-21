@@ -176,6 +176,7 @@ function init() as void
     m.LINK = 1002
     m.EXIT_DIALOG = 1003
     m.ADS_STAGE = 1004
+    m.CHECK_PLAY = 1005
     m.POPULAR = 0
     m.GAMES = 1
     m.CREATIVE = 2
@@ -682,6 +683,9 @@ function set_content_grid(event as object) as void
             node.image_url = "pkg:/locale/default/images/poster_error.png"
         end if
         node.title = clean(data.title)
+        if node.title = ""
+            node.title = tr("message_no_description")
+        end if
         name = clean(data.user_name.display_name)
         if data.user_name.display_name = invalid or len(name) <> len(data.user_name.display_name)
             name = clean(data.user_name.login)
@@ -1198,12 +1202,15 @@ end function
 
 ' Set params for the play check timer
 function play_video(event = invalid as object, ignore_error = false as boolean, show_ads = true as boolean) as void
+    save_stage_info(m.CHECK_PLAY)
+    m.stage = m.CHECK_PLAY
     m.play_params = [event, ignore_error, show_ads]
     m.play_check_timer.control = "start"
 end function
 
 ' Check if the video is preloaded and play call do_play_video if true
 function check_play_video(event as object) as void
+    set_saved_stage_info(m.CHECK_PLAY)
     if m.play_params <> invalid and m.is_video_preloaded
         do_play_video(m.play_params[0], m.play_params[1], m.play_params[2])
         m.play_params = invalid
@@ -1479,9 +1486,7 @@ function on_video_state_change(event as object) as void
     else if event.getData() = "finished" and m.stage = m.VIDEO_PLAYER
         hide_video()
     ' Video is buffering
-    ' FIXME  Do not check for the video player stage here. During up/down 
-    ' scaling it could be anything.
-    else if event.getData() = "buffering"
+    else if event.getData() = "buffering" and (m.stage = m.VIDEO_PLAYER or m.stage = m.CHECK_PLAY)
         printl(m.DEBUG, "Resetting video size")
         reset_video_size()
     ' Video is playing

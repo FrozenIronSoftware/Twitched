@@ -400,6 +400,10 @@
            		<source>error_hls_local_write_fail</source>
            		<target>Failed to have stream fetching settings.</target>
            	</trans-unit>
+           	<trans-unit id="98">
+           		<source>message_no_description</source>
+           		<target>No description provided.</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>
