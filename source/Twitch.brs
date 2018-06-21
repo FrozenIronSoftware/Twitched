@@ -1032,8 +1032,15 @@ function show_video_info_screen() as void
     ' Set info screen data
     m.info_screen.preview_image = video_item.thumbnail_url.replace("{width}", "438").replace("{height}", "270")
     m.info_screen.title = clean(video_item.title)
+    if m.info_screen.title = ""
+        m.info_screen.title = tr("message_no_description")
+    end if
     m.info_screen.streamer = [name, video_item.user_name.login, video_item.user_id]
-    m.info_screen.game = [clean(video_item.game_name), video_item.game_id]
+    game_name = clean(video_item.game_name)
+    if game_name = ""
+        game_name = tr("title_unknown")
+    end if
+    m.info_screen.game = [game_name, video_item.game_id]
     m.info_screen.viewers = video_item.viewer_count
     if video_item.view_count > 0
         m.info_screen.viewers = video_item.view_count
