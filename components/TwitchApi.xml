@@ -28,6 +28,13 @@
 		<field id="validate_token" type="array" alwaysNotify="true" />
 		<field id="get_hls_url" type="array" alwaysNotify="true" />
 		<field id="get_twitched_config" type="string" alwaysNotify="true" />
+		<field id="get_followed_communities" type="array" alwaysNotify="true" />
+		<field id="get_followed_games" type="array" alwaysNotify="true" />
+		<field id="is_following_game" type="array" alwaysNotify="true" />
+		<field id="follow_community" type="array" alwaysNotify="true" />
+		<field id="follow_game" type="array" alwaysNotify="true" />
+		<field id="unfollow_community" type="array" alwaysNotify="true" />
+		<field id="unfollow_game" type="array" alwaysNotify="true" />
 		<!-- Functions -->
 		<function name="get_stream_url" />
 		<function name="get_video_url" />

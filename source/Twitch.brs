@@ -241,6 +241,7 @@ function init() as void
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
     m.play_check_timer.observeField("fire", "check_play_video")
+    m.poster_grid.observeField("rowItemSelected", "on_poster_item_selcted")
     ' Vars
     m.video_quality = m.global.P720
     m.last_underrun = 0
@@ -253,6 +254,8 @@ function init() as void
     m.is_video_preloaded = false
     m.load_vod_at_time = false
     m.video_position = -1
+    m.temp_poster_data = invalid
+    m.dynamic_poster_id = invalid
     ' Init
     init_logging()
     init_analytics()
@@ -357,6 +360,20 @@ function on_callback(event as object) as void
         on_registry_multi_read(event)
     else if callback = "on_twitched_config"
         on_twitched_config(event)
+    else if callback = "on_followed_community_data"
+        on_followed_community_data(event)
+    else if callback = "on_followed_game_data"
+        on_followed_game_data(event)
+    else if callback = "on_game_data"
+        on_game_data(event)
+    else if callback = "set_dynamic_content_grid"
+        set_dynamic_content_grid(event)
+    else if callback = "on_dynamic_follow_game_data"
+        on_dynamic_follow_game_data(event)
+    else if callback = "on_dynamic_follow_community_data"
+        on_dynamic_follow_community_data(event)
+    else if callback = "on_dynamic_follow_status_change"
+        on_dynamic_follow_status_change(event)
     else
         if callback = invalid
             callback = ""
@@ -500,7 +517,7 @@ function load_menu_item(stage as integer, force = false as boolean) as void
     else if stage = m.GAMES
         m.poster_grid.visible = true
         show_message("message_loading")
-        m.twitch_api.get_games = [{limit: m.MAX_POSTERS}, "set_poster_grid"]
+        m.twitch_api.get_games = [{limit: m.MAX_POSTERS}, "on_game_data"]
     ' Creative
     else if stage = m.CREATIVE
         m.content_grid.visible = true
@@ -543,6 +560,17 @@ function load_menu_item(stage as integer, force = false as boolean) as void
     m.stage = stage
 end function
 
+' Handle game data being loaded and request follows
+function on_game_data(event as object) as void
+    m.temp_poster_data = event.getData().result
+    m.twitch_api.get_followed_games = [{limit: m.MAX_POSTERS}, "on_followed_game_data"]
+end function
+
+' Handle followed game data
+function on_followed_game_data(event as object) as void
+    set_poster_grid([m.temp_poster_data, event.getData().result])
+end function
+
 ' Set the poster grid to community data
 ' @param event roSGNodeMessage with data containing an associative array 
 '        {result: object twitch_get_communities response}
@@ -576,7 +604,28 @@ function on_community_data(event as object) as void
         }
         data.push(item)
     end for
-    set_poster_grid({parsed: data})
+    m.temp_poster_data = data
+    m.twitch_api.get_followed_communities = [{limit: m.MAX_POSTERS}, "on_followed_community_data"]
+end function
+
+' Handle community follows
+function on_followed_community_data(event as object) as void
+    follows_data = event.getData().result
+    follows = []
+    if type(follows_data) = "roArray"
+        for each follow in follows_data
+            if type(follow) = "roAssociativeArray" and follow.id <> invalid and follow.name <> invalid and follow.avatar_image_url <> invalid
+                follow = {
+                    box_art_url: follow.avatar_image_url,
+                    name: follow.name,
+                    id: follow.id,
+                    is_community: true
+                }
+                follows.push(follow)
+            end if
+        end for
+    end if
+    set_poster_grid([m.temp_poster_data, follows])
 end function
 
 ' Resets the stage, hiding all content components and resetting variables
@@ -610,46 +659,73 @@ end function
 function set_poster_grid(event as object) as void
     show_message("")
     ' Check for data
-    is_event = type(event) = "roSGNodeEvent"
-    is_assocarray = type(event) = "roAssociativeArray"
-    if (not is_event or type(event.getData().result) <> "roArray") and (not is_assocarray or type(event.parsed) <> "roArray")
+    posters = []
+    follows = []
+    if type(event) = "roSGNodeEvent" and type(event.getData().result) = "roArray"
+        posters = event.getData().result
+    else if type(event) = "roArray" and event.count() = 2 and type(event[0]) = "roArray"
+        posters = event[0]
+        if type(event[1]) = "roArray"
+            follows = event[1]
+        end if
+    else
         print("set_poster_grid: invalid data")
         error("error_api_fail", 1002)
         return
     end if
-    ' Check for a forced event with parsed data
-    if is_event and type(event.getData().result) = "roArray"
-        m.poster_data = event.getData().result
-    else if is_assocarray and type(event.parsed) = "roArray"
-        m.poster_data = event.parsed
-    else
-        print("set_poster_grid: invalid data")
-        error("error_api_fail", 1003)
-        return
-    end if
     ' Check if there is no data
-    if m.poster_data.count() = 0
+    if posters.count() = 0 and follows.count() = 0
         show_message("message_no_data")
     end if
     ' Set content
-    m.poster_grid.content = createObject("roSGNode","ContentNode")
-    for each data in m.poster_data
+    m.poster_data = [posters, follows]
+    content = createObject("roSGNode","ContentNode")
+    main_section = content.createChild("ContentNode")
+    main_section.title = ""
+    if not add_posters_to_section(main_section, posters, 1003, false)
+        return
+    end if
+    if follows.count() > 0
+        follow_section = content.createChild("ContentNode")
+        follow_section.title = ""
+        if not add_posters_to_section(follow_section, follows, 1004, true)
+            return
+        end if
+    end if
+    m.poster_grid.content = content
+end function
+
+' Populate a section with the posters
+function add_posters_to_section(section, posters, error_code, is_follows) as boolean
+    for each data in posters
+        ' Section title
+        if section.title = ""
+            if data.is_community = true ' Checked for true because it may not exist
+                if is_follows
+                    section.title = tr("title_followed_communities")
+                else
+                    section.title = tr("title_communities")
+                end if
+            else
+                if is_follows
+                    section.title = tr("title_followed_games")
+                else
+                    section.title = tr("title_games")
+                end if
+            end if
+        end if
         ' Validate json
         if type(data) <> "roAssociativeArray" or data.box_art_url = invalid
             print("set_poster_grid: invalid json")
-            error("error_api_fail", 1004)
-            return
+            error("error_api_fail", error_code)
+            return false
         end if
         ' Add node
-        node = m.poster_grid.content.createChild("ContentNode")
-        node.hdgridposterurl = data.box_art_url.replace("{width}", "220").replace("{height}", "315")
-        node.sdgridposterurl = data.box_art_url.replace("{width}", "80").replace("{height}", "45")
-        node.shortdescriptionline1 = clean(data.name)
-        if data.viewers <> invalid
-            viewer_string = "{0} {1}"
-            node.shortdescriptionline2 = substitute(viewer_string, pretty_number(data.viewers), trs("inline_viewers", data.viewers), "", "")
-        end if
+        node = section.createChild("PosterRowListItemData")
+        node.image_url = data.box_art_url.replace("{width}", "195").replace("{height}", "280")
+        node.title = clean(data.name)
     end for
+    return true
 end function
 
 ' Set the content grid to the data given to it
@@ -787,7 +863,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
             load_menu_item(m.SEARCH)
         end if
     ' Search
-    else if m.search_panel.isInFocusChain() or m.stage = m.SEARCH
+    else if m.search_panel.isInFocusChain()
         ' Back
         if press and (key = "back" or key = "left")
             m.main_menu.setFocus(true)
@@ -806,6 +882,10 @@ function onKeyEvent(key as string, press as boolean) as boolean
                 if m.poster_grid.content = invalid
                     load_menu_item(m.stage, true)
                 end if
+                ' Reset options
+                m.header.showOptions = false
+                m.header.optionsAvailable = false
+                m.header.optionsText = ""
             ' Return to search
             else if m.stage = m.SEARCH
                 reset()
@@ -822,17 +902,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
             ' Video grid stages
             if stage_contains_video_grid()
                 show_video_info_screen()
-            ' Poster grid stages
-            else if stage_contains_poster_grid()
-                load_dynamic_grid()
             ' Search
             else if m.stage = m.SEARCH
                 ' Info screen
                 if m.content_grid.hasFocus()
                     show_video_info_screen()
-                ' Dynamic Grid
-                else if m.poster_grid.hasFocus()
-                    load_dynamic_grid()
                 ' Unhandled
                 else
                     print "Unhandled search item OK press"
@@ -841,6 +915,12 @@ function onKeyEvent(key as string, press as boolean) as boolean
             else
                 print("Unhandled poster/video grid selection. Stage: " +  m.stage.toStr())
                 return false
+            end if
+            return true
+        ' Handle options
+        else if press and key = "options"
+            if m.stage = m.DYNAMIC_GRID
+                follow_dynamic_game_or_community()
             end if
             return true
         end if
@@ -921,6 +1001,30 @@ function onKeyEvent(key as string, press as boolean) as boolean
     return false
 end function
 
+' Use the set community or game id to follow or unfollow
+function follow_dynamic_game_or_community()
+    if type(m.dynamic_poster_id) = "roAssociativeArray" and m.dynamic_poster_id.is_following <> invalid and m.dynamic_poster_id.id <> invalid and m.dynamic_poster_id.is_community <> invalid
+        if not m.dynamic_poster_id.is_following
+            if m.dynamic_poster_id.is_community
+                m.twitch_api.follow_community = [m.dynamic_poster_id.id, "on_dynamic_follow_status_change"]
+            else
+                m.twitch_api.follow_game = [m.dynamic_poster_id.id, "on_dynamic_follow_status_change"]
+            end if
+        else
+            if m.dynamic_poster_id.is_community
+                m.twitch_api.unfollow_community = [m.dynamic_poster_id.id, "on_dynamic_follow_status_change"]
+            else
+                m.twitch_api.unfollow_game = [m.dynamic_poster_id.id, "on_dynamic_follow_status_change"]
+            end if
+        end if
+    end if
+end function
+
+' Handle a follow status update
+function on_dynamic_follow_status_change(event as object) as void
+    update_dynamic_follow_status(true)
+end function
+
 ' Hide the video info screen and focus whatever content is under it
 function hide_video_info_screen() as void
     set_saved_stage_info(m.INFO)
@@ -951,19 +1055,24 @@ function stage_contains_poster_grid() as boolean
     return m.stage = m.GAMES or m.stage = m.COMMUNITIES
 end function
 
+' Handle poster item selection
+function on_poster_item_selcted(event as object) as void
+    load_dynamic_grid()
+end function
+
 ' Load a video grid with the currently selected game/community/creative videos
 function load_dynamic_grid(game_name = "" as string, game_id = "" as string, community_id = "" as string) as void
     ' Check data
-    if type(m.poster_data) <> "roArray" and game_name = "" and game_id = "" and community_id = ""
+    if (type(m.poster_data) <> "roArray" or m.poster_data.count() < 2 or type(m.poster_data[0]) <> "roArray" or type(m.poster_data[1]) <> "roArray") and game_name = "" and game_id = "" and community_id = ""
         print("load_dynamic_grid: Invalid poster data")
         return
     end if
     ' Get selected game
     if game_name = "" and game_id = "" and community_id = ""
-        selected_index = m.poster_grid.itemSelected
-        if selected_index <> invalid and selected_index < m.poster_data.count()
+        selected_index = m.poster_grid.rowItemSelected
+        if selected_index <> invalid and selected_index.count() = 2 and selected_index[0] < m.poster_data.count()
             ' Set data
-            poster_item = m.poster_data[selected_index]
+            poster_item = m.poster_data[selected_index[0]][selected_index[1]]
             if type(poster_item) <> "roAssociativeArray"
                 print("load_dynamic_grid: invalid poster item")
                 return
@@ -993,11 +1102,21 @@ function load_dynamic_grid(game_name = "" as string, game_id = "" as string, com
     ' Load streams
     show_message("message_loading")
     m.content_grid.content = invalid
+    m.dynamic_poster_id = invalid
+    if game_id <> ""
+        m.dynamic_poster_id = {}
+        m.dynamic_poster_id.id = game_id
+        m.dynamic_poster_id.is_community = false
+    else if community_id <> ""
+        m.dynamic_poster_id = {}
+        m.dynamic_poster_id.id = community_id
+        m.dynamic_poster_id.is_community = true
+    end if
     m.twitch_api.get_streams = [{
         limit: m.MAX_VIDEOS,
         game: game_id,
         community: community_id
-    }, "set_content_grid"]
+    }, "set_dynamic_content_grid"]
     ' Title
     if m.stage = m.COMMUNITIES and community_id <> ""
         m.header.title = tr("title_community") + " " + m.ARROW + " " + game_name
@@ -1007,7 +1126,73 @@ function load_dynamic_grid(game_name = "" as string, game_id = "" as string, com
     ' Show grid
     m.content_grid.visible = true
     m.content_grid.setFocus(true)
+    ' Set stage
     m.stage = m.DYNAMIC_GRID
+end function
+
+' Set the content grid and load follow info for the active game or community
+function set_dynamic_content_grid(event as object) as void
+    set_content_grid(event)
+    update_dynamic_follow_status()
+end function
+
+' Request the staus of the current dynamic item follow
+function update_dynamic_follow_status(no_cache = false as boolean) as void
+    if m.dynamic_poster_id <> invalid and m.dynamic_poster_id.id <> "" and m.dynamic_poster_id.is_community <> invalid
+        if not m.dynamic_poster_id.is_community
+            m.twitch_api.is_following_game = [
+                {
+                    id: m.dynamic_poster_id.id,
+                    no_cache: no_cache
+                }, 
+                "on_dynamic_follow_game_data"]
+        else
+            m.twitch_api.get_followed_communities = [
+                {to_id: m.dynamic_poster_id.id},
+                "on_dynamic_follow_community_data"
+            ]
+        end if
+    end if
+end function
+
+' Handle follow data for a community on the dynamic grid
+function on_dynamic_follow_community_data(event as object) as void
+    follows = event.getData().result
+    title = ""
+    is_following = false
+    if type(follows) = "roArray" and follows.count() = 1
+        title = tr("title_unfollow")
+        is_following = true
+    else
+        title = tr("title_follow")
+        is_following = false
+    end if
+    if type(m.dynamic_poster_id) = "roAssociativeArray"
+        m.dynamic_poster_id.is_following = is_following
+    end if
+    m.header.showOptions = true
+    m.header.optionsAvailable = true
+    m.header.optionsText = title
+end function
+
+' Handle follow data for a game on the dynamic grid
+function on_dynamic_follow_game_data(event as object) as void
+    result = event.getData().result
+    title = ""
+    is_following = false
+    if type(result) = "roAssociativeArray" and result.status = true
+        title = tr("title_unfollow")
+        is_following = true
+    else
+        title = tr("title_follow")
+        is_following = false
+    end if
+    if type(m.dynamic_poster_id) = "roAssociativeArray"
+        m.dynamic_poster_id.is_following = is_following
+    end if
+    m.header.showOptions = true
+    m.header.optionsAvailable = true
+    m.header.optionsText = title
 end function
 
 ' Show the video information screen for the current item

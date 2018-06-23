@@ -49,6 +49,7 @@ end function
 
 ' Handle keys
 function onKeyEvent(key as string, press as boolean) as boolean
+    print("Search Key: " + key + " Press: " + press.toStr())
     ' Keyboard
     if m.keyboard.isInFocusChain()
         ' Move to buttons
@@ -78,6 +79,9 @@ function onKeyEvent(key as string, press as boolean) as boolean
             m.keyboard.setFocus(true)
             return true
         end if
+    ' Ignore OK events
+    else if key = "OK"
+        return true
     end if
     return false
 end function

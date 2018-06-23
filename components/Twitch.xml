@@ -46,27 +46,23 @@
     			"pkg:/locale/default/images/transparent.png"
     		drawFocusFeedbackOnTop="true" />
     	
-    	<PosterGrid
+    	<RowList
     		id="poster_grid"
+    		itemComponentName="PosterRowListItem"
     		visible="false"
     		translation="[660,232]"
-    		basePosterSize="[225,315]"
-    		itemSpacing="[15,30]"
-    		numColumns="5"
+    		itemSize="[1170,325]"
+    		itemSpacing="[0,100]"
     		numRows="2"
-    		caption1NumLines="1"
-    		caption1Color="0xffffff"
-    		caption2NumLines="1"
-    		caption2Color="0xffffff"
-    		caption2Font="font:SmallestSystemFont"
-    		captionBackgroundBitmapUri=
-    			"pkg:/locale/default/images/transparent.png"
-    		imageWellBitmapUri=
-    			"pkg:/locale/default/images/transparent.png"
-    		loadingBitmapUri=
-    			"pkg:/locale/default/images/poster_loading_vertical.png"
-    		failedBitmapUri=
-    			"pkg:/locale/default/images/poster_error_vertical.png" />
+    		rowItemSize="[[195,325]]"
+    		rowItemSpacing="[[15,0]]"
+    		showRowCounter="[false]"
+    		showRowLabel="[true]"
+    		rowLabelOffset="[[0,15]]"
+    		rowFocusAnimationStyle="floatingFocus"
+    		vertFocusAnimationStyle="fixedFocus"
+    		drawFocusFeedbackOnTop="true"
+    		imageWellBitmapUri="pkg:/locale/default/images/transparent.png" />
     	
     	<Registry 
     		id="registry" />

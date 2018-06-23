@@ -408,6 +408,22 @@
            		<source>title_unknown</source>
            		<target>Unknown</target>
            	</trans-unit>
+           	<trans-unit id="100">
+           		<source>title_followed_communities</source>
+           		<target>Followed Communities</target>
+           	</trans-unit>
+           	<trans-unit id="101">
+           		<source>title_followed_games</source>
+           		<target>Followed Games</target>
+           	</trans-unit>
+           	<trans-unit id="102">
+           		<source>title_follow</source>
+           		<target>Follow</target>
+           	</trans-unit>
+           	<trans-unit id="103">
+           		<source>title_unfollow</source>
+           		<target>Unfollow</target>
+           	</trans-unit>
         </body>
     </file>
 </xliff>
