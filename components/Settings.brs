@@ -6,13 +6,16 @@ function init() as void
     m.URL_INFO = "https://twitched.org/info"
     m.URL_OSS = "https://twitched.org/info/oss"
     m.URL_PRIVACY = "https://twitched.org/info/privacy"
-    m.INFO = 0
-    m.OSS = 1
-    m.PRIVACY = 2
-    m.LANGUAGE = 3
-    m.QUALITY = 4
-    m.LOG_IN_OUT = 5
-    m.MENU_ITEMS = ["title_info", "title_oss", "title_privacy_policy", "title_language", "title_quality", "title_log_in_out"]
+    m.INFO = 4
+    m.OSS = 5
+    m.PRIVACY = 6
+    m.LANGUAGE = 0
+    m.QUALITY = 1
+    m.LOG_IN_OUT = 3
+    m.HLS_LOCAL = 2
+    m.MENU_ITEMS = ["title_language", "title_quality", "title_hls_local", 
+        "title_log_in_out", "title_info", "title_oss", "title_privacy_policy"
+    ]
     m.LANG_JSON = parseJson(readAsciiFile("pkg:/resources/twitch_lang.json"))
     ' Components
     m.menu = m.top.findNode("menu")
@@ -21,6 +24,8 @@ function init() as void
     m.checklist = m.top.findNode("checklist")
     m.radiolist = m.top.findNode("radiolist")
     ' Init
+    m.initial_radio_list_position = m.radiolist.translation
+    m.focused_menu_item = -1
     init_menu()
     ' Events
     m.top.observeField("visible", "on_set_visible")
@@ -48,6 +53,9 @@ function onKeyEvent(key as string, press as boolean) as boolean
                 m.checklist.setFocus(true)
                 return true
             else if m.menu.itemFocused = m.QUALITY
+                m.radiolist.setFocus(true)
+                return true
+            else if m.menu.itemFocused = m.HLS_LOCAL
                 m.radiolist.setFocus(true)
                 return true
             end if
@@ -107,6 +115,9 @@ function select_menu_item(item as integer) as void
         else
             m.top.setField("sign_out_in", "in")
         end if
+    ' Local HLS
+    else if item = m.HLS_LOCAL
+        m.radiolist.setFocus(true)
     ' Unhandled
     else
         print "Unhandled setting menu item selected: " + item.toStr()
@@ -116,6 +127,7 @@ end function
 ' Focus a menu item
 function focus_menu_item(item as integer) as void
     reset()
+    m.focused_menu_item = item
     ' Info
     if item = m.INFO
         m.title.text = tr("title_info")
@@ -182,6 +194,30 @@ function focus_menu_item(item as integer) as void
         m.radiolist.visible = true
     ' Log in/out
     else if item = m.LOG_IN_OUT
+    ' Local HLS
+    else if item = m.HLS_LOCAL
+        ' Title and message
+        m.title.text = tr("title_hls_local")
+        m.message.text = tr("message_hls_local")
+        ' Clear content
+        m.radiolist.content.removeChildrenIndex(m.radiolist.content.getChildCount(), 0)
+        ' Add quality items
+        items = ["title_enabled", "title_disabled"]
+        for each state in items
+            radio_item = m.radiolist.content.createChild("ContentNode")
+            radio_item.title = tr(state)
+        end for
+        ' Set selected item
+        if m.global.use_local_hls_parsing
+            m.radiolist.checkedItem = 0
+        else
+            m.radiolist.checkedItem = 1
+        end if
+        ' Move radio list down
+        trans = m.radiolist.translation
+        m.radiolist.translation = [trans[0], trans[1] + 250]
+        ' Show radio list
+        m.radiolist.visible = true
     ' Unhandled
     else
         print "Unhandled setting menu item focused: " + item.toStr()
@@ -194,6 +230,8 @@ function reset() as void
     m.message.text = ""
     m.checklist.visible = false
     m.radiolist.visible = false
+    m.radiolist.translation = m.initial_radio_list_position
+    m.focused_menu_item = -1
 end function
 
 ' Initialize the settings panel list
@@ -221,9 +259,17 @@ end function
 
 ' Handle radiolist checked item change
 function on_checked_item_update(event as object) as void
-    if event.getData() = 0
-        m.top.setField("quality", "auto")
-    else if event.getData() > -1
-        m.top.setField("quality", m.radiolist.content.getChild(event.getData()).title)
+    if m.focused_menu_item = m.QUALITY
+        if event.getData() = 0
+            m.top.setField("quality", "auto")
+        else if event.getData() > -1
+            m.top.setField("quality", m.radiolist.content.getChild(event.getData()).title)
+        end if
+    else if m.focused_menu_item = m.HLS_LOCAL
+        if event.getData() = 0
+            m.top.setField("hls_local", true)
+        else
+            m.top.setField("hls_local", false)
+        end if
     end if
 end function

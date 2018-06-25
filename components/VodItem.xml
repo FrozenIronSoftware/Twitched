@@ -5,17 +5,17 @@
 	
 		<Poster 
 			id="image"
-			width="195"
-			height="120"
+			width="292"
+			height="180"
 			loadingBitmapUri="pkg:/locale/default/images/poster_loading.png"
     		failedBitmapUri="pkg:/locale/default/images/poster_error.png" />
 		
 		<ScrollingLabel 
 			id="title"
-			height="30"
-			maxWidth="195"
+			height="45"
+			maxWidth="292"
 			color="0xffffff"
-			translation="[0,130]"
+			translation="[0,195]"
 			font="font:SmallSystemFont" />
 		
 	</children>

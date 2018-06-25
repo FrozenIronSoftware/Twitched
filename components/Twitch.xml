@@ -6,8 +6,8 @@
 		<Rectangle
 			id="background"
 			color="0x19171c"
-			width="1280"
-			height="720" />
+			width="1920"
+			height="1080" />
 
 		<Overhang
 			id="header"
@@ -20,8 +20,8 @@
 
     	<LabelList
     		id="main_menu"
-    		translation="[90,155]"
-    		itemSize="[300,48]"
+    		translation="[135,232]"
+    		itemSize="[450,72]"
     		focusBitmapUri="pkg:/locale/default/images/list_selection.9.png"
     		focusBitmapBlendColor="0x6441a4"
     		focusFootprintBitmapUri=
@@ -37,36 +37,32 @@
     		id="content_grid"
     		itemComponentName="VideoGridItem"
     		visible="false"
-    		translation="[410,155]"
-    		itemSize="[260,250]"
-    		itemSpacing="[20,40]"
+    		translation="[615,232]"
+    		itemSize="[390,375]"
+    		itemSpacing="[30,60]"
     		numColumns="3"
     		numRows="2"
     		imageWellBitmapUri=
     			"pkg:/locale/default/images/transparent.png"
     		drawFocusFeedbackOnTop="true" />
     	
-    	<PosterGrid
+    	<RowList
     		id="poster_grid"
+    		itemComponentName="PosterRowListItem"
     		visible="false"
-    		translation="[440,155]"
-    		basePosterSize="[150,210]"
-    		itemSpacing="[10,20]"
-    		numColumns="5"
+    		translation="[660,232]"
+    		itemSize="[1170,325]"
+    		itemSpacing="[0,100]"
     		numRows="2"
-    		caption1NumLines="1"
-    		caption1Color="0xffffff"
-    		caption2NumLines="1"
-    		caption2Color="0xffffff"
-    		caption2Font="font:SmallestSystemFont"
-    		captionBackgroundBitmapUri=
-    			"pkg:/locale/default/images/transparent.png"
-    		imageWellBitmapUri=
-    			"pkg:/locale/default/images/transparent.png"
-    		loadingBitmapUri=
-    			"pkg:/locale/default/images/poster_loading_vertical.png"
-    		failedBitmapUri=
-    			"pkg:/locale/default/images/poster_error_vertical.png" />
+    		rowItemSize="[[195,325]]"
+    		rowItemSpacing="[[15,0]]"
+    		showRowCounter="[false]"
+    		showRowLabel="[true]"
+    		rowLabelOffset="[[0,15]]"
+    		rowFocusAnimationStyle="floatingFocus"
+    		vertFocusAnimationStyle="fixedFocus"
+    		drawFocusFeedbackOnTop="true"
+    		imageWellBitmapUri="pkg:/locale/default/images/transparent.png" />
     	
     	<Registry 
     		id="registry" />
@@ -79,9 +75,9 @@
     		
     	<Label
     		id="status_message"
-    		width="800"
-    		height="100"
-    		translation="[440, 280]"
+    		width="1200"
+    		height="150"
+    		translation="[660, 420]"
     		horizAlign="center"
 			vertAlign="center"
 			wrap="true"
@@ -91,25 +87,25 @@
 			
 		<Settings
 			id="settings"
-			translation="[440,155]"
+			translation="[660,232]"
 			visible="false" />
 			
 		<Search
 			id="search"
 			visible="false"
-			translation="[440,155]" />
+			translation="[660,232]" />
 			
 		<InfoScreen
     		id="info_screen"
     		visible="false"
-    		translation="[0,115]" />
+    		translation="[0,172]" />
     		
     	<Rectangle 
     		id="video_background"
     		color="0x000000"
     		visible="false"
-    		width="1280"
-    		height="720" />
+    		width="1920"
+    		height="1080" />
 			
 		<Video 
     		id="video"
@@ -127,7 +123,7 @@
     	<LinkScreen
 			id="link_screen"
 			visible="false"
-			translation="[0, 115]" />
+			translation="[0, 172]" />
 			
 		<Dialog 
     		id="dialog"
@@ -147,14 +143,14 @@
     		id="ad_container"
     		color="0x000000"
     		visible="false"
-    		width="1280"
-    		height="720">
+    		width="1920"
+    		height="1080">
     		<Label
     			id="ad_loading_message"
     			font="font:MediumBoldSystemFont"
     			color="0xffffff"
-	    		width="1280"
-	    		height="720"
+	    		width="1920"
+	    		height="1080"
 	    		translation="[0, 0]"
 	    		horizAlign="center"
 	    		vertAlign="center"

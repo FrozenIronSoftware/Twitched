@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
+<!-- Copyright (C) 2018 Frozen Iron Software LLC. All Rights Reserved. -->
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
     <file datatype="x-brs" original="source/source/Twitch.brs" 
-    	source-language="en-US" target-language="en-US">
+    	source-language="en-US" target-language="es-ES">
         <body>
             <trans-unit id="0">
             	<source>title_featured</source>
-            	<target>Featured</target>
+            	<target>Destacado</target>
            	</trans-unit>
            	<trans-unit id="1">
             	<source>title_games</source>
-            	<target>Games</target>
+            	<target>Juegos</target>
            	</trans-unit>
            	<trans-unit id="2">
             	<source>title_creative</source>
-            	<target>Creative</target>
+            	<target>Creativo</target>
            	</trans-unit>
            	<trans-unit id="3">
             	<source>title_communities</source>
-            	<target>Communities</target>
+            	<target>Comunidades</target>
            	</trans-unit>
            	<trans-unit id="4">
             	<source>title_popular</source>
@@ -26,31 +26,31 @@
            	</trans-unit>
            	<trans-unit id="5">
             	<source>title_followed</source>
-            	<target>Followed</target>
+            	<target>Seguido</target>
            	</trans-unit>
            	<trans-unit id="6">
            		<source>error_api_fail</source>
-           		<target>Failed to connect to the API server.</target>
+           		<target>Error al conectarse al servidor API.</target>
            	</trans-unit>
            	<trans-unit id="6">
            		<source>title_community</source>
-           		<target>Community</target>
+           		<target>Comunidad</target>
            	</trans-unit>
            	<trans-unit id="7">
            		<source>button_play</source>
-           		<target>Play</target>
+           		<target>Jugar</target>
            	</trans-unit>
            	<trans-unit id="8">
            		<source>title_stream</source>
-           		<target>Stream</target>
+           		<target>Transmisión</target>
            	</trans-unit>
            	<trans-unit id="9">
            		<source>prefix_streamer</source>
-           		<target>Streamer</target>
+           		<target>Emisor</target>
            	</trans-unit>
            	<trans-unit id="10">
            		<source>prefix_game</source>
-           		<target>Game</target>
+           		<target>Juego</target>
            	</trans-unit>
            	<trans-unit id="11">
            		<source>title_error</source>
@@ -58,39 +58,39 @@
            	</trans-unit>
            	<trans-unit id="12">
            		<source>title_error_code</source>
-           		<target>Error Code</target>
+           		<target>Código de Error</target>
            	</trans-unit>
            	<trans-unit id="13">
            		<source>title_viewers</source>
-           		<target>Viewers</target>
+           		<target>Espectadores</target>
            	</trans-unit>
            	<trans-unit id="14">
            		<source>title_language</source>
-           		<target>Language</target>
+           		<target>Idioma</target>
            	</trans-unit>
            	<trans-unit id="15">
            		<source>title_uptime</source>
-           		<target>Uptime</target>
+           		<target>Tiempo de Actividad</target>
            	</trans-unit>
            	<trans-unit id="16">
            		<source>title_stream_type</source>
-           		<target>Type</target>
+           		<target>Tipo</target>
            	</trans-unit>
            	<trans-unit id="17">
            		<source>inline_viewers_singular</source>
-           		<target>viewer</target>
+           		<target>espectador</target>
            	</trans-unit>
            	<trans-unit id="18">
            		<source>inline_viewers_plural</source>
-           		<target>viewers</target>
+           		<target>espectadores</target>
            	</trans-unit>
            	<trans-unit id="19">
            		<source>inline_hours_singular</source>
-           		<target>hour</target>
+           		<target>hora</target>
            	</trans-unit>
            	<trans-unit id="20">
            		<source>inline_hours_plural</source>
-           		<target>hours</target>
+           		<target>horas</target>
            	</trans-unit>
            	<trans-unit id="21">
            		<source>inline_minutes_singular</source>
@@ -98,103 +98,103 @@
            	</trans-unit>
            	<trans-unit id="22">
            		<source>inline_minutes_plural</source>
-           		<target>minutes</target>
+           		<target>minuto</target>
            	</trans-unit>
            	<trans-unit id="23">
            		<source>title_exit_confirm</source>
-           		<target>Exit</target>
+           		<target>Salida</target>
            	</trans-unit>
            	<trans-unit id="24">
            		<source>message_exit_confirm</source>
-           		<target>Would you like to exit Twitched?</target>
+           		<target>¿Te gustaría salir de Twitched?</target>
            	</trans-unit>
            	<trans-unit id="25">
            		<source>button_cancel</source>
-           		<target>Cancel</target>
+           		<target>Cancelar</target>
            	</trans-unit>
            	<trans-unit id="26">
            		<source>button_confirm</source>
-           		<target>Confirm</target>
+           		<target>Confirmar</target>
            	</trans-unit>
            	<trans-unit id="27">
            		<source>title_loading_stream</source>
-           		<target>Loading Stream</target>
+           		<target>Cargando Transmisión</target>
            	</trans-unit>
            	<trans-unit id="28">
            		<source>error_stream_not_found</source>
-           		<target>The stream is not live or does not exist.</target>
+           		<target>La transmisión no es en vivo o no existe.</target>
            	</trans-unit>
            	<trans-unit id="29">
            		<source>error_deep_link_invalid</source>
-           		<target>Could not launch content: Invalid deep link.</target>
+           		<target>No se pudo iniciar el contenido.</target>
            	</trans-unit>
            	<trans-unit id="30">
            		<source>message_loading</source>
-           		<target>Loading</target>
+           		<target>Cargando</target>
            	</trans-unit>
            	<trans-unit id="31">
            		<source>message_web_link</source>
-           		<target>Press OK on your Roku remote to begin linking a Twitch account.</target>
+           		<target>Presiona OK en tu control remoto Roku para comenzar a vincular una cuenta Twitch.</target>
            	</trans-unit>
            	<trans-unit id="32">
            		<source>error_link_canceled</source>
-           		<target>Account linking was canceled.</target>
+           		<target>El enlace de la cuenta fue cancelado.</target>
            	</trans-unit>
            	<trans-unit id="33">
            		<source>title_link</source>
-           		<target>Link your Twitch Account</target>
+           		<target>Enlace su Cuenta Twitch</target>
            	</trans-unit>
            	<trans-unit id="34">
            		<source>message_link</source>
-           		<target>On a web browser, go to {1} and enter the following code:</target>
+           		<target>En un navegador web, vaya a {1} e ingrese el siguiente código:</target>
            	</trans-unit>
            	<trans-unit id="35">
            		<source>message_link_close</source>
-           		<target>This screen will automatically close once the link has completed successfully.</target>
+           		<target>Esta pantalla se cerrará automáticamente una vez que el enlace se haya completado con éxito.</target>
            	</trans-unit>
            	<trans-unit id="36">
            		<source>error_link_failed</source>
-           		<target>Account linking failed.</target>
+           		<target>Falló el enlace de la cuenta.</target>
            	</trans-unit>
            	<trans-unit id="37">
            		<source>error_token_write_fail</source>
-           		<target>Failed to save authentication data.</target>
+           		<target>Error al guardar los datos de autenticación.</target>
            	</trans-unit>
            	<trans-unit id="38">
            		<source>error_link_timeout</source>
-           		<target>Account linking timed out.</target>
+           		<target>Se agotó el tiempo de espera de la cuenta.</target>
            	</trans-unit>
            	<trans-unit id="39">
            		<source>message_link_success</source>
-           		<target>A Twitch account has been linked.</target>
+           		<target>Se ha vinculado una cuenta de Twitch.</target>
            	</trans-unit>
            	<trans-unit id="40">
            		<source>title_info</source>
-           		<target>Info</target>
+           		<target>Información</target>
            	</trans-unit>
            	<trans-unit id="41">
            		<source>error_video</source>
-           		<target>An error occurred while playing a video.</target>
+           		<target>Se produjo un error al reproducir un video.</target>
            	</trans-unit>
            	<trans-unit id="42">
            		<source>title_search</source>
-           		<target>Search</target>
+           		<target>Buscar</target>
            	</trans-unit>
            	<trans-unit id="43">
            		<source>title_settings</source>
-           		<target>Settings</target>
+           		<target>Configuraciones</target>
            	</trans-unit>
            	<trans-unit id="44">
            		<source>title_info</source>
-           		<target>Info</target>
+           		<target>Información</target>
            	</trans-unit>
            	<trans-unit id="45">
            		<source>title_oss</source>
-           		<target>Open Source Software</target>
+           		<target>Software de Código Abierto</target>
            	</trans-unit>
            	<trans-unit id="46">
            		<source>title_privacy_policy</source>
-           		<target>Privacy Policy</target>
+           		<target>Política de Privacidad</target>
            	</trans-unit>
            	<trans-unit id="47">
            		<source>title_log_in_out</source>
@@ -202,67 +202,67 @@
            	</trans-unit>
            	<trans-unit id="48">
            		<source>title_log_in</source>
-           		<target>Log In</target>
+           		<target>Iniciar Sesión</target>
            	</trans-unit>
            	<trans-unit id="49">
            		<source>title_log_out</source>
-           		<target>Log Out</target>
+           		<target>Cerrar Sesión</target>
            	</trans-unit>
            	<trans-unit id="50">
            		<source>message_log_out</source>
-           		<target>Log out successful.</target>
+           		<target>Cierre la sesión con éxito.</target>
            	</trans-unit>
            	<trans-unit id="51">
            		<source>message_settings_info</source>
-           		<target>Information about the Twitched app is available at {1}.</target>
+           		<target>La información sobre la aplicación Twitched está disponible en {1}.</target>
            	</trans-unit>
            	<trans-unit id="52">
            		<source>message_settings_oss</source>
-           		<target>Information about open source software used in Twitched is available at {1}.</target>
+           		<target>La información sobre el software de código abierto utilizado en Twitched está disponible en {1}.</target>
            	</trans-unit>
            	<trans-unit id="53">
            		<source>message_settings_privacy_policy</source>
-           		<target>Twitched's privacy policy is available at {1}.</target>
+           		<target>La política de privacidad de Twitched está disponible en {1}.</target>
            	</trans-unit>
            	<trans-unit id="54">
            		<source>button_search</source>
-           		<target>Search</target>
+           		<target>Buscar</target>
            	</trans-unit>
            	<trans-unit id="55">
            		<source>button_search_channels</source>
-           		<target>Channels</target>
+           		<target>Canales</target>
            	</trans-unit>
            	<trans-unit id="56">
            		<source>button_search_games</source>
-           		<target>Games</target>
+           		<target>Juegos</target>
            	</trans-unit>
            	<trans-unit id="57">
            		<source>message_no_data</source>
-           		<target>No data</target>
+           		<target>Sin datos</target>
            	</trans-unit>
            	<trans-unit id="58">
            		<source>error_stream_offline</source>
-           		<target>The stream is offline.</target>
+           		<target>La transmisión está fuera de línea.</target>
            	</trans-unit>
            	<trans-unit id="59">
            		<source>title_joined</source>
-           		<target>Joined</target>
+           		<target>Cuenta Creada</target>
            	</trans-unit>
            	<trans-unit id="60">
            		<source>title_views</source>
-           		<target>Total Views</target>
+           		<target>Vistas Totales</target>
            	</trans-unit>
            	<trans-unit id="61">
            		<source>inline_playing</source>
-           		<target>playing</target>
+           		<target>jugando</target>
            	</trans-unit>
            	<trans-unit id="62">
            		<source>message_irc_connecting</source>
-           		<target>Connecting to chat</target>
+           		<target>Conectando al chat</target>
            	</trans-unit>
            	<trans-unit id="63">
            		<source>message_irc_connected</source>
-           		<target>Connected to chat</target>
+           		<target>Conectado al chat</target>
            	</trans-unit>
            	<trans-unit id="64">
            		<source>twitched</source>
@@ -282,147 +282,147 @@
            	</trans-unit>
            	<trans-unit id="68">
            		<source>button_all</source>
-           		<target>All</target>
+           		<target>Todas</target>
            	</trans-unit>
            	<trans-unit id="69">
            		<source>button_upload</source>
-           		<target>Upload</target>
+           		<target>Subir</target>
            	</trans-unit>
            	<trans-unit id="70">
            		<source>button_highlight</source>
-           		<target>Highlight</target>
+           		<target>Realce</target>
            	</trans-unit>
            	<trans-unit id="71">
            		<source>button_archive</source>
-           		<target>Archive</target>
+           		<target>Archivo</target>
            	</trans-unit>
            	<trans-unit id="72">
            		<source>title_video_type</source>
-           		<target>Video Type</target>
+           		<target>Tipo de Video</target>
            	</trans-unit>
            	<trans-unit id="73">
            		<source>title_video_type_all</source>
-           		<target>All</target>
+           		<target>Todas</target>
            	</trans-unit>
            	<trans-unit id="74">
            		<source>title_video_type_upload</source>
-           		<target>Uploads</target>
+           		<target>Subidas</target>
            	</trans-unit>
            	<trans-unit id="75">
            		<source>title_video_type_archive</source>
-           		<target>Archive</target>
+           		<target>Archivo</target>
            	</trans-unit>
            	<trans-unit id="76">
            		<source>title_video_type_highlight</source>
-           		<target>Highlights</target>
+           		<target>Reflejos</target>
            	</trans-unit>
            	<trans-unit id="77">
            		<source>title_published_at</source>
-           		<target>Published</target>
+           		<target>Publicado</target>
            	</trans-unit>
            	<trans-unit id="78">
            		<source>title_loading</source>
-           		<target>Loading</target>
+           		<target>Cargando</target>
            	</trans-unit>
            	<trans-unit id="79">
            		<source>title_description</source>
-           		<target>Description</target>
+           		<target>Descripción</target>
            	</trans-unit>
            	<trans-unit id="80">
            		<source>button_follow</source>
-           		<target>Follow</target>
+           		<target>Seguir</target>
            	</trans-unit>
            	<trans-unit id="81">
            		<source>button_unfollow</source>
-           		<target>Unfollow</target>
+           		<target>Dejar de Seguir</target>
            	</trans-unit>
            	<trans-unit id="82">
            		<source>inline_on</source>
-           		<target>on</target>
+           		<target>en</target>
            	</trans-unit>
            	<trans-unit id="83">
            		<source>inline_playing</source>
-           		<target>playing</target>
+           		<target>jugando</target>
            	</trans-unit>
            	<trans-unit id="84">
            		<source>title_language</source>
-           		<target>Language</target>
+           		<target>Idioma</target>
            	</trans-unit>
            	<trans-unit id="85">
            		<source>error_language_write_fail</source>
-           		<target>Failed to save language data.</target>
+           		<target>Error al guardar los datos de idioma.</target>
            	</trans-unit>
            	<trans-unit id="86">
            		<source>title_quality</source>
-           		<target>Quality</target>
+           		<target>Calidad</target>
            	</trans-unit>
            	<trans-unit id="87">
            		<source>title_video_quality</source>
-           		<target>Video Quality</target>
+           		<target>Calidad de video</target>
            	</trans-unit>
            	<trans-unit id="88">
            		<source>title_automatic</source>
-           		<target>Automatic</target>
+           		<target>Automático</target>
            	</trans-unit>
            	<trans-unit id="89">
            		<source>title_status</source>
-           		<target>Status</target>
+           		<target>Estado</target>
            	</trans-unit>
            	<trans-unit id="90">
            		<source>inline_offline</source>
-           		<target>offline</target>
+           		<target>desconectado</target>
            	</trans-unit>
            	<trans-unit id="91">
            		<source>title_search_history</source>
-           		<target>Recent Search History</target>
+           		<target>Historial de Búsqueda Reciente</target>
            	</trans-unit>
            	<trans-unit id="92">
            		<source>title_search_history_clear</source>
-           		<target>Clear Recent Search History</target>
+           		<target>Borrar Historial de Búsqueda Reciente</target>
            	</trans-unit>
            	<trans-unit id="93">
            		<source>title_hls_local</source>
-           		<target>Local Stream Fetching</target>
+           		<target>Procesamiento de Transmisión Local</target>
            	</trans-unit>
            	<trans-unit id="94">
            		<source>title_enabled</source>
-           		<target>Enabled</target>
+           		<target>Habilitado</target>
            	</trans-unit>
            	<trans-unit id="95">
            		<source>title_disabled</source>
-           		<target>Disabled</target>
+           		<target>Deshabilitado</target>
            	</trans-unit>
            	<trans-unit id="96">
            		<source>message_hls_local</source>
-           		<target>If enabled, stream data will be parsed locally instead of on Twitched's servers.</target>
+           		<target>Si está habilitado, los datos de transmisión se analizarán localmente en lugar de en los servidores de Twitched.</target>
            	</trans-unit>
            	<trans-unit id="97">
            		<source>error_hls_local_write_fail</source>
-           		<target>Failed to save stream fetching settings.</target>
+           		<target>Error al guardar la configuración de búsqueda de la transmisión.</target>
            	</trans-unit>
            	<trans-unit id="98">
            		<source>message_no_description</source>
-           		<target>No description provided.</target>
+           		<target>Ninguna descripción provista.</target>
            	</trans-unit>
            	<trans-unit id="99">
            		<source>title_unknown</source>
-           		<target>Unknown</target>
+           		<target>Desconocido</target>
            	</trans-unit>
            	<trans-unit id="100">
            		<source>title_followed_communities</source>
-           		<target>Followed Communities</target>
+           		<target>Comunidades Seguidas</target>
            	</trans-unit>
            	<trans-unit id="101">
            		<source>title_followed_games</source>
-           		<target>Followed Games</target>
+           		<target>Juegos Seguidos</target>
            	</trans-unit>
            	<trans-unit id="102">
            		<source>title_follow</source>
-           		<target>Follow</target>
+           		<target>Seguir</target>
            	</trans-unit>
            	<trans-unit id="103">
            		<source>title_unfollow</source>
-           		<target>Unfollow</target>
+           		<target>Dejar de Seguir</target>
            	</trans-unit>
         </body>
     </file>

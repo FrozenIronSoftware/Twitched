@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="FontTest" extends="Scene">
+	<children>
+
+		<Label 
+			id="text"
+			wrap="false"
+			width="1920"
+			height="50"
+			translation="[100,100]" />
+			
+		<Rectangle
+			id="rect"
+			color="0xffffff"
+			translation="[100,150]"
+			width="0"
+			height="50" />
+
+	</children>
+</component>

@@ -73,7 +73,7 @@ function on_item_content_change(event as object) as void
     m.name.width = 400
     m.name.translation = [0, 0]
     badge_size = 18
-    name_height = 22
+    name_height = 32
     badge_margin = 5
     m.badges.removeChildrenIndex(m.badges.getChildCount(), 0)
     if type(message.badges) = "roArray"
@@ -111,10 +111,7 @@ end function
 
 ' Handle the size of the emote space being calculated
 function on_space_size(event as object) as void
-    size = m.message.font.size
-    if event.getData().result.width < size
-        size = event.getData().result.width
-    end if
+    size = event.getData().result.width
     m.emote_size = size
     add_emote()
 end function
@@ -149,7 +146,7 @@ end function
 function on_text_size(event as object) as void
     size = event.getData().result
     if size.width >= m.message.width
-        ' FIXME Handle more than the first line
+        ' TODO Handle more than the first line
         m.emote_index++
         add_emote()
         return
@@ -163,14 +160,15 @@ function on_text_size(event as object) as void
                     emote = emotes[m.emote_index]
                     emoteComponent = m.emotes.createChild("Poster")
                     emoteComponent.uri = emote.url
-                    emoteComponent.width = m.emote_size
-                    emoteComponent.height = m.emote_size
+                    emoteComponent.loadWidth = m.emote_size
+                    'emoteComponent.height = m.emote_size
                     x = size.width
                     y = m.message.translation[1] + (fix(x / m.message.width) * size.height)
                     if fix(x / m.message.width) > 0
                         x -= m.message.width * fix(x / m.message.width)
                     end if
-                    emoteComponent.translation = [x + 5, y + 5]
+                    margin = m.message.font.size * 0.14
+                    emoteComponent.translation = [x + margin, y + margin]
                 end if
             end if
         end if

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (C) 2018 Frozen Iron Software LLC. All Rights Reserved. -->
+<component name="PosterRowListItemData" extends="ContentNode">
+    <interface> 
+        <field id="image_url" type="string" alwaysNotify="true" />
+        <field id="title" type="string" alwaysNotify="true" />
+    </interface>
+</component>

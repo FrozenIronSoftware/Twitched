@@ -53,6 +53,14 @@ function init() as void
     m.top.observeField("refresh_twitch_token", m.port)
     m.top.observeField("validate_token", m.port)
     m.top.observeField("get_hls_url", m.port)
+    m.top.observeField("get_twitched_config", m.port)
+    m.top.observeField("get_followed_communities", m.port)
+    m.top.observeField("get_followed_games", m.port)
+    m.top.observeField("is_following_game", m.port)
+    m.top.observeField("follow_community", m.port)
+    m.top.observeField("follow_game", m.port)
+    m.top.observeField("unfollow_community", m.port)
+    m.top.observeField("unfollow_game", m.port)
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -106,6 +114,22 @@ function run() as void
                 validate_token(msg)
             else if msg.getField() = "get_hls_url"
                 get_hls_url(msg)
+            else if msg.getField() = "get_twitched_config"
+                get_twitched_config(msg)
+            else if msg.getField() = "get_followed_communities"
+                get_followed_communities(msg)
+            else if msg.getField() = "get_followed_games"
+                get_followed_games(msg)
+            else if msg.getField() = "is_following_game"
+                is_following_game(msg)
+            else if msg.getField() = "follow_community"
+                follow_community(msg)
+            else if msg.getField() = "follow_game"
+                follow_game(msg)
+            else if msg.getField() = "unfollow_community"
+                unfollow_community(msg)
+            else if msg.getField() = "unfollow_game"
+                unfollow_game(msg)
             end if
         end if
     end while
@@ -581,13 +605,14 @@ end function
 ' Get access data and construct a URL for an HLS endpoint
 ' @param event with data containing and array of parameters [integer hls_type, string stream_id, string quality, string callback]
 function get_hls_url(params as object) as void
-    ' FIXME This returns invalid so the normal server handled playlist is used
-    ' instead of the local implementation. It is buggy.
-    m.top.setField("result", {
-        callback: params.getData()[3]
-        result: invalid
-    })
-    return
+    ' Return invalid so the server is called for HLS playlists
+    if (not m.global.use_local_hls_parsing) or m.global.twitched_config.force_remote_hls
+        m.top.setField("result", {
+            callback: params.getData()[3]
+            result: invalid
+        })
+        return
+    end if
     passed_params = params.getData()
     hls_url_params = {
         type: passed_params[0],
@@ -840,4 +865,104 @@ function initialize_twitch_http_agent() as void
     'm.http_twitch.addHeader("Authorization", "Bearer " + m.top.user_token) ' This endpoint may change to Helix and require a bearer token
     m.http_twitch.addHeader("Authorization", "OAuth " + m.top.user_token)
     m.http_twitch.initClientCertificates()
+end function
+
+' Request Twitched's config json
+' @param params node event containing a string callback
+function get_twitched_config(params as object) as void
+    request_url = m.API + "/config"
+    request("GET", request_url, [], params.getData())
+end function
+
+' Request followed communities
+' @param params array [assocarray params, string callback]
+function get_followed_communities(params as object) as void
+    request_url = m.API + "/communities/follows"
+    passed_params = params.getData()[0]
+    url_params = []
+    if passed_params.limit <> invalid
+        url_params.push("limit=" + m.http.escape(passed_params.limit.toStr()))
+    end if
+    if passed_params.offset <> invalid
+        url_params.push("offset=" + m.http.escape(passed_params.offset.toStr()))
+    end if
+    if passed_params.to_id <> invalid
+        url_params.push("to_id=" + m.http.escape(passed_params.to_id.toStr()))
+    end if
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+
+' Request followed games
+' @param params array [assocarray params, string callback]
+function get_followed_games(params as object) as void
+    request_url = m.API + "/twitch/games/follows"
+    passed_params = params.getData()[0]
+    url_params = []
+    if passed_params.limit <> invalid
+        url_params.push("limit=" + m.http.escape(passed_params.limit.toStr()))
+    end if
+    if passed_params.offset <> invalid
+        url_params.push("offset=" + m.http.escape(passed_params.offset.toStr()))
+    end if
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+
+' Check if user is following a game
+' @param params array [assocarray params, string callback]
+function is_following_game(params as object) as void
+    request_url = m.API + "/twitch/games/following"
+    passed_params = params.getData()[0]
+    url_params = []
+    if passed_params.name <> invalid
+        url_params.push("name=" + m.http.escape(passed_params.name.toStr()))
+    end if
+    if passed_params.id <> invalid
+        url_params.push("id=" + m.http.escape(passed_params.id.toStr()))
+    end if
+    if passed_params.no_cache <> invalid
+        url_params.push("no_cache=" + m.http.escape(passed_params.no_cache.toStr()))
+    end if
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+    
+' Follow a community
+' @param params array [string id, string callback]
+function follow_community(params as object) as void
+    request_url = m.API + "/communities/follow"
+    id = params.getData()[0]
+    url_params = []
+    url_params.push("id=" + m.http.escape(id.toStr()))
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+
+
+' Follow a game
+' @param params array [string id, string callback]
+function follow_game(params as object) as void
+    request_url = m.API + "/twitch/games/follow"
+    id = params.getData()[0]
+    url_params = []
+    url_params.push("id=" + m.http.escape(id.toStr()))
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+
+' Unfollow a community
+' @param params array [string id, string callback]
+function unfollow_community(params as object) as void
+    request_url = m.API + "/communities/unfollow"
+    id = params.getData()[0]
+    url_params = []
+    url_params.push("id=" + m.http.escape(id.toStr()))
+    request("GET", request_url, url_params, params.getData()[1])
+end function
+
+
+' Unfollow a game
+' @param params array [string id, string callback]
+function unfollow_game(params as object) as void
+    request_url = m.API + "/twitch/games/unfollow"
+    id = params.getData()[0]
+    url_params = []
+    url_params.push("id=" + m.http.escape(id.toStr()))
+    request("GET", request_url, url_params, params.getData()[1])
 end function

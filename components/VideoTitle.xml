@@ -5,18 +5,18 @@
 	
 		<Rectangle
 			id="background"
-			width="1280"
-			height="290"
+			width="1920"
+			height="435"
 			color="0x000000"
 			opacity="0.7"
-			translation="[0, 500]" />
+			translation="[0, 750]" />
 	
 		<Label
 			id="title"
 			text="test"
-			width="1180"
-    		height="30"
-			translation="[50, 530]"
+			width="1770"
+    		height="45"
+			translation="[75, 795]"
 			horizAlign="center"
 			vertAlign="bottom"
 			wrap="false"
@@ -26,9 +26,9 @@
 			
 		<Label
 			id="streamer"
-			width="1180"
-    		height="30"
-			translation="[50, 580]"
+			width="1770"
+    		height="45"
+			translation="[75, 870]"
 			horizAlign="center"
 			vertAlign="bottom"
 			wrap="false"

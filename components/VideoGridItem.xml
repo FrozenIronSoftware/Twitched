@@ -5,25 +5,25 @@
 	
 		<Poster 
 			id="image"
-			width="260"
-			height="160"
+			width="390"
+			height="240"
 			loadingBitmapUri="pkg:/locale/default/images/poster_loading.png"
     		failedBitmapUri="pkg:/locale/default/images/poster_error.png" />
 		
 		<ScrollingLabel 
 			id="title"
-			height="30"
-			maxWidth="260"
+			height="45"
+			maxWidth="390"
 			color="0xffffff"
-			translation="[0,170]"
+			translation="[0,255]"
 			font="font:SmallSystemFont"
 			horizAlign="left" />
 			
 		<Label 
 			id="description"
-			width="260"
+			width="390"
 			color="0xffffff"
-			translation="[0,200]"
+			translation="[0,300]"
 			font="font:SmallestSystemFont"
 			horizAlign="center"
 			maxLines="2"
@@ -31,9 +31,9 @@
 			
 		<Poster 
 			id="game"
-			width="80"
-			height="112"
-			translation="[180,48]"
+			width="120"
+			height="168"
+			translation="[270,72]"
 			loadingBitmapUri="pkg:/locale/default/images/poster_loading_vertical.png"
     		failedBitmapUri="pkg:/locale/default/images/poster_error_vertical.png" />
 		

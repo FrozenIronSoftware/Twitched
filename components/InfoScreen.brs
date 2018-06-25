@@ -72,6 +72,8 @@ function on_callback(event as object) as void
         on_follow_channel(event)
     else if callback = "on_unfollow_channel"
         on_unfollow_channel(event)
+    else if callback = "on_stream_data"
+        on_stream_data(event)
     else
         if callback = invalid
             callback = ""
@@ -313,6 +315,7 @@ function on_user_info(event as object) as void
 end function
 
 function on_follow_info(event as object) as void
+    printl(m.DEBUG, "InfoScreen: on_follow_info")
     ' Validate
     follows = event.getData().result
     if type(follows) <> "roArray"
@@ -363,7 +366,9 @@ function on_play_button_pressed() as void
     video_id = invalid
     ' Stream play
     if not is_video()
-        m.top.setField("play_selected", true)
+        m.twitch_api.get_streams = [{
+            user_id: m.top.streamer[2]
+        }, "on_stream_data"]
     ' Video play
     else
         if m.video_selected <> invalid
@@ -376,6 +381,38 @@ function on_play_button_pressed() as void
     end if
     show_loading_dialog()
     track_video_play("Play Button", video_type, m.top.streamer[1], m.top.streamer[2], video_id)
+end function
+
+' Handle stream data and either attempt to play video or show offline error
+function on_stream_data(event as object) as void
+    streams = event.getData().result
+    if type(streams) <> "roArray"
+        m.loading_dialog.visible = false
+        m.buttons.setFocus(true)
+        error(3002)
+    else
+        ' Offline
+        if streams.count() <> 1
+            m.loading_dialog.visible = false
+            m.buttons.setFocus(true)
+            show_offline_message()
+        ' Online
+        else
+            m.top.setField("play_selected", true)
+        end if
+    end if
+end function
+
+' Show a stream offline message dialog
+function show_offline_message() as void
+    m.optionsDialog = false
+    m.dialog.title = tr("title_error")
+    m.dialog.message = tr("error_stream_offline") + chr(10) + tr("title_error_code") + ": 3003"
+    m.dialog.buttons = [tr("button_confirm")]
+    m.dialog.focusButton = 0
+    m.dialog_type = "error"
+    m.dialog.visible = true
+    m.top.setField("dialog", m.dialog)
 end function
 
 ' Send analytics data for a video play
@@ -472,7 +509,7 @@ function on_video_data(event as object) as void
         if type(video_data) = "roAssociativeArray"
             if video_data.duration_seconds > 0
                 video = row.createChild("VodItemData")
-                video.image_url = video_data.thumbnail_url.replace("%{width}", "195").replace("%{height}", "120")
+                video.image_url = video_data.thumbnail_url.replace("{width}", "438").replace("{height}", "270")
                 video.title = clean(video_data.title)
                 video.id = video_data.id
                 video.duration = video_data.duration_seconds

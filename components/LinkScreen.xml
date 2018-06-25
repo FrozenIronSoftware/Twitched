@@ -11,9 +11,9 @@
 	
 		<Label
 			id="title"
-			width="600"
-			height="100"
-			translation="[350, 25]"
+			width="900"
+			height="150"
+			translation="[525, 37]"
 			horizAlign="center"
 			vertAlign="center"
 			wrap="true"
@@ -23,9 +23,9 @@
 			
 		<Label
 			id="message"
-			width="600"
-			height="100"
-			translation="[350, 125]"
+			width="900"
+			height="150"
+			translation="[525, 187]"
 			horizAlign="center"
 			vertAlign="center"
 			wrap="true"
@@ -35,9 +35,9 @@
 			
 		<Label
 			id="code"
-			width="600"
-			height="100"
-			translation="[350, 225]"
+			width="900"
+			height="150"
+			translation="[525, 337]"
 			horizAlign="center"
 			vertAlign="center"
 			wrap="true"
@@ -47,9 +47,9 @@
 			
 		<Label
 			id="message_footer"
-			width="600"
-			height="100"
-			translation="[350, 325]"
+			width="900"
+			height="150"
+			translation="[525, 525]"
 			horizAlign="center"
 			vertAlign="center"
 			wrap="true"
@@ -59,9 +59,9 @@
 			
 		<Label
 			id="url"
-			width="600"
-			height="100"
-			translation="[100, 450]"
+			width="900"
+			height="150"
+			translation="[150, 675]"
 			horizAlign="left"
 			vertAlign="center"
 			wrap="true"

@@ -4,13 +4,44 @@
 	<children>
 	
 		<MiniKeyboard
-			id="keyboard" />
+			id="keyboard"
+			scale="[.75, .75]" />
 			
 		<ButtonGroup
     		id="search_buttons"
-    		minWidth="250"
-    		maxWidth="300"
-    		translation="[400,300]" />
+    		minWidth="425"
+    		maxWidth="425"
+    		translation="[5,550]" />
+    		
+    	<Label
+    		id="history_title"
+    		width="650"
+    		height="30"
+    		translation="[500, 0]"
+    		horizAlign="left"
+			vertAlign="top"
+			wrap="false"
+			numLines="1"
+			maxLines="1"
+			visible="true"
+			font="font:SmallSystemFont" />
+    		
+    	<LabelList
+    		id="history"
+    		translation="[500, 50]"
+    		itemSize="[650,60]"
+    		focusBitmapUri="pkg:/locale/default/images/list_selection.9.png"
+    		focusBitmapBlendColor="0x6441a4"
+    		focusFootprintBitmapUri=
+    			"pkg:/locale/default/images/list_selection.9.png"
+    		focusFootprintBlendColor="0x19171c"
+    		vertFocusAnimationStyle="fixedFocusWrap"
+    		focusedColor="0xffffff"
+    		color="0xffffff"
+    		numRows="13" />
+    		
+    	<Registry
+    		id="registry" />
 
 	</children>
 
