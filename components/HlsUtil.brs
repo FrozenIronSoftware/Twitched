@@ -20,12 +20,12 @@ function get_max_quality_for_model(quality as string) as object
         max_60 = 0
         max_bitrate = 4 * ONE_MILLION
     ' 1080 60 FPS
-    else if model = "8000X" or model = "3910X" or model = "3900X" or model = "3710X" or model = "3700X" or model = "3600X"
+    else if model = "8000X" or model = "3910X" or model = "3900X" or model = "3710X" or model = "3700X"
         max_30 = 1080
         max_60 = 1080
         max_bitrate = 7 * ONE_MILLION
     ' 1080 30 FPS
-    else if model = "4230X" or model = "4210X" or model = "3500X" or model = "2720X" or model = "2710X" or model = "4200X" or model = "3400X" or model ="3420X" or model = "3100X" or model = "3050X" or model = "5000X" or model = "3800X"
+    else if model = "4230X" or model = "4210X" or model = "3500X" or model = "2720X" or model = "2710X" or model = "4200X" or model = "3400X" or model ="3420X" or model = "3100X" or model = "3050X" or model = "5000X" or model = "3800X" or model = "3600X"
         max_30 = 1080
         max_60 = 0
         max_bitrate = 7 * ONE_MILLION
