@@ -374,6 +374,8 @@ function on_callback(event as object) as void
         on_dynamic_follow_community_data(event)
     else if callback = "on_dynamic_follow_status_change"
         on_dynamic_follow_status_change(event)
+    else if callback = "on_hls_local_write"
+        on_hls_local_write(event)
     else
         if callback = invalid
             callback = ""
