@@ -31,13 +31,14 @@ function init() as void
     m.MOTD_END_D = "376"
     m.CAP = "CAP"
     m.NOTICE = "NOTICE"
+    m.BUFFER_SIZE = 100000
     ' Components
     m.twitch_api = m.top.findNode("twitch_api")
     ' Variables
     m.channel = ""
     m.socket = invalid
     m.data = createObject("roByteArray")
-    m.data[2048] = 0
+    m.data[m.BUFFER_SIZE] = 0
     m.data_size = 0
     m.badges = {}
     m.connected = false
@@ -140,7 +141,7 @@ function read_socket_data() as void
     end if
     m.data.fromAsciiString(data)
     m.data_size = m.data.count()
-    m.data[2048] = 0
+    m.data[m.BUFFER_SIZE] = 0
 end function
 
 ' Send connection details to the IRC server
