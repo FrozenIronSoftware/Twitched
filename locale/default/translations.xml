@@ -32,7 +32,7 @@
            		<source>error_api_fail</source>
            		<target>Failed to connect to the API server.</target>
            	</trans-unit>
-           	<trans-unit id="6">
+           	<trans-unit id="six">
            		<source>title_community</source>
            		<target>Community</target>
            	</trans-unit>
