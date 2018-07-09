@@ -95,7 +95,9 @@ function show_ads(params as object) as void
     content_length = params[2]
     m.ads.setNielsenProgramId(nielsen_id) ' Streamer
     m.ads.setNielsenGenre(genre) ' General variety
-    m.ads.setContentLength(content_length) ' Seconds
+    if content_length > 0
+        m.ads.setContentLength(content_length) ' Seconds
+    end if
     ads = m.ads.getAds()
     ads_count = 0
     if ads <> invalid
