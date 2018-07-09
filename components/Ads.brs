@@ -1,5 +1,7 @@
 ' Copyright (C) 2017-2018 Rolando Islas. All Rights Reserved.
 
+#if enable_ads
+
 Library "Roku_Ads.brs"
 
 ' Ads entry point
@@ -56,7 +58,7 @@ end function
 function run() as void
     printl(m.DEBUG, "Ads: Ads task started")
     while true
-        msg = wait(0, m.PORT) 
+        msg = wait(0, m.PORT)
         ' Field event
         if type(msg) = "roSGNodeEvent"
             if msg.getField() = "show_ads"
@@ -119,3 +121,10 @@ function track_ads(ads_count as integer) as void
         }
     }
 end function
+
+#else
+
+    function init() as void
+    end function
+
+#end if
