@@ -12,6 +12,7 @@ function init() as void
     m.ads = Roku_Ads()
     m.ads.enableNielsenDar(true)
     m.ads.setNielsenAppId(m.global.secret.ad_nielsen_id)
+    m.ads.setAdPrefs(true, 2)
     ' Components
     m.twitch_api = m.top.findNode("twitch_api")
     ' Events
@@ -22,6 +23,7 @@ function init() as void
     m.twitch_api.get_ad_server = "on_ad_server"
     ' Variables
     m.did_fetch_server = false
+    m.ad_url = ""
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -41,6 +43,7 @@ function on_ad_server(event as object) as void
     end if
     printl(m.DEBUG, "Ads: Fetched ad server from Twitched API")
     m.did_fetch_server = true
+    m.ad_url = ad_server.ad_server
     set_ad_url(ad_server.ad_server)
 end function
 
@@ -93,33 +96,48 @@ function show_ads(params as object) as void
     nielsen_id = params[0]
     genre = params[1]
     content_length = params[2]
+    set_ad_url(m.ad_url)
     m.ads.setNielsenProgramId(nielsen_id) ' Streamer
     m.ads.setNielsenGenre(genre) ' General variety
+    m.ads.setContentId(nielsen_id)
+    m.ads.setContentGenre("Entertainment")
     if content_length > 0
         m.ads.setContentLength(content_length) ' Seconds
+    else
+        m.ads.setContentLength() ' Clear
     end if
     ads = m.ads.getAds()
     ads_count = 0
     if ads <> invalid
         ads_count = ads.count()
     end if
-    track_ads(ads_count)
+    track_ads(ads_count, false)
     if ads_count = 0
-        printl(m.DEBUG, "Ads: No ads loaded")
-        m.top.setField("status", true)
-        return
+        printl(m.DEBUG, "Ads: No ads loaded from third-party ad server")
+        ' Load Roku ads as a fallback
+        set_ad_url("")
+        ads = m.ads.getAds()
+        if ads <> invalid
+            ads_count = ads.count()
+        end if
+        track_ads(ads_count, true)
+        if ads_count = 0
+            printl(m.DEBUG, "Ads: No ads loaded from Roku ad server")
+            m.top.setField("status", true)
+            return
+        end if
     end if
     printl(m.DEBUG, "Ads: Showing ads")
     m.top.setField("status", m.ads.showAds(ads, invalid, m.top.view))
 end function
 
 ' Send analytics data about how many ads were received for playback
-function track_ads(ads_count as integer) as void
+function track_ads(ads_count as integer, from_roku as boolean) as void
     m.global.analytics.trackEvent = {
         google: {
             ec: "Ad",
             ea: "Ads Started",
-            el: "Count: " + ads_count.toStr()
+            el: "Count: " + ads_count.toStr() + ", From Roku: " + from_roku.toStr()
         }
     }
 end function
