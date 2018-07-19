@@ -6,72 +6,83 @@ function get_max_quality_for_model(quality as string) as object
     if right(quality, 1) = "P"
         quality = left(quality, len(quality) - 1)
     end if
-    default_quality = val(quality, 0)
-    info = createObject("roDeviceInfo")
-    model = info.getModel()
-    max_30 = invalid
-    max_60 = invalid
-    max_bitrate = invalid
-    ONE_MILLION = 1000000
-    ' Big o' if else chain for models
-    ' 720 30 FPS
-    if model = "2700X" or model = "2500X" or model = "2450X" or model = "3000X" or model = "2400X"
-        max_30 = 720
-        max_60 = 0
-        max_bitrate = 4 * ONE_MILLION
-    ' 1080 60 FPS
-    else if model = "8000X" or model = "3910X" or model = "3900X" or model = "3710X" or model = "3700X"
-        max_30 = 1080
-        max_60 = 1080
-        max_bitrate = 7 * ONE_MILLION
-    ' 1080 30 FPS
-    else if model = "4230X" or model = "4210X" or model = "3500X" or model = "2720X" or model = "2710X" or model = "4200X" or model = "3400X" or model ="3420X" or model = "3100X" or model = "3050X" or model = "5000X" or model = "3800X" or model = "3600X"
-        max_30 = 1080
-        max_60 = 0
-        max_bitrate = 7 * ONE_MILLION
-    ' 4K 60 FPS
-    else if model = "7000X" or model = "6000X" or model = "4660X" or model = "3810X" or model = "4640X" or model = "4630X" or model = "4620X" or model = "4400X"
-        max_30 = 2160
-        max_60 = 2160
-        max_bitrate = 20 * ONE_MILLION
-    ' Legacy SD 30 FPS
-    else if model = "2100X" or model = "2100N" or model = "2050N" or model = "2050X" or model = "2000C" or model = "N1101" or model = "N1100" or model = "N1050" or model = "N1000"
-        max_30 = 480
-        max_60 = 0
-        max_bitrate = 2 * ONE_MILLION
-    ' Assume any new Roku device can play at least 1080p 60 FPS
-    else
-        max_30 = default_quality
-        max_60 = default_quality
-        max_bitrate = 7 * ONE_MILLION
-    end if
-    min_30 = max_30
-    if default_quality < min_30
-        min_30 = default_quality
-    end if
-    min_60 = max_60
-    if default_quality < min_60
-        min_60 = default_quality
-    end if
+    requested_quality = val(quality, 0)
+    model = createObject("roDeviceInfo").getModel()
+    for each stream_quality in m.global.twitched_config.stream_qualities
+        if stream_quality.model = model
+            stream_quality = limit_stream_quality(stream_quality, requested_quality)
+            return stream_quality
+        end if
+    end for
+    ' Quality not found in database
+    ' Send a sensible 720p 30fps 7mbps default quality
     return {
-        max_30: min_30,
-        max_60: min_60,
-        max_bitrate: max_bitrate
+        id: 0,
+        model: model,
+        bitrate: 7000000,
+        comment: "",
+        "240p30": true,
+        "240p60": false,
+        "480p30": true,
+        "480p60": false,
+        "720p30": true,
+        "720p60": false,
+        "1080p30": true,
+        "1080p60": false,
+        "only_source_60": true
     }
+end function
+
+' Limit stream quality
+' @param stream_quality stream associative array
+' @param limit resolution limit
+function limit_stream_quality(stream_quality as object, limit as integer) as object
+    if limit < 1080
+        stream_quality.["1080p30"] = false
+        stream_quality.["1080p60"] = false
+    end if
+    if limit < 720
+        stream_quality.["720p30"] = false
+        stream_quality.["720p60"] = false
+    end if
+    if limit < 480
+        stream_quality.["480p30"] = false
+        stream_quality.["480p60"] = false
+    end if
+    if limit < 240
+        stream_quality.["240p30"] = false
+        stream_quality.["240p60"] = false
+    end if
+    return stream_quality
 end function
 
 ' Get FPS of a playlist
 function get_stream_fps(playlist as object) as integer
+    return get_quality_and_fps(playlist).fps
+end function
+
+' Return an associative array containing quality and fps fields for a playlist
+function get_quality_and_fps(playlist as object) as object
     quality_regex = createObject("roRegex", ".*NAME=" + chr(34) +"(\d+)p?(\d*).*" + chr(34) + ".*", "")
+    quality = 0
     fps = 0
     if quality_regex.isMatch(playlist.line_one)
         groups = quality_regex.match(playlist.line_one)
+        quality = val(groups[1], 0)
         fps = val(groups[2], 0)
         if fps = 0
             fps = 30
         end if
     end if
-    return fps
+    return {
+        quality: quality,
+        fps: fps
+    }
+end function
+
+' Get stream quality
+function get_stream_quality(playlist as object) as integer
+    return get_quality_and_fps(playlist).quality
 end function
 
 ' Check if the playlist if of the passed quality or lower
@@ -102,11 +113,60 @@ function is_stream_video(playlist as object) as boolean
     return instr(0, playlist.line_one, "audio") = 0 and instr(0, playlist.line_two, "audio") = 0
 end function
 
+' Check if the playlist is a source stream
+function is_stream_source(playlist as object) as boolean
+    return instr(0, playlist.line_one, "source") > 0
+end function
+
 ' Convert the playlist associative array to an array
-function stream_to_array(playlist as object) as object 
+function stream_to_array(playlist as object) as object
     return [
         playlist.line_one,
         playlist.line_two,
         playlist.line_three
     ]
+end function
+
+' Check if a stream playlist if of lesser or equal quality to the one passed
+function stream_meets_quality(max_quality as object, stream as object) as boolean
+    ' Check if this stream is 60 FPS. If it is and the StreamQuality denies
+    ' non-source 60 FPS, check if it is a source stream.
+    if get_stream_fps(stream) = 60 and max_quality.only_source_60 and not is_stream_source(stream)
+        return false
+    end if
+    ' Check if the bitrate is higher than the defined max bitrate
+    if get_stream_bitrate(stream) > max_quality.bitrate
+        return false
+    end if
+    ' Check 30 FPS streams
+    if get_stream_fps(stream) = 30
+        if get_stream_quality(stream) <= 240 and not max_quality["240p30"]
+            return false
+        end if
+        if get_stream_quality(stream) > 240 and get_stream_quality(stream) <= 480 and not max_quality["480p30"]
+            return false
+        end if
+        if get_stream_quality(stream) = 720 and not max_quality["720p30"]
+            return false
+        end if
+        if get_stream_quality(stream) > 720 and not max_quality["1080p30"]
+            return false
+        end if
+    end if
+    ' Check 60 FPS streams
+    if get_stream_fps(stream) = 60
+        if get_stream_quality(stream) <= 240 and not max_quality["240p60"]
+            return false
+        end if
+        if get_stream_quality(stream) > 240 and get_stream_quality(stream) <= 480 and not max_quality["480p60"]
+            return false
+        end if
+        if get_stream_quality(stream) = 720 and not max_quality["720p60"]
+            return false
+        end if
+        if get_stream_quality(stream) > 720 and not max_quality["1080p60"]
+            return false
+        end if
+    end if
+    return true
 end function

@@ -280,6 +280,10 @@ function on_twitched_config(event as object) as void
         printl(m.DEBUG, "Twitched config missing force_remote_hls field. Defaulting to false")
         twitched_config.force_remote_hls = false
     end if
+    if type(twitched_config.stream_qualities) <> "roArray"
+        printl(m.DEBUG, "Twitched config missing stream_qualities field. Defaulting to empty array")
+        twitched_config.stream_qualities = []
+    end if
     m.global.twitched_config = twitched_config
     ' Load registry data that does not need to be acted upon immediatly
     m.registry.read_multi = [m.global.REG_TWITCH, [
@@ -1671,7 +1675,11 @@ function on_video_state_change(event as object) as void
     print tab(2)"Stage: " m.stage.toStr()
     ' Handle error
     if event.getData() = "error"
-        print(m.video.errorMsg)
+        video_error_message = m.video.errorMsg
+        if video_error_message = invalid
+            video_error_message = ""
+        end if
+        print tab(2)"Video error message: " video_error_message
         if m.stage = m.VIDEO_PLAYER
             hide_video()
             show_video_error()

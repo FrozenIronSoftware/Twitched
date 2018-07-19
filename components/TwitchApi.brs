@@ -33,6 +33,8 @@ function init() as void
     m.hls_url_params = invalid
     m.parse_json = true
     m.hls_playlist = invalid
+    m.last_twitch_token = ""
+    m.last_twitch_sig = ""
     ' Events
     m.top.observeField("get_streams", m.port)
     m.top.observeField("get_games", m.port)
@@ -302,7 +304,7 @@ function on_http_response(event as object) as void
             _on_hls_access_token(event)
         else if callback = "_on_hls_playlist"
             _on_hls_playlist(event)
-        else 
+        else
             if callback = invalid
                 callback = ""
             end if
@@ -662,22 +664,22 @@ function _on_hls_access_token(event as object) as void
         ' Stream
         if m.hls_url_params.type = m.top.HLS_TYPE_STREAM
             url = m.API_USHER + "/api/channel/hls/" + m.hls_url_params.id + ".m3u8"
-            url_params.push("player=twitched")
+            url_params.push("player=Twitched")
             url_params.push("token=" + m.http_twitch.escape(data.token))
             url_params.push("sig=" + m.http_twitch.escape(data.sig))
             url_params.push("p=" + m.http_twitch.escape(rnd(&h7fffffff).toStr()))
             url_params.push("type=any")
-            url_params.push("allow_audio_only=false")
+            url_params.push("allow_audio_only=true")
             url_params.push("allow_source=true")
         ' Video
         else if m.hls_url_params.type = m.top.HLS_TYPE_VIDEO
             url = m.API_USHER + "/vod/" + m.hls_url_params.id + ".m3u8"
-            url_params.push("player=twitched")
+            url_params.push("player=Twitched")
             url_params.push("nauth=" + m.http_twitch.escape(data.token))
             url_params.push("nauthsig=" + m.http_twitch.escape(data.sig))
             url_params.push("p=" + m.http_twitch.escape(rnd(&h7fffffff).toStr()))
             url_params.push("type=any")
-            url_params.push("allow_audio_only=false")
+            url_params.push("allow_audio_only=true")
             url_params.push("allow_source=true")
         ' Error
         else
@@ -746,28 +748,24 @@ function clean_master_playlist() as void
     ' Add compatible playlists
     playlists_meeting_quality = []
     for each playlist in playlists
-        if ((get_stream_fps(playlist) = 30 and is_stream_quality_or_lower(playlist, max_quality.max_30)) or (get_stream_fps(playlist) = 60 and is_stream_quality_or_lower(playlist, max_quality.max_60))) and get_stream_bitrate(playlist) <= max_quality.max_bitrate
+        if stream_meets_quality(max_quality, playlist) and is_stream_video(playlist)
             playlists_meeting_quality.push(playlist)
         end if
     end for
     ' If no playlists match the quality, add the smallest
-    if playlists_meeting_quality.count() = 0
-        smallest = invalid
-        for each playlist in playlists
-            if is_stream_video(playlist)
-                if smallest = invalid or get_stream_quality(smallest) > get_stream_quality(playlist)
-                    if (get_stream_fps(playlist) = 30 and is_stream_quality_or_lower(playlist, max_quality.max_30)) or (get_stream_fps(playlist) = 60 and is_stream_quality_or_lower(playlist, max_quality.max_60))
-                        if get_stream_bitrate(playlist) <= max_quality.max_bitrate
-                            smallest = playlist
-                        end if
-                    end if
-                end if
-            end if
-        end for
-        if smallest <> invalid
-            playlists_meeting_quality.push(smallest)
-        end if
-    end if
+    'if playlists_meeting_quality.count() = 0
+    '    smallest = invalid
+    '    for each playlist in playlists
+    '        if is_stream_video(playlist)
+    '            if smallest = invalid or get_stream_quality(smallest) > get_stream_quality(playlist) and stream_meets_quality(max_quality, playlist)
+    '                smallest = playlist
+    '            end if
+    '        end if
+    '    end for
+    '    if smallest <> invalid
+    '        playlists_meeting_quality.push(smallest)
+    '    end if
+    'end if
     ' Add streams to the master playlist
     did_add_playlist = false
     for each playlist in playlists_meeting_quality
@@ -864,6 +862,9 @@ function initialize_twitch_http_agent() as void
     m.http_twitch.addHeader("Client-ID", m.global.secret.client_id_twitch)
     'm.http_twitch.addHeader("Authorization", "Bearer " + m.top.user_token) ' This endpoint may change to Helix and require a bearer token
     m.http_twitch.addHeader("Authorization", "OAuth " + m.top.user_token)
+    app_info = createObject("roAppInfo")
+    space_regex = createObject("roRegex", "\s", "")
+    m.http_twitch.addHeader("User-Agent", substitute("{0}Roku/{1} (BrightScript)", space_regex.replace(app_info.getTitle(), ""), app_info.getVersion()))
     m.http_twitch.initClientCertificates()
 end function
 
@@ -924,7 +925,7 @@ function is_following_game(params as object) as void
     end if
     request("GET", request_url, url_params, params.getData()[1])
 end function
-    
+
 ' Follow a community
 ' @param params array [string id, string callback]
 function follow_community(params as object) as void
