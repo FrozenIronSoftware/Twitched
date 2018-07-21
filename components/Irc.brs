@@ -90,7 +90,7 @@ function run() as void
         ' Check for messages
         ' Do not user port.getMessage()!
         ' SocketEvents will not show up if it is used.
-        msg = wait(0, m.PORT) 
+        msg = wait(0, m.PORT)
         ' Field event
         if type(msg) = "roSGNodeEvent"
             if msg.getField() = "connect"
@@ -243,7 +243,7 @@ function parse_twitch_tags(tags_string as dynamic) as object
         return tags
     end if
     ' No finditer implementation. The TWITCH_TAG_REGEX cannot be used directly
-    ' for finding the matches. Tags are split at semicolons and equal signs 
+    ' for finding the matches. Tags are split at semicolons and equal signs
     matches = tags_string.split(";")
     if matches.count() < 1
         return tags
@@ -329,11 +329,11 @@ function handle_message(message as object) as void
     ' Msg
     else if message.command = m.PRIVMSG
         handle_privmsg(message)
-        
+
     end if
 end function
 
-' Parse a message for details and construct a clean message object to 
+' Parse a message for details and construct a clean message object to
 ' set to a global field as a chat event
 function handle_privmsg(message as object) as void
     name = message.nick
