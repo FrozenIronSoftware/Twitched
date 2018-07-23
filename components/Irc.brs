@@ -413,14 +413,14 @@ function parse_emotes(emotes_string as string) as object
         for each emote in emotes
             if (smallest = invalid or emote.start < smallest.start) and emote.start > added_size
                 smallest = emote
-            endif
+            end if
         end for
         if smallest <> invalid
             ordered.push(smallest)
             added_size = smallest.start
             smallest = invalid
         else
-            return emotes ' This should not happen.
+            return ordered ' This should not happen.
         end if
     end for
     return ordered
