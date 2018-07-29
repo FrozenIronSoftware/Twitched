@@ -3,7 +3,6 @@
 ' Main entry point for the application.
 ' Starts the main scene
 function main(args as dynamic) as void
-    stop
     print("Twitched started")
     ' Load secret keys
 	secret = parseJson(readAsciiFile("pkg:/secret.json"))
