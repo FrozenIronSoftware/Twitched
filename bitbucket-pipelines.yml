@@ -1,0 +1,7 @@
+image: atlassian/default-image:latest
+
+pipelines:
+  default:
+    - step:
+        script:
+          - ./check_for_stops.sh

@@ -3,6 +3,7 @@
 ' Main entry point for the application.
 ' Starts the main scene
 function main(args as dynamic) as void
+    stop
     print("Twitched started")
     ' Load secret keys
 	secret = parseJson(readAsciiFile("pkg:/secret.json"))
@@ -46,8 +47,8 @@ function main(args as dynamic) as void
 	' Main loop
 	while true
 	   msg = wait(0, port)
-	   if type(msg) = "roSGScreenEvent" 
-	       if msg.isScreenClosed() 
+	   if type(msg) = "roSGScreenEvent"
+	       if msg.isScreenClosed()
 	           return
 	       end if
 	   else if type(msg) = "roSGNodeEvent"
@@ -74,7 +75,7 @@ function main2()
     loop = true
     mode = 0
     fudge = 1.0
-   
+
     while loop
         scr.Clear(&hFF808080)
 
@@ -92,7 +93,7 @@ function main2()
         scr.DrawText(txt, 100, 40, &h000000FF, f)
         scr.DrawText(usage, 100, 300, &h000000FF, f)
         scr.Finish()
-   
+
         while true
             msg = wait(0, port)
             if msg <> invalid and type(msg) = "roUniversalControlEvent" then
@@ -139,7 +140,7 @@ function main3()
     font = font_registry.getFont("Code New Roman", 35, false, false)
     label.font = font
     rect.width = font.getOneLineWidth(label.text, 1920) * 1.065
-    
+
     while true
         while true
             msg = wait(0, port)
@@ -184,16 +185,16 @@ function init() as void
     m.FOLLOWED = 4
     m.SEARCH = 5
     m.SETTINGS = 6
-    m.MENU_ITEMS = ["title_popular", "title_games", "title_creative", 
+    m.MENU_ITEMS = ["title_popular", "title_games", "title_creative",
         "title_communities", "title_followed", "title_search", "title_settings"]
     m.AD_INTERVAL = 20 * 60
     ' Components
     m.ads = invalid
-    if m.global.secret.enable_ads
+    #if enable_ads
         m.ads = createObject("roSGNode", "Ads")
         ad_loading_message = m.top.findNode("ad_loading_message")
         ad_loading_message.text = tr("message_loading")
-    end if
+    #end if
     m.ad_container = m.top.findNode("ad_container")
     m.header = m.top.findNode("header")
     m.main_menu = m.top.findNode("main_menu")
@@ -280,6 +281,10 @@ function on_twitched_config(event as object) as void
         printl(m.DEBUG, "Twitched config missing force_remote_hls field. Defaulting to false")
         twitched_config.force_remote_hls = false
     end if
+    if type(twitched_config.stream_qualities) <> "roArray"
+        printl(m.DEBUG, "Twitched config missing stream_qualities field. Defaulting to empty array")
+        twitched_config.stream_qualities = []
+    end if
     m.global.twitched_config = twitched_config
     ' Load registry data that does not need to be acted upon immediatly
     m.registry.read_multi = [m.global.REG_TWITCH, [
@@ -294,7 +299,7 @@ function on_registry_multi_read(event as object) as void
         ' Set use local hls parsing defaults to true
         m.global.use_local_hls_parsing = (result[m.global.REG_HLS_LOCAL] = "true" or result[m.global.REG_HLS_LOCAL] = invalid)
     end if
-    m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, 
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE,
         "on_twitch_language"]
 end function
 
@@ -374,6 +379,8 @@ function on_callback(event as object) as void
         on_dynamic_follow_community_data(event)
     else if callback = "on_dynamic_follow_status_change"
         on_dynamic_follow_status_change(event)
+    else if callback = "on_hls_local_write"
+        on_hls_local_write(event)
     else
         if callback = invalid
             callback = ""
@@ -524,7 +531,7 @@ function load_menu_item(stage as integer, force = false as boolean) as void
         show_message("message_loading")
         ' Creative id: 488191
         show_message("message_loading")
-        m.twitch_api.get_streams = [{limit: m.MAX_VIDEOS, game: "488191"}, 
+        m.twitch_api.get_streams = [{limit: m.MAX_VIDEOS, game: "488191"},
             "set_content_grid"]
     ' Communities
     else if stage = m.COMMUNITIES
@@ -572,7 +579,7 @@ function on_followed_game_data(event as object) as void
 end function
 
 ' Set the poster grid to community data
-' @param event roSGNodeMessage with data containing an associative array 
+' @param event roSGNodeMessage with data containing an associative array
 '        {result: object twitch_get_communities response}
 function on_community_data(event as object) as void
     show_message("")
@@ -654,7 +661,7 @@ function reset(only_hide = false as boolean, reset_header_options = true as bool
 end function
 
 ' Set the poster grid with game content
-' @param event roSGNodeMessage with data containing an associative array 
+' @param event roSGNodeMessage with data containing an associative array
 '        {result: object twitch_get_games response}
 function set_poster_grid(event as object) as void
     show_message("")
@@ -729,7 +736,7 @@ function add_posters_to_section(section, posters, error_code, is_follows) as boo
 end function
 
 ' Set the content grid to the data given to it
-' @param event roSGNodeMessage with data containing an associative array 
+' @param event roSGNodeMessage with data containing an associative array
 '        {result: object twitch_get_streams response}
 function set_content_grid(event as object) as void
     show_message("")
@@ -816,7 +823,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if m.stage = m.ADS_STAGE
         ' Ignore. Control logic is handled by the RAF once it has focus.
     ' Main Menu
-    else if m.main_menu.hasFocus() 
+    else if m.main_menu.hasFocus()
         ' Menu item selected
         if press and (key = "right" or key = "OK")
             m.header.showOptions = false
@@ -1144,7 +1151,7 @@ function update_dynamic_follow_status(no_cache = false as boolean) as void
                 {
                     id: m.dynamic_poster_id.id,
                     no_cache: no_cache
-                }, 
+                },
                 "on_dynamic_follow_game_data"]
         else
             m.twitch_api.get_followed_communities = [
@@ -1287,15 +1294,15 @@ function preload_video(load_vod_at_time = true as boolean) as void
     vod = m.info_screen.video_selected
     if vod = invalid
         streamer = m.info_screen.streamer[1]
-        ' Fallback to ID in the event the client does not have the streamer 
+        ' Fallback to ID in the event the client does not have the streamer
         ' login name
         if streamer = invalid or streamer = ""
             streamer = m.info_screen.streamer[2]
         end if
-        m.twitch_api.get_hls_url = [m.twitch_api.HLS_TYPE_STREAM, streamer, 
+        m.twitch_api.get_hls_url = [m.twitch_api.HLS_TYPE_STREAM, streamer,
             m.video_quality, "on_hls_data"]
     else
-        m.twitch_api.get_hls_url = [m.twitch_api.HLS_TYPE_VIDEO, vod.id, 
+        m.twitch_api.get_hls_url = [m.twitch_api.HLS_TYPE_VIDEO, vod.id,
             m.video_quality, "on_hls_data"]
     end if
 end function
@@ -1322,7 +1329,7 @@ function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at
         ])
         if vod = invalid
             streamer = m.info_screen.streamer[1]
-            ' Fallback to ID in the event the client does not have the streamer 
+            ' Fallback to ID in the event the client does not have the streamer
             ' login name
             if streamer = invalid or streamer = ""
                 streamer = ":" + m.info_screen.streamer[2]
@@ -1656,7 +1663,7 @@ end function
 
 ' Handle a twitch link timeout
 ' This generally means that the link time has expired
-' It could also mean that the API has an error, but that would usually be 
+' It could also mean that the API has an error, but that would usually be
 ' caught on the initial call to the link API endpoint
 function on_link_timeout(event as object) as void
     hide_link_screen()
@@ -1669,8 +1676,12 @@ function on_video_state_change(event as object) as void
     print tab(2)"Stage: " m.stage.toStr()
     ' Handle error
     if event.getData() = "error"
-        print(m.video.errorMsg)
-        if m.stage = m.VIDEO_PLAYER
+        video_error_message = m.video.errorMsg
+        if video_error_message = invalid
+            video_error_message = ""
+        end if
+        print tab(2)"Video error message: " video_error_message
+        if m.stage = m.VIDEO_PLAYER or m.stage = m.CHECK_PLAY
             hide_video()
             show_video_error()
         end if
@@ -1827,8 +1838,8 @@ function on_twitch_user_info(event as object, do_start = false as boolean) as vo
             refresh_callback = "refresh_token_and_start"
         end if
         m.registry.read_multi = [
-            m.global.REG_TWITCH, 
-            [m.global.REG_REFRESH_TOKEN, m.global.REG_TOKEN_SCOPE], 
+            m.global.REG_TWITCH,
+            [m.global.REG_REFRESH_TOKEN, m.global.REG_TOKEN_SCOPE],
             refresh_callback
         ]
         return
@@ -1981,7 +1992,7 @@ end function
 ' Handle vod video being selected
 function on_vod_video_selected(event as object) as void
     id = event.getData()
-    if id = invalid 
+    if id = invalid
         return
     end if
     preload_video(false)
@@ -2017,7 +2028,7 @@ function update_stream_info(event = invalid as object) as void
     ' Do not up/down scale if the video is not playing
     if m.video.state <> "playing"
         return
-    end if 
+    end if
     check_play_ads()
     ' Check if a scale up should be tried
     if not m.did_scale_down and m.video.streamInfo.measuredBitrate - m.video.streamingSegment.segBitrateBps >= 1000000
@@ -2073,7 +2084,7 @@ function on_twitch_language(event as object) as void
     end if
     m.global.language = language
     ' Load the quality from the registry
-    m.registry.read = [m.global.REG_TWITCH, m.global.REG_QUALITY, 
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_QUALITY,
         "on_twitch_quality"]
 end function
 
@@ -2084,7 +2095,7 @@ function on_language_change(event as object) as void
     end if
     m.global.language = event.getData()
     json = formatJson(event.getData())
-    m.registry.write = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, json, 
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE, json,
         "on_language_write"]
 end function
 
@@ -2145,7 +2156,7 @@ function on_quality_change(event as object) as void
     if event.getData() = invalid or event.getData() = ""
         return
     end if
-    m.registry.write = [m.global.REG_TWITCH, m.global.REG_QUALITY, 
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_QUALITY,
         event.getData(), "on_quality_write"]
     m.video_quality_force = event.getData()
 end function
@@ -2165,7 +2176,7 @@ function on_twitch_quality(event as object) as void
         m.video_quality_force = quality
     end if
     ' Load the user token from the registry / start the main application flow
-    m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN, 
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_TOKEN,
         "set_twitch_user_token"]
 end function
 
@@ -2178,7 +2189,7 @@ end function
 ' Handle HLS local settings option change
 function on_hls_local_change(event as object) as void
     enabled = event.getData()
-    m.registry.write = [m.global.REG_TWITCH, m.global.REG_HLS_LOCAL, 
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_HLS_LOCAL,
         enabled.toStr(), "on_hls_local_write"]
     m.global.use_local_hls_parsing = enabled
 end function

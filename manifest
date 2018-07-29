@@ -1,7 +1,7 @@
 title=Twitched
 major_version=1
 minor_version=5
-build_version=2735
+build_version=2843
 mm_icon_focus_hd=pkg:/locale/default/images/channel_poster_hd.png
 mm_icon_focus_sd=pkg:/locale/default/images/channel_poster_sd.png
 splash_screen_fhd=pkg:/locale/default/images/splash_fhd.png
@@ -12,3 +12,5 @@ splash_min_time=1600
 screensaver_private=1
 ui_resolutions=fhd
 sg_component_libs_required=Roku_Analytics
+bs_const=enable_ads=false
+#bs_libs_required=roku_ads_lib
