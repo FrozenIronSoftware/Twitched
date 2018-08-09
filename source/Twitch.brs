@@ -2128,6 +2128,7 @@ function on_buffer_status(event as object) as void
                 return
             end if
             printl(m.INFO, "Stream underrun")
+            m.chat.do_input = false
             set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
             play_video(invalid, false, false)
@@ -2146,6 +2147,7 @@ function on_buffer_status(event as object) as void
                 return
             end if
             printl(m.INFO, "Increasing stream quality")
+            m.chat.do_input = false
             set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
             play_video(invalid, false, false)
