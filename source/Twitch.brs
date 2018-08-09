@@ -256,6 +256,7 @@ function init() as void
     m.video_position = -1
     m.temp_poster_data = invalid
     m.dynamic_poster_id = invalid
+    m.has_attempted_refresh = false
     ' Init
     init_logging()
     init_analytics()
@@ -1830,7 +1831,8 @@ function on_twitch_user_info(event as object, do_start = false as boolean) as vo
         return
     end if
     ' Invalid token. Try to refresh it
-    if info.count() < 1
+    if info.count() < 1 and not m.has_attempted_refresh
+        m.has_attempted_refresh = true
         print "Invalid token. Attempting to refresh"
         refresh_callback = "refresh_token"
         if do_start
@@ -1914,7 +1916,8 @@ function on_refreshed_token(event as object, do_start = false as boolean) as voi
             key_val,
             "on_token_write"
         ]
-        log_in(data.token, false)
+        log_in(data.token, do_start)
+        return
     end if
     if do_start
         deep_link_or_start()
