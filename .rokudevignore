@@ -2,3 +2,5 @@ readme.md
 license.txt
 secret.json.example
 third_party.txt
+bitbucket-pipelines.yml
+check_for_stops.sh
