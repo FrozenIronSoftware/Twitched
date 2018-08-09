@@ -93,7 +93,7 @@ end function
 ' Handle an input request
 ' Expects a sgnode event with the field data being a boolean
 function activate_input(event as object) as void
-    if event.getData()
+    if event.getData() and m.top.user_name <> "" and m.top.token <> ""
         m.keyboard.title = tr("title_chat")
         m.keyboard.buttons = [tr("button_confirm"), tr("button_cancel")]
         m.keyboard.keyboard.text = ""
