@@ -2027,11 +2027,16 @@ function update_stream_info(event = invalid as object) as void
     printl(m.EXTRA, "Underrun: " + m.video.streamInfo.isUnderrun.toStr())
     printl(m.EXTRA, "Screen: " + createObject("roDeviceInfo").getVideoMode())
     printl(m.EXTRA, "Quality: " + m.video_quality)
+    printl(m.EXTRA, "Position: " + m.video.position.toStr())
     ' Do not up/down scale if the video is not playing
     if m.video.state <> "playing"
         return
     end if
     check_play_ads()
+    ' Wait 30 seconds before trying to scale
+    if m.video.position < 30
+        return
+    end if
     ' Check if a scale up should be tried
     if not m.did_scale_down and m.video.streamInfo.measuredBitrate - m.video.streamingSegment.segBitrateBps >= 1000000
         on_buffer_status(true)
