@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
-    <file datatype="x-brs" original="source/source/Twitch.brs" 
+    <file datatype="x-brs" original="source/source/Twitch.brs"
     	source-language="en-US" target-language="en-US">
         <body>
             <trans-unit id="0">
@@ -424,6 +424,18 @@
            		<source>title_unfollow</source>
            		<target>Unfollow</target>
            	</trans-unit>
+            <trans-unit id="104">
+                <source>title_start_menu</source>
+                <target>Start Menu</target>
+            </trans-unit>
+            <trans-unit id="105">
+                <source>message_start_menu</source>
+                <target>Select which menu will be shown on app launch.</target>
+            </trans-unit>
+            <trans-unit id="106">
+                <source>error_start_menu_index_write_fail</source>
+                <target>Failed to write start menu index to registry</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

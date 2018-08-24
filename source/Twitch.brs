@@ -28,6 +28,7 @@ function main(args as dynamic) as void
 	   REG_HISTORY: "HISTORY",
 	   REG_SEARCH: "SEARCH",
 	   REG_HLS_LOCAL: "HLS",
+       REG_START_MENU: "START_MENU",
 	   VERSION: app_info.getVersion(),
 	   P1080: "1080p",
 	   P720: "720p",
@@ -35,6 +36,7 @@ function main(args as dynamic) as void
 	   P360: "360p",
 	   P240: "240p",
 	   use_local_hls_parsing: true,
+       start_menu_index: 0,
 	   twitched_config: {}
 	})
 	' Events
@@ -237,6 +239,7 @@ function init() as void
     m.settings_panel.observeField("language", "on_language_change")
     m.settings_panel.observeField("quality", "on_quality_change")
     m.settings_panel.observeField("hls_local", "on_hls_local_change")
+    m.settings_panel.observeField("start_menu_index", "on_start_menu_index_change")
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
@@ -288,7 +291,8 @@ function on_twitched_config(event as object) as void
     m.global.twitched_config = twitched_config
     ' Load registry data that does not need to be acted upon immediatly
     m.registry.read_multi = [m.global.REG_TWITCH, [
-        m.global.REG_HLS_LOCAL
+        m.global.REG_HLS_LOCAL,
+        m.global.REG_START_MENU
     ], "on_registry_multi_read"]
 end function
 
@@ -298,6 +302,10 @@ function on_registry_multi_read(event as object) as void
     if type(result) = "roAssociativeArray"
         ' Set use local hls parsing defaults to true
         m.global.use_local_hls_parsing = (result[m.global.REG_HLS_LOCAL] = "true" or result[m.global.REG_HLS_LOCAL] = invalid)
+        start_menu_index = result[m.global.REG_START_MENU]
+        if start_menu_index <> invalid
+            m.global.start_menu_index = val(start_menu_index, 0)
+        end if
     end if
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE,
         "on_twitch_language"]
@@ -442,6 +450,7 @@ function deep_link_or_start() as void
         end if
     end if
     ' Normal init
+    m.main_menu.jumpToItem = m.global.start_menu_index
     m.main_menu.setFocus(true)
 end function
 
@@ -2207,5 +2216,19 @@ end function
 function on_hls_local_write(event as object) as void
     if not event.getData().result
         error("error_hls_local_write_fail", 1017)
+    end if
+end function
+
+' Handle start menu index change from settings event
+function on_start_menu_index_change(event as object) as void
+    m.global.start_menu_index = event.getData()
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_START_MENU,
+        m.global.start_menu_index.toStr(), "on_start_menu_index_write"]
+end function
+
+' Handle start menu index setting being written to the registry
+function on_start_menu_index_write(event as object) as void
+    if not event.getData().result
+        error("error_start_menu_index_write_fail", 1018)
     end if
 end function

@@ -2,8 +2,8 @@
 <!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
 <component name="Settings" extends="Group">
 	<children>
-	
-		<LabelList 
+
+		<LabelList
 			id="menu"
 			itemSize="[525,72]"
     		focusBitmapUri="pkg:/locale/default/images/list_selection.9.png"
@@ -16,7 +16,7 @@
     		color="0xffffff" >
     		<ContentNode role="content" />
     	</LabelList>
-    	
+
     	<Label
 			id="title"
 			width="450"
@@ -28,7 +28,7 @@
 			numLines="1"
 			maxLines="1"
 			font="font:LargeBoldSystemFont" />
-			
+
 		<Label
 			id="message"
 			width="525"
@@ -40,7 +40,7 @@
 			numLines="6"
 			maxLines="6"
 			font="font:SmallSystemFont" />
-			
+
 		<CheckList
 			id="checklist"
 			visible="false"
@@ -49,7 +49,7 @@
 			textHorizAlign="left" >
 			<ContentNode role="content" />
 		</CheckList>
-		
+
 		<RadioButtonList
 			id="radiolist"
 			visible="false"
@@ -69,6 +69,7 @@
 		<field id="language" type="array" alwaysNotify="true" />
 		<field id="quality" type="string" alwaysNotify="true" />
 		<field id="hls_local" type="boolean" alwaysNotify="true" />
+        <field id="start_menu_index" type="integer" alwaysNotify="true" />
 	</interface>
 
 	<script type="text/brightscript" uri="pkg:/components/Settings.brs" />
