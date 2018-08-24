@@ -389,6 +389,8 @@ function on_callback(event as object) as void
         on_dynamic_follow_status_change(event)
     else if callback = "on_hls_local_write"
         on_hls_local_write(event)
+    else if callback = "on_start_menu_index_write"
+        on_start_menu_index_write(event)
     else
         if callback = invalid
             callback = ""
