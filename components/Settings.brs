@@ -277,6 +277,15 @@ function on_checked_state_update(event as object) as void
     if m.LANG_JSON.count() <> m.checklist.checkedState.count()
         return
     end if
+    ' Uncheck others if all is selected
+    if m.checklist.checkedState[0]
+        checkedState = [true]
+        for index = 1 to m.LANG_JSON.count() - 1
+            checkedState[index] = false
+        end for
+        m.checklist.checkedState = checkedState
+    end if
+    ' Create list of enabled languages
     language = []
     for index = 0 to m.LANG_JSON.count() - 1
         if m.checklist.checkedState[index]
