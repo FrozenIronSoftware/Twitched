@@ -241,7 +241,7 @@ function init() as void
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
     m.play_check_timer.observeField("fire", "check_play_video")
-    m.poster_grid.observeField("rowItemSelected", "on_poster_item_selcted")
+    m.poster_grid.observeField("rowItemSelected", "on_poster_item_selected")
     ' Vars
     m.video_quality = m.global.P720
     m.last_underrun = 0
@@ -780,7 +780,7 @@ function set_content_grid(event as object) as void
         else
             viewer_string = "{0} {1} {2} {3}"
             node.description = substitute(viewer_string, pretty_number(data.viewer_count), trs("inline_viewers", data.viewer_count), tr("inline_on"), name)
-            if data.game_name <> invalid
+            if data.game_name <> invalid and (m.dynamic_poster_id = invalid or m.dynamic_poster_id.is_community)
                 node.game_image = m.twitch_api.callFunc("get_game_thumbnail", [data.game_name, 120, 168])
             end if
         end if
@@ -1063,7 +1063,7 @@ function stage_contains_poster_grid() as boolean
 end function
 
 ' Handle poster item selection
-function on_poster_item_selcted(event as object) as void
+function on_poster_item_selected(event as object) as void
     load_dynamic_grid()
 end function
 
