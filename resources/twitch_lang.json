@@ -1,5 +1,10 @@
 [
     {
+        "code": "all",
+        "name_en": "All",
+        "name": "All"
+    },
+    {
         "code": "en",
         "name_en": "English",
         "name": "English"

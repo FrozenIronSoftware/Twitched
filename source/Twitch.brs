@@ -28,6 +28,7 @@ function main(args as dynamic) as void
 	   REG_HISTORY: "HISTORY",
 	   REG_SEARCH: "SEARCH",
 	   REG_HLS_LOCAL: "HLS",
+       REG_START_MENU: "START_MENU",
 	   VERSION: app_info.getVersion(),
 	   P1080: "1080p",
 	   P720: "720p",
@@ -35,6 +36,7 @@ function main(args as dynamic) as void
 	   P360: "360p",
 	   P240: "240p",
 	   use_local_hls_parsing: true,
+       start_menu_index: 0,
 	   twitched_config: {}
 	})
 	' Events
@@ -237,11 +239,12 @@ function init() as void
     m.settings_panel.observeField("language", "on_language_change")
     m.settings_panel.observeField("quality", "on_quality_change")
     m.settings_panel.observeField("hls_local", "on_hls_local_change")
+    m.settings_panel.observeField("start_menu_index", "on_start_menu_index_change")
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
     m.play_check_timer.observeField("fire", "check_play_video")
-    m.poster_grid.observeField("rowItemSelected", "on_poster_item_selcted")
+    m.poster_grid.observeField("rowItemSelected", "on_poster_item_selected")
     ' Vars
     m.video_quality = m.global.P720
     m.last_underrun = 0
@@ -256,6 +259,7 @@ function init() as void
     m.video_position = -1
     m.temp_poster_data = invalid
     m.dynamic_poster_id = invalid
+    m.has_attempted_refresh = false
     ' Init
     init_logging()
     init_analytics()
@@ -287,7 +291,8 @@ function on_twitched_config(event as object) as void
     m.global.twitched_config = twitched_config
     ' Load registry data that does not need to be acted upon immediatly
     m.registry.read_multi = [m.global.REG_TWITCH, [
-        m.global.REG_HLS_LOCAL
+        m.global.REG_HLS_LOCAL,
+        m.global.REG_START_MENU
     ], "on_registry_multi_read"]
 end function
 
@@ -297,6 +302,10 @@ function on_registry_multi_read(event as object) as void
     if type(result) = "roAssociativeArray"
         ' Set use local hls parsing defaults to true
         m.global.use_local_hls_parsing = (result[m.global.REG_HLS_LOCAL] = "true" or result[m.global.REG_HLS_LOCAL] = invalid)
+        start_menu_index = result[m.global.REG_START_MENU]
+        if start_menu_index <> invalid
+            m.global.start_menu_index = val(start_menu_index, 0)
+        end if
     end if
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE,
         "on_twitch_language"]
@@ -380,6 +389,8 @@ function on_callback(event as object) as void
         on_dynamic_follow_status_change(event)
     else if callback = "on_hls_local_write"
         on_hls_local_write(event)
+    else if callback = "on_start_menu_index_write"
+        on_start_menu_index_write(event)
     else
         if callback = invalid
             callback = ""
@@ -441,6 +452,7 @@ function deep_link_or_start() as void
         end if
     end if
     ' Normal init
+    m.main_menu.jumpToItem = m.global.start_menu_index
     m.main_menu.setFocus(true)
 end function
 
@@ -779,7 +791,7 @@ function set_content_grid(event as object) as void
         else
             viewer_string = "{0} {1} {2} {3}"
             node.description = substitute(viewer_string, pretty_number(data.viewer_count), trs("inline_viewers", data.viewer_count), tr("inline_on"), name)
-            if data.game_name <> invalid
+            if data.game_name <> invalid and (m.dynamic_poster_id = invalid or m.dynamic_poster_id.is_community)
                 node.game_image = m.twitch_api.callFunc("get_game_thumbnail", [data.game_name, 120, 168])
             end if
         end if
@@ -1062,7 +1074,7 @@ function stage_contains_poster_grid() as boolean
 end function
 
 ' Handle poster item selection
-function on_poster_item_selcted(event as object) as void
+function on_poster_item_selected(event as object) as void
     load_dynamic_grid()
 end function
 
@@ -1830,7 +1842,8 @@ function on_twitch_user_info(event as object, do_start = false as boolean) as vo
         return
     end if
     ' Invalid token. Try to refresh it
-    if info.count() < 1
+    if info.count() < 1 and not m.has_attempted_refresh
+        m.has_attempted_refresh = true
         print "Invalid token. Attempting to refresh"
         refresh_callback = "refresh_token"
         if do_start
@@ -1914,7 +1927,8 @@ function on_refreshed_token(event as object, do_start = false as boolean) as voi
             key_val,
             "on_token_write"
         ]
-        log_in(data.token, false)
+        log_in(data.token, do_start)
+        return
     end if
     if do_start
         deep_link_or_start()
@@ -2024,11 +2038,16 @@ function update_stream_info(event = invalid as object) as void
     printl(m.EXTRA, "Underrun: " + m.video.streamInfo.isUnderrun.toStr())
     printl(m.EXTRA, "Screen: " + createObject("roDeviceInfo").getVideoMode())
     printl(m.EXTRA, "Quality: " + m.video_quality)
+    printl(m.EXTRA, "Position: " + m.video.position.toStr())
     ' Do not up/down scale if the video is not playing
     if m.video.state <> "playing"
         return
     end if
     check_play_ads()
+    ' Wait 30 seconds before trying to scale
+    if m.video.position < 30
+        return
+    end if
     ' Check if a scale up should be tried
     if not m.did_scale_down and m.video.streamInfo.measuredBitrate - m.video.streamingSegment.segBitrateBps >= 1000000
         on_buffer_status(true)
@@ -2125,6 +2144,7 @@ function on_buffer_status(event as object) as void
                 return
             end if
             printl(m.INFO, "Stream underrun")
+            m.chat.do_input = false
             set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
             play_video(invalid, false, false)
@@ -2143,6 +2163,7 @@ function on_buffer_status(event as object) as void
                 return
             end if
             printl(m.INFO, "Increasing stream quality")
+            m.chat.do_input = false
             set_saved_stage_info(m.VIDEO_PLAYER)
             preload_video(true)
             play_video(invalid, false, false)
@@ -2197,5 +2218,19 @@ end function
 function on_hls_local_write(event as object) as void
     if not event.getData().result
         error("error_hls_local_write_fail", 1017)
+    end if
+end function
+
+' Handle start menu index change from settings event
+function on_start_menu_index_change(event as object) as void
+    m.global.start_menu_index = event.getData()
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_START_MENU,
+        m.global.start_menu_index.toStr(), "on_start_menu_index_write"]
+end function
+
+' Handle start menu index setting being written to the registry
+function on_start_menu_index_write(event as object) as void
+    if not event.getData().result
+        error("error_start_menu_index_write_fail", 1018)
     end if
 end function

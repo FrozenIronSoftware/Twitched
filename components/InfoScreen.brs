@@ -395,7 +395,7 @@ function on_stream_data(event as object) as void
         if streams.count() <> 1
             m.loading_dialog.visible = false
             m.buttons.setFocus(true)
-            show_offline_message()
+            show_offline_message(3003)
         ' Online
         else
             m.top.setField("play_selected", true)
@@ -404,10 +404,10 @@ function on_stream_data(event as object) as void
 end function
 
 ' Show a stream offline message dialog
-function show_offline_message() as void
+function show_offline_message(error_code as integer) as void
     m.optionsDialog = false
     m.dialog.title = tr("title_error")
-    m.dialog.message = tr("error_stream_offline") + chr(10) + tr("title_error_code") + ": 3003"
+    m.dialog.message = tr("error_stream_offline") + chr(10) + tr("title_error_code") + ": " + error_code.toStr()
     m.dialog.buttons = [tr("button_confirm")]
     m.dialog.focusButton = 0
     m.dialog_type = "error"
@@ -444,7 +444,7 @@ function show_loading_dialog()
     m.optionsDialog = false
     m.loading_dialog.title = tr("title_loading")
     m.loading_dialog.visible = true
-    ' This is not set as the dialog on the main scene, otherwise the user would 
+    ' This is not set as the dialog on the main scene, otherwise the user would
     ' be able to dismiss it via the back button. This is, however, focused so
     ' the key handler will not be able to perform any actions while it is shown
     m.loading_dialog.setFocus(true)

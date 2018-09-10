@@ -6,15 +6,17 @@ function init() as void
     m.URL_INFO = "https://twitched.org/info"
     m.URL_OSS = "https://twitched.org/info/oss"
     m.URL_PRIVACY = "https://twitched.org/info/privacy"
-    m.INFO = 4
-    m.OSS = 5
-    m.PRIVACY = 6
+    m.INFO = 5
+    m.OSS = 6
+    m.PRIVACY = 7
     m.LANGUAGE = 0
     m.QUALITY = 1
-    m.LOG_IN_OUT = 3
-    m.HLS_LOCAL = 2
-    m.MENU_ITEMS = ["title_language", "title_quality", "title_hls_local", 
-        "title_log_in_out", "title_info", "title_oss", "title_privacy_policy"
+    m.LOG_IN_OUT = 4
+    m.HLS_LOCAL = 3
+    m.START_MENU = 2
+    m.MENU_ITEMS = ["title_language", "title_quality", "title_start_menu",
+        "title_hls_local", "title_log_in_out", "title_info", "title_oss",
+        "title_privacy_policy"
     ]
     m.LANG_JSON = parseJson(readAsciiFile("pkg:/resources/twitch_lang.json"))
     ' Components
@@ -47,7 +49,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
         end if
     ' Menu
     else if m.menu.hasFocus()
-        ' Activate 
+        ' Activate
         if press and key = "right"
             if m.menu.itemFocused = m.LANGUAGE
                 m.checklist.setFocus(true)
@@ -58,8 +60,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
             else if m.menu.itemFocused = m.HLS_LOCAL
                 m.radiolist.setFocus(true)
                 return true
+            else if m.menu.itemFocused = m.START_MENU
+                m.radiolist.setFocus(true)
+                return true
             end if
-        end if        
+        end if
     end if
     return false
 end function
@@ -117,6 +122,9 @@ function select_menu_item(item as integer) as void
         end if
     ' Local HLS
     else if item = m.HLS_LOCAL
+        m.radiolist.setFocus(true)
+    ' Start menu
+    else if item = m.START_MENU
         m.radiolist.setFocus(true)
     ' Unhandled
     else
@@ -218,6 +226,27 @@ function focus_menu_item(item as integer) as void
         m.radiolist.translation = [trans[0], trans[1] + 250]
         ' Show radio list
         m.radiolist.visible = true
+    ' Start Menu
+    else if item = m.START_MENU
+        ' Title and text
+        m.title.text = tr("title_start_menu")
+        m.message.text = tr("message_start_menu")
+        ' Clear
+        m.radiolist.content.removeChildrenIndex(m.radiolist.content.getChildCount(), 0)
+        ' Add menu items
+        items = ["title_popular", "title_games", "title_creative",
+            "title_communities", "title_followed", "title_search"]
+        for each menu_title in items
+            radio_item = m.radiolist.content.createChild("ContentNode")
+            radio_item.title = tr(menu_title)
+        end for
+        ' Set the selected item
+        m.radiolist.checkedItem = m.global.start_menu_index
+        ' Move radio list down
+        trans = m.radiolist.translation
+        m.radiolist.translation = [trans[0], trans[1] + 125]
+        ' Show
+        m.radiolist.visible = true
     ' Unhandled
     else
         print "Unhandled setting menu item focused: " + item.toStr()
@@ -248,6 +277,15 @@ function on_checked_state_update(event as object) as void
     if m.LANG_JSON.count() <> m.checklist.checkedState.count()
         return
     end if
+    ' Uncheck others if all is selected
+    if m.checklist.checkedState[0]
+        checkedState = [true]
+        for index = 1 to m.LANG_JSON.count() - 1
+            checkedState[index] = false
+        end for
+        m.checklist.checkedState = checkedState
+    end if
+    ' Create list of enabled languages
     language = []
     for index = 0 to m.LANG_JSON.count() - 1
         if m.checklist.checkedState[index]
@@ -270,6 +308,10 @@ function on_checked_item_update(event as object) as void
             m.top.setField("hls_local", true)
         else
             m.top.setField("hls_local", false)
+        end if
+    else if m.focused_menu_item = m.START_MENU
+        if event.getData() > -1
+            m.top.setField("start_menu_index", event.getData())
         end if
     end if
 end function
