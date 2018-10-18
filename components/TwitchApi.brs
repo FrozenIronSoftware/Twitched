@@ -365,8 +365,18 @@ function get_video_url(params as object) as string
 end function
 
 ' Get the device model info string
+' The model number is sanitized. The first numbers are kept and any letters are
+' discarded. An X will be append to the numbers.
+' Example: 8000EU becomes 8000X
+' If the format is not matched, the unmodified model will be returned.
 function get_device_model() as string
-    return createObject("roDeviceInfo").getModel()
+    device_info = createObject("roDeviceInfo")
+    model_regex = createObject("roRegex", "([0-9]*).*", "")
+    match = model_regex.match(device_info.getModel())
+    if match.count() <> 2 or (type(match[1], 3) <> "roString" and type(match[1], 3) <> "String")
+        return device_info.getModel()
+    end if
+    return match[1] + "X"
 end function
 
 ' Request a link code from the API
