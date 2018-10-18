@@ -613,17 +613,23 @@ function validate_token(params as object) as void
 end function
 
 ' Get access data and construct a URL for an HLS endpoint
-' @param event with data containing and array of parameters [integer hls_type, string stream_id, string quality, string callback]
+' @param event with data containing and array of parameters [integer hls_type, string stream_id, string quality, string callback, boolean force_fetch]
+'        if force_fetch is true the global config and local config will be
+'        ignored even if they dictate a fetch should fail
 function get_hls_url(params as object) as void
+    passed_params = params.getData()
     ' Return invalid so the server is called for HLS playlists
-    if (not m.global.use_local_hls_parsing) or m.global.twitched_config.force_remote_hls
+    force_fetch = false
+    if passed_params[4] <> invalid and passed_params[4]
+        force_fetch = passed_params[4]
+    end if
+    if ((not m.global.use_local_hls_parsing) or m.global.twitched_config.force_remote_hls) and (not force_fetch)
         m.top.setField("result", {
-            callback: params.getData()[3]
+            callback: passed_params[3]
             result: invalid
         })
         return
     end if
-    passed_params = params.getData()
     hls_url_params = {
         type: passed_params[0],
         id: passed_params[1],

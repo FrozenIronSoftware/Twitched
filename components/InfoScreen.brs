@@ -74,6 +74,8 @@ function on_callback(event as object) as void
         on_unfollow_channel(event)
     else if callback = "on_stream_data"
         on_stream_data(event)
+    else if callback = "on_hls_data"
+        on_hls_data(event)
     else
         if callback = invalid
             callback = ""
@@ -366,9 +368,14 @@ function on_play_button_pressed() as void
     video_id = invalid
     ' Stream play
     if not is_video()
-        m.twitch_api.get_streams = [{
-            user_id: m.top.streamer[2]
-        }, "on_stream_data"]
+        if m.global.twitched_config.force_remote_hls
+            m.twitch_api.get_streams = [{
+                user_id: m.top.streamer[2]
+            }, "on_stream_data"]
+        else
+            m.twitch_api.get_hls_url = [m.twitch_api.HLS_TYPE_STREAM, m.top.streamer[1],
+                m.global.P720, "on_hls_data", true]
+        end if
     ' Video play
     else
         if m.video_selected <> invalid
@@ -400,6 +407,19 @@ function on_stream_data(event as object) as void
         else
             m.top.setField("play_selected", true)
         end if
+    end if
+end function
+
+' Handle stream data (HLS) and either attempt to play video or show offline error
+function on_hls_data(event as object) as void
+    ' HLS data was returned. The stream is online
+    if event <> invalid and type(event.getData().result) = "roAssociativeArray"
+        m.top.setField("play_selected", true)
+    ' There was an error or the stream is offline
+    else
+        m.loading_dialog.visible = false
+        m.buttons.setFocus(true)
+        show_offline_message(3003)
     end if
 end function
 
