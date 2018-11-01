@@ -53,8 +53,8 @@ end function
 function get_ad_id() as string
     ad_id = ""
     device_info = createObject("roDeviceInfo")
-    if not device_info.isAdIdTrackingDisabled() ' TODO deprecated call
-        ad_id = device_info.getAdvertisingId()
+    if not device_info.isRidaDisabled()
+        ad_id = device_info.getRida()
     end if
     return ad_id
 end function
