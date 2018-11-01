@@ -8,6 +8,7 @@ Library "Roku_Ads.brs"
 function init() as void
     ' Constants
     m.PORT = createObject("roMessagePort")
+    m.MAX_ADS_PER_BREAK = 2
     ' Ads
     m.ads = Roku_Ads()
     m.ads.enableNielsenDar(true)
@@ -51,7 +52,7 @@ end function
 function get_ad_id() as string
     ad_id = ""
     device_info = createObject("roDeviceInfo")
-    if not device_info.isAdIdTrackingDisabled()
+    if not device_info.isAdIdTrackingDisabled() ' TODO deprecated call
         ad_id = device_info.getAdvertisingId()
     end if
     return ad_id
@@ -106,29 +107,84 @@ function show_ads(params as object) as void
     else
         m.ads.setContentLength() ' Clear
     end if
-    ads = m.ads.getAds()
-    ads_count = 0
-    if ads <> invalid
-        ads_count = ads.count()
-    end if
-    track_ads(ads_count, false)
-    if ads_count = 0
+    ads = get_ads()
+    ad_pods = ads["ad_pods"]
+    ad_count = ads["count"]
+    track_ads(ad_count, false)
+    if ad_count = 0
         printl(m.DEBUG, "Ads: No ads loaded from third-party ad server")
         ' Load Roku ads as a fallback
         set_ad_url("")
-        ads = m.ads.getAds()
-        if ads <> invalid
-            ads_count = ads.count()
-        end if
-        track_ads(ads_count, true)
-        if ads_count = 0
+        ads = get_ads()
+        ad_pods = ads["ad_pods"]
+        ad_count = ads["count"]
+        track_ads(ad_count, true)
+        if ad_count = 0
             printl(m.DEBUG, "Ads: No ads loaded from Roku ad server")
             m.top.setField("status", true)
             return
         end if
     end if
-    printl(m.DEBUG, "Ads: Showing ads")
-    m.top.setField("status", m.ads.showAds(ads, invalid, m.top.view))
+    printl(m.DEBUG, "Ads: Showing " + ad_count.toStr() + " ads")
+    m.top.setField("status", m.ads.showAds(ad_pods, invalid, m.top.view))
+end function
+
+' Get the ads from the current ad server.
+' @return associative array containing ad pods and the total ad count
+' The ad_pods array may be invalid
+' {
+'   ad_pods: [...],
+'   count: 0
+' }
+' An array of ad pods will be returned with the most ads contained total equal
+' to the total allowed per ad bread (m.MAX_ADS_PER_BREAK).
+function get_ads() as object
+    ret_ad_pods = []
+    ad_count = 0
+    ad_pods = m.ads.getAds()
+    if type(ad_pods) <> "roArray"
+        return {
+            ad_pods: invalid,
+            count: 0
+        }
+    end if
+    for each ad_pod in ad_pods
+        if type(ad_pod) = "roAssociativeArray" and ad_count < m.MAX_ADS_PER_BREAK
+            allowed_ads = []
+            duration = 0
+            ads = ad_pod["ads"]
+            ' Populate an array of ads for this pod
+            if type(ads) = "roArray"
+                max_index = min(m.MAX_ADS_PER_BREAK - ad_count - 1, ads.count() - 1)
+                for ad_index = 0 to max_index
+                    ad = ads[ad_index]
+                    ad_duration = ad["duration"]
+                    if ad_duration <> invalid
+                        duration = duration + ad_duration
+                        allowed_ads.push(ad)
+                    end if
+                end for
+            end if
+            ' Add this pod to the ad pods to return
+            if allowed_ads.count() > 0
+                ad_pod["ads"] = allowed_ads
+                ad_pod["duration"] = duration
+                ad_count = ad_count + allowed_ads.count()
+                ret_ad_pods.push(ad_pod)
+            end if
+        end if
+    end for
+    ' Return ad pods
+    if ad_count > 0
+        return {
+            ad_pods: ret_ad_pods,
+            count: ad_count
+        }
+    end if
+    return {
+        ad_pods: invalid,
+        count: 0
+    }
 end function
 
 ' Send analytics data about how many ads were received for playback
