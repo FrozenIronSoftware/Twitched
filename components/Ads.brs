@@ -12,6 +12,7 @@ function init() as void
     ' Ads
     m.ads = Roku_Ads()
     m.ads.enableNielsenDar(true)
+    m.ads.enableAdMeasurements(true)
     m.ads.setNielsenAppId(m.global.secret.ad_nielsen_id)
     m.ads.setAdPrefs(true, 2)
     ' Components
