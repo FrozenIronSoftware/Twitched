@@ -3,24 +3,25 @@
 <component name="Ads" extends="Task">
 
 	<children>
-	
-		<TwitchApi 
+
+		<TwitchApi
     		id="twitch_api" />
-		
+
 	</children>
 
 	<interface>
 		<!-- Fields -->
 		<field id="status" type="boolean" alwaysNotify="true" />
 		<field id="show_ads" type="array" alwaysNotify="true" />
-		<!-- 
+		<!--
 			 The view field is specified independently because changes to
 			 the node cause field update events.
 		 -->
 		<field id="view" type="node" />
+        <field id="showing_ads" type="boolean" />
 	</interface>
-	
+
 	<script type="text/brightscript" uri="pkg:/components/Ads.brs" />
 	<script type="text/brightscript" uri="pkg:/components/Util.brs" />
-	
+
 </component>

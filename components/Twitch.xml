@@ -45,7 +45,7 @@
     		imageWellBitmapUri=
     			"pkg:/locale/default/images/transparent.png"
     		drawFocusFeedbackOnTop="true" />
-    	
+
     	<RowList
     		id="poster_grid"
     		itemComponentName="PosterRowListItem"
@@ -63,16 +63,16 @@
     		vertFocusAnimationStyle="fixedFocus"
     		drawFocusFeedbackOnTop="true"
     		imageWellBitmapUri="pkg:/locale/default/images/transparent.png" />
-    	
-    	<Registry 
+
+    	<Registry
     		id="registry" />
-    		
-    	<TwitchApi 
+
+    	<TwitchApi
     		id="twitch_api" />
-    	
+
     	<TwitchApi
     		id="twitch_api_auth" />
-    		
+
     	<Label
     		id="status_message"
     		width="1200"
@@ -84,62 +84,62 @@
 			numLines="2"
 			maxLines="2"
 			visible="false" />
-			
+
 		<Settings
 			id="settings"
 			translation="[660,232]"
 			visible="false" />
-			
+
 		<Search
 			id="search"
 			visible="false"
 			translation="[660,232]" />
-			
+
 		<InfoScreen
     		id="info_screen"
     		visible="false"
     		translation="[0,172]" />
-    		
-    	<Rectangle 
+
+    	<Rectangle
     		id="video_background"
     		color="0x000000"
     		visible="false"
     		width="1920"
     		height="1080" />
-			
-		<Video 
+
+		<Video
     		id="video"
     		visible="false"
     		enableTrickPlay="false" />
-    		
+
     	<Chat
     		id="chat"
     		visible="false" />
-    	
-    	<VideoTitle 
+
+    	<VideoTitle
     		id="video_title"
     		visible="false" />
-    		
+
     	<LinkScreen
 			id="link_screen"
 			visible="false"
 			translation="[0, 172]" />
-			
-		<Dialog 
+
+		<Dialog
     		id="dialog"
     		visible="false" />
-    		
+
     	<Timer
     		id="stream_info_timer"
     		repeat="true"
     		duration="5" />
-    		
+
     	<Timer
     		id="play_check_timer"
     		repeat="false"
     		duration="1" />
-    		
-    	<Rectangle 
+
+    	<Rectangle
     		id="ad_container"
     		color="0x000000"
     		visible="false"
@@ -161,11 +161,12 @@
     	</Rectangle>
 
 	</children>
-	
+
 	<interface>
-		
+
 		<field id="do_exit" type="boolean" alwaysNotify="true" />
-		
+        <field id="deep_link" type="assocarray" alwaysNotify="true" />
+
 	</interface>
 
 	<script type="text/brightscript" uri="pkg:/source/Twitch.brs" />

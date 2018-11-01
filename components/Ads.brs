@@ -92,6 +92,7 @@ end function
 ' Sets the status to the result of the ad call
 ' @param params roArray [nielsen_id  as string, genre as string, content_length as integer]
 function show_ads(params as object) as void
+    m.top.showing_ads = true
     if not m.did_fetch_server
         m.twitch_api.get_ad_server = "on_ad_server"
     end if
@@ -128,6 +129,7 @@ function show_ads(params as object) as void
     end if
     printl(m.DEBUG, "Ads: Showing " + ad_count.toStr() + " ads")
     m.top.setField("status", m.ads.showAds(ad_pods, invalid, m.top.view))
+    m.top.showing_ads = false
 end function
 
 ' Get the ads from the current ad server.

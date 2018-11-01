@@ -45,6 +45,8 @@ function main(args as dynamic) as void
 	   display_safe_area(scene)
 	end if
 	scene.observeField("do_exit", port)
+    input = createObject("roInput")
+    input.setMessagePort(port)
 	' Main loop
 	while true
 	   msg = wait(0, port)
@@ -59,6 +61,14 @@ function main(args as dynamic) as void
 	               return
 	           end if
 	       end if
+       else if type(msg) = "roInputEvent"
+           info = msg.getInfo()
+           if info <> invalid
+               scene.deep_link = {
+                   contentId: info.contentId,
+                   mediaType: info.mediaType
+               }
+           end if
 	   end if
 	end while
 end function
@@ -245,6 +255,7 @@ function init() as void
     m.stream_info_timer.observeField("fire", "update_stream_info")
     m.play_check_timer.observeField("fire", "check_play_video")
     m.poster_grid.observeField("rowItemSelected", "on_poster_item_selected")
+    m.top.observeField("deep_link", "on_input_deep_link")
     ' Vars
     m.video_quality = m.global.P720
     m.last_underrun = 0
@@ -1748,6 +1759,7 @@ function hide_video(reset_info_screen = true as boolean) as void
     else
         m.info_screen.focus = "true"
     end if
+    m.ad_container.visible = false
     m.video.control = "stop"
     m.video.visible = false
     m.video_title.visible = false
@@ -2232,5 +2244,19 @@ end function
 function on_start_menu_index_write(event as object) as void
     if not event.getData().result
         error("error_start_menu_index_write_fail", 1018)
+    end if
+end function
+
+' Handle a deep link input event
+' The event data should be an associative array
+function on_input_deep_link(event as object) as void
+    args = event.getData()
+    if args <> invalid and (m.ads = invalid or not m.ads.showing_ads)
+        hide_video()
+        hide_video_info_screen()
+        reset()
+        m.stage = -1
+        m.global.args = args
+        deep_link_or_start()
     end if
 end function
