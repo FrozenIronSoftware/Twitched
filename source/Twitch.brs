@@ -1712,6 +1712,11 @@ function on_video_state_change(event as object) as void
             video_error_message = ""
         end if
         print tab(2)"Video error message: " video_error_message
+        ' Don't do anthing if the error message is ignored
+        if video_error_message = "ignored"
+            print("+++++++++++++++++++++++++++++++++++++++++++++")
+            return
+        end if
         if m.stage = m.VIDEO_PLAYER or m.stage = m.CHECK_PLAY
             hide_video()
             show_video_error()
