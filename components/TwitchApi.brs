@@ -9,6 +9,7 @@ function init() as void
     m.API = "https://www.twitched.org/api" ' Twitched Root API
     m.API_RAW = "https://api.twitch.tv/api" ' Twitch Raw (undocumented) endpoint [It's bloody raw - Gordon Ramsay]
     m.API_USHER = "https://usher.ttvnw.net" ' Twitch Raw (undocumented) endpoint
+    m.API_VIZIMA = "https://vizima.twitch.tv/api" ' Twitch keyserver API
     m.top.setField("AUTH_URL", "https://twitched.org/link") ' User web endpoint
     m.top.HLS_TYPE_STREAM = 0
     m.top.HLS_TYPE_VIDEO = 1
@@ -312,6 +313,8 @@ function on_http_response(event as object) as void
             _on_hls_access_token(event)
         else if callback = "_on_hls_playlist"
             _on_hls_playlist(event)
+        else if callback = "_on_keyserver_data"
+            _on_keyserver_data(event)
         else
             if callback = invalid
                 callback = ""
@@ -623,7 +626,9 @@ function validate_token(params as object) as void
 end function
 
 ' Get access data and construct a URL for an HLS endpoint
-' @param event with data containing and array of parameters [integer hls_type, string stream_id, string quality, string callback, boolean force_fetch]
+' @param event with data containing and array of parameters [integer hls_type,
+'        string stream_id, string quality, string callback,
+'        boolean force_fetch]
 '        if force_fetch is true the global config and local config will be
 '        ignored even if they dictate a fetch should fail
 function get_hls_url(params as object) as void
@@ -644,7 +649,9 @@ function get_hls_url(params as object) as void
         type: passed_params[0],
         id: passed_params[1],
         quality: passed_params[2],
-        callback: passed_params[3]
+        callback: passed_params[3],
+        force_fetch: force_fetch,
+        drm_data: invalid
     }
     ' If the ID is the same as the stored value use the cached data
     if m.hls_url_params <> invalid and m.hls_url_params.id = hls_url_params.id
@@ -683,6 +690,7 @@ function _on_hls_access_token(event as object) as void
     data = event.result
     ' Valid data
     if type(data) = "roAssociativeArray"
+        m.hls_url_params.access_token = data
         url = ""
         url_params = []
         ' Stream
@@ -695,6 +703,9 @@ function _on_hls_access_token(event as object) as void
             url_params.push("type=any")
             url_params.push("allow_audio_only=true")
             url_params.push("allow_source=true")
+            url_params.push("playlist_include_framerate=true")
+            url_params.push("cdm=wv")
+            url_params.push("max_level=52")
         ' Video
         else if m.hls_url_params.type = m.top.HLS_TYPE_VIDEO
             url = m.API_USHER + "/vod/" + m.hls_url_params.id + ".m3u8"
@@ -705,6 +716,9 @@ function _on_hls_access_token(event as object) as void
             url_params.push("type=any")
             url_params.push("allow_audio_only=true")
             url_params.push("allow_source=true")
+            url_params.push("playlist_include_framerate=true")
+            url_params.push("cdm=wv")
+            url_params.push("max_level=52")
         ' Error
         else
             m.top.setField("result", {
@@ -728,6 +742,22 @@ end function
 function _on_hls_playlist(event as object) as void
     data = event.result
     m.hls_playlist = data
+    request_twitch_keyserver_data()
+end function
+
+' Request keyserver auth data from Twitch
+function request_twitch_keyserver_data() as void
+    url = m.API_VIZIMA + "/authxml/" + m.hls_url_params.id
+    url_params = []
+    url_params.push("token=" + m.http_twitch.escape(m.hls_url_params.access_token.token))
+    url_params.push("sig=" + m.http_twitch.escape(m.hls_url_params.access_token.sig))
+    request("GET", url, url_params, "_on_keyserver_data", "", m.http_twitch, false)
+end function
+
+' Handle keyserver data
+function _on_keyserver_data(event as object) as void
+    data = event.result
+    m.hls_url_params.drm_data = data
     clean_master_playlist()
 end function
 
@@ -857,7 +887,8 @@ function clean_master_playlist() as void
         callback: m.hls_url_params.callback
         result: {
             url: out_path,
-            headers: []
+            headers: [],
+            drm_data: m.hls_url_params.drm_data
         }
     })
 end function

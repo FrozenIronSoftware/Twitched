@@ -1335,11 +1335,13 @@ function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at
     vod = m.info_screen.video_selected
     master_playlist = ""
     headers = []
+    drm_data = invalid
     ' User direct Twitch HLS m3u8 URL
     if event <> invalid and type(event.getData().result) = "roAssociativeArray"
         hls_data = event.getData().result
         master_playlist = hls_data.url
         headers.append(hls_data.headers)
+        drm_data = hls_data.drm_data
     ' Use Twitched proxy HLS URL
     else
         printl(m.DEBUG, "Local HLS get failed. Using Twitched's HLS endpoint.")
@@ -1363,6 +1365,13 @@ function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at
     end if
     ' Setup video data
     video = createObject("roSGNode", "ContentNode")
+    if drm_data <> invalid
+        video.drmParams = {
+            keySystem: "widevine",
+            licenseServerUrl: "https://wv-keyos-twitch.licensekeyserver.com/",
+            appData: drm_data
+        }
+    end if
     video.url = master_playlist
     video.adaptiveMaxStartBitrate = 800
     video.switchingStrategy = "full-adaptation"
