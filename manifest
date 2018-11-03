@@ -16,3 +16,4 @@ bs_const=enable_ads=false
 #bs_libs_required=roku_ads_lib
 requires_widevine_drm=1
 requires_widevine_version=1.0
+rsg_version=1.2
