@@ -198,7 +198,6 @@ function init() as void
     m.SETTINGS = 6
     m.MENU_ITEMS = ["title_popular", "title_games", "title_creative",
         "title_communities", "title_followed", "title_search", "title_settings"]
-    m.AD_INTERVAL = 20 * 60
     ' Components
     m.ads = invalid
     #if enable_ads
@@ -306,6 +305,10 @@ function on_twitched_config(event as object) as void
     if type(twitched_config.ad_limit_vod) <> "roInt" and type(twitched_config.ad_limit_vod) <> "Integer"
         printl(m.DEBUG, "Twitched config missing ad_limit_vod field. Defaulting to 2")
         twitched_config.ad_limit_vod = 2
+    end if
+    if type(twitched_config.ad_interval) <> "roInt" and type(twitched_config.ad_interval) <> "Integer"
+        printl(m.DEBUG, "Twitched config missing ad_interval field. Defaulting to 20 minutes (in seconds)")
+        twitched_config.ad_interval = 20 * 60
     end if
     m.global.twitched_config = twitched_config
     ' Load registry data that does not need to be acted upon immediatly
@@ -2097,9 +2100,9 @@ function check_play_ads() as void
     if m.ads = invalid or m.video = invalid or m.video.content = invalid or m.video.content.live = invalid or m.video.position = invalid or m.video.duration = invalid
         return
     end if
-    printl(m.EXTRA, "Ad Time: " + (m.AD_INTERVAL - (m.video.position - m.last_ad_position)).toStr())
+    printl(m.EXTRA, "Ad Time: " + (m.global.twitched_config.ad_interval - (m.video.position - m.last_ad_position)).toStr())
     ' Check if enough time has passed for an ad
-    if m.video.position - m.last_ad_position >= m.AD_INTERVAL
+    if m.video.position - m.last_ad_position >= m.global.twitched_config.ad_interval
         printl(m.DEBUG, "Twitch: Mid-roll ads")
         m.last_ad_position = m.video.position
         if m.video.content.live
