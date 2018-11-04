@@ -299,6 +299,14 @@ function on_twitched_config(event as object) as void
         printl(m.DEBUG, "Twitched config missing stream_qualities field. Defaulting to empty array")
         twitched_config.stream_qualities = []
     end if
+    if type(twitched_config.ad_limit_stream) <> "roInt" and type(twitched_config.ad_limit_stream) <> "Integer"
+        printl(m.DEBUG, "Twitched config missing ad_limit_stream field. Defaulting to 2")
+        twitched_config.ad_limit_stream = 2
+    end if
+    if type(twitched_config.ad_limit_vod) <> "roInt" and type(twitched_config.ad_limit_vod) <> "Integer"
+        printl(m.DEBUG, "Twitched config missing ad_limit_vod field. Defaulting to 2")
+        twitched_config.ad_limit_vod = 2
+    end if
     m.global.twitched_config = twitched_config
     ' Load registry data that does not need to be acted upon immediatly
     m.registry.read_multi = [m.global.REG_TWITCH, [
@@ -1474,7 +1482,8 @@ function do_play_video(event = invalid as object, ignore_error = false as boolea
         save_stage_info(m.ADS_STAGE)
         m.stage = m.ADS_STAGE
         m.ads.view = m.ad_container
-        m.ads.show_ads = [m.info_screen.streamer[1], "GV", m.video.duration]
+        is_vod = (m.info_screen.video_selected <> invalid)
+        m.ads.show_ads = [m.info_screen.streamer[1], "GV", m.video.duration, is_vod]
         m.ad_container.visible = true
     ' Show video
     else

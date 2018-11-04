@@ -8,7 +8,6 @@ Library "Roku_Ads.brs"
 function init() as void
     ' Constants
     m.PORT = createObject("roMessagePort")
-    m.MAX_ADS_PER_BREAK = 2
     ' Ads
     m.ads = Roku_Ads()
     m.ads.enableNielsenDar(true)
@@ -90,7 +89,8 @@ end function
 
 ' Async show ads call
 ' Sets the status to the result of the ad call
-' @param params roArray [nielsen_id  as string, genre as string, content_length as integer]
+' @param params roArray [nielsen_id  as string, genre as string,
+' content_length as integer, is_vod as boolean]
 function show_ads(params as object) as void
     m.top.showing_ads = true
     if not m.did_fetch_server
@@ -99,6 +99,7 @@ function show_ads(params as object) as void
     nielsen_id = params[0]
     genre = params[1]
     content_length = params[2]
+    is_vod = params[3]
     set_ad_url(m.ad_url)
     m.ads.setNielsenProgramId(nielsen_id) ' Streamer
     m.ads.setNielsenGenre(genre) ' General variety
@@ -109,7 +110,11 @@ function show_ads(params as object) as void
     else
         m.ads.setContentLength() ' Clear
     end if
-    ads = get_ads()
+    max_ads = m.global.twitched_config.ad_limit_stream
+    if is_vod
+        max_ads = m.global.twitched_config.ad_limit_vod
+    end if
+    ads = get_ads(max_ads)
     ad_pods = ads["ad_pods"]
     ad_count = ads["count"]
     track_ads(ad_count, false)
@@ -117,7 +122,7 @@ function show_ads(params as object) as void
         printl(m.DEBUG, "Ads: No ads loaded from third-party ad server")
         ' Load Roku ads as a fallback
         set_ad_url("")
-        ads = get_ads()
+        ads = get_ads(max_ads)
         ad_pods = ads["ad_pods"]
         ad_count = ads["count"]
         track_ads(ad_count, true)
@@ -140,8 +145,12 @@ end function
 '   count: 0
 ' }
 ' An array of ad pods will be returned with the most ads contained total equal
-' to the total allowed per ad bread (m.MAX_ADS_PER_BREAK).
-function get_ads() as object
+' to the total allowed per ad bread, passed as the first argument.
+function get_ads(max_ads as integer) as object
+    if max_ads < 1
+        printl(m.DEBUG, "Ads: Max ads set to less than 1. Forcing 2")
+        max_ads = 2 ' Load two if for some reason max_ads is 0 or less
+    end if
     ret_ad_pods = []
     ad_count = 0
     ad_pods = m.ads.getAds()
@@ -152,13 +161,13 @@ function get_ads() as object
         }
     end if
     for each ad_pod in ad_pods
-        if type(ad_pod) = "roAssociativeArray" and ad_count < m.MAX_ADS_PER_BREAK
+        if type(ad_pod) = "roAssociativeArray" and ad_count < max_ads
             allowed_ads = []
             duration = 0
             ads = ad_pod["ads"]
             ' Populate an array of ads for this pod
             if type(ads) = "roArray"
-                max_index = min(m.MAX_ADS_PER_BREAK - ad_count - 1, ads.count() - 1)
+                max_index = min(max_ads - ad_count - 1, ads.count() - 1)
                 for ad_index = 0 to max_index
                     ad = ads[ad_index]
                     ad_duration = ad["duration"]
