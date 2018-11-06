@@ -29,6 +29,7 @@ function main(args as dynamic) as void
 	   REG_SEARCH: "SEARCH",
 	   REG_HLS_LOCAL: "HLS",
        REG_START_MENU: "START_MENU",
+       REG_VOD_BOOKMARK: "VOD_BOOKMARK",
 	   VERSION: app_info.getVersion(),
 	   P1080: "1080p",
 	   P720: "720p",
@@ -269,6 +270,7 @@ function init() as void
     m.temp_poster_data = invalid
     m.dynamic_poster_id = invalid
     m.has_attempted_refresh = false
+    m.bookmarks = invalid
     ' Init
     init_logging()
     init_analytics()
@@ -415,6 +417,10 @@ function on_callback(event as object) as void
         on_hls_local_write(event)
     else if callback = "on_start_menu_index_write"
         on_start_menu_index_write(event)
+    else if callback = "on_video_bookmark"
+        on_video_bookmark(event)
+    else if callback = "on_bookmark_write"
+        on_bookmark_write(event)
     else
         if callback = invalid
             callback = ""
@@ -1771,6 +1777,7 @@ end function
 
 ' Hide the video and show the info screen
 function hide_video(reset_info_screen = true as boolean) as void
+    bookmark_video()
     set_saved_stage_info(m.VIDEO_PLAYER)
     m.info_screen.setFocus(true)
     m.info_screen.visible = true
@@ -2040,8 +2047,60 @@ function on_vod_video_selected(event as object) as void
     if id = invalid
         return
     end if
-    preload_video(false)
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_VOD_BOOKMARK,
+        "on_video_bookmark"]
+end function
+
+' Handle a video bookmark location
+function on_video_bookmark(event as object) as void
+    data = event.getData().result
+    bookmarks = parseJson(data)
+    m.bookmarks = bookmarks
+    id = m.info_screen.video_selected
+    m.video_position = 0
+    if type(bookmarks) = "roArray"
+        for each bookmark in bookmarks
+            if bookmark.id = id
+                m.video_position = bookmark.time
+            end if
+        end for
+    end if
+    preload_video(true)
     play_video(invalid, true)
+end function
+
+' Bookmark the current video time
+function bookmark_video() as void
+    if m.info_screen.video_selected = invalid or type(m.bookmarks) <> "roArray"
+        return
+    end if
+    mark = {
+        id: m.info_screen.video_selected,
+        time: m.video.position
+    }
+    if m.bookmarks.count() >= 100
+        m.bookmarks.delete(0)
+    end if
+    added = false
+    for bookmark_index = 0 to m.bookmarks.count() - 1
+        bookmark = m.bookmarks[bookmark_index]
+        if bookmark.id = mark.id
+            m.bookmarks[bookmark_index] = mark
+            added = true
+        end if
+    end for
+    if not added
+        m.bookmarks.push(mark)
+    end if
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_VOD_BOOKMARK,
+        m.bookmarks, "on_bookmark_write"]
+end function
+
+' Handle bookmark being written
+function on_bookmark_write(event as object) as void
+    if not event.getData().result
+        error("error_bookmark_write_fail", 1019)
+    end if
 end function
 
 ' Set the dialog for the info screen
