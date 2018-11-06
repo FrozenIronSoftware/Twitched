@@ -234,7 +234,7 @@ function focus_menu_item(item as integer) as void
         ' Clear
         m.radiolist.content.removeChildrenIndex(m.radiolist.content.getChildCount(), 0)
         ' Add menu items
-        items = ["title_popular", "title_games", "title_creative",
+        items = ["title_popular", "title_games",
             "title_communities", "title_followed", "title_search"]
         for each menu_title in items
             radio_item = m.radiolist.content.createChild("ContentNode")

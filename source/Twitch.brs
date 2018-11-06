@@ -191,12 +191,11 @@ function init() as void
     m.CHECK_PLAY = 1005
     m.POPULAR = 0
     m.GAMES = 1
-    m.CREATIVE = 2
-    m.COMMUNITIES = 3
-    m.FOLLOWED = 4
-    m.SEARCH = 5
-    m.SETTINGS = 6
-    m.MENU_ITEMS = ["title_popular", "title_games", "title_creative",
+    m.COMMUNITIES = 2
+    m.FOLLOWED = 3
+    m.SEARCH = 4
+    m.SETTINGS = 5
+    m.MENU_ITEMS = ["title_popular", "title_games",
         "title_communities", "title_followed", "title_search", "title_settings"]
     ' Components
     m.ads = invalid
@@ -327,6 +326,9 @@ function on_registry_multi_read(event as object) as void
         start_menu_index = result[m.global.REG_START_MENU]
         if start_menu_index <> invalid
             m.global.start_menu_index = val(start_menu_index, 0)
+            if m.global.start_menu_index > m.SEARCH or m.global.start_menu_index < 0
+                m.global.start_menu_index = 0
+            end if
         end if
     end if
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE,
@@ -558,14 +560,6 @@ function load_menu_item(stage as integer, force = false as boolean) as void
         m.poster_grid.visible = true
         show_message("message_loading")
         m.twitch_api.get_games = [{limit: m.MAX_POSTERS}, "on_game_data"]
-    ' Creative
-    else if stage = m.CREATIVE
-        m.content_grid.visible = true
-        show_message("message_loading")
-        ' Creative id: 488191
-        show_message("message_loading")
-        m.twitch_api.get_streams = [{limit: m.MAX_VIDEOS, game: "488191"},
-            "set_content_grid"]
     ' Communities
     else if stage = m.COMMUNITIES
         m.poster_grid.visible = true
@@ -1087,7 +1081,7 @@ end function
 
 ' Checks if the current stage's content is a video grid
 function stage_contains_video_grid() as boolean
-    return m.stage = m.POPULAR or m.stage = m.FOLLOWED or m.stage = m.DYNAMIC_GRID or m.stage = m.CREATIVE
+    return m.stage = m.POPULAR or m.stage = m.FOLLOWED or m.stage = m.DYNAMIC_GRID
 end function
 
 ' Checks if the current stage's content is a poster grid
@@ -1100,7 +1094,7 @@ function on_poster_item_selected(event as object) as void
     load_dynamic_grid()
 end function
 
-' Load a video grid with the currently selected game/community/creative videos
+' Load a video grid with the currently selected game/community videos
 function load_dynamic_grid(game_name = "" as string, game_id = "" as string, community_id = "" as string) as void
     ' Check data
     if (type(m.poster_data) <> "roArray" or m.poster_data.count() < 2 or type(m.poster_data[0]) <> "roArray" or type(m.poster_data[1]) <> "roArray") and game_name = "" and game_id = "" and community_id = ""
