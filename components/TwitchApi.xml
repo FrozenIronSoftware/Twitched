@@ -39,8 +39,9 @@
 		<function name="get_stream_url" />
 		<function name="get_video_url" />
 		<function name="get_game_thumbnail" />
+        <function name="get_bif_url" />
 	</interface>
-	
+
 	<script type="text/brightscript" uri="pkg:/components/TwitchApi.brs" />
 	<script type="text/brightscript" uri="pkg:/components/HlsUtil.brs" />
 	<script type="text/brightscript" uri="pkg:/components/Util.brs" />

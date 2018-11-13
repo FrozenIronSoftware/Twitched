@@ -1391,6 +1391,9 @@ function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at
         video.title = vod.title
         video.description = vod.description
         m.video.duration = vod.duration
+        video.sdBifUrl = m.twitch_api.callFunc("get_bif_url", ["sd", vod.id])
+        video.hdBifUrl = m.twitch_api.callFunc("get_bif_url", ["hd", vod.id])
+        video.fhdBifUrl = m.twitch_api.callFunc("get_bif_url", ["fhd", vod.id])
     else
         video.title = m.info_screen.title
         if m.info_screen.game[0] <> invalid and m.info_screen.game[0] <> ""

@@ -367,6 +367,12 @@ function get_video_url(params as object) as string
     return (m.API + "/twitch/vod/60/" + params[1] + "/" + get_device_model() + "/" + params[0] + "+" + params[1] + ".m3u8").encodeUri().replace("+", "%2B")
 end function
 
+' Get bif url
+' @param params array [quality, video_id]
+function get_bif_url(params as object) as string
+    return (m.API + "/bif/" + params[1] + "/" + params[0] + ".bif").encodeUri()
+end function
+
 ' Get the device model info string
 ' The model number is sanitized. The first numbers are kept and any letters are
 ' discarded. An X will be append to the numbers.
