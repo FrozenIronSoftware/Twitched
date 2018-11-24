@@ -440,6 +440,14 @@
                 <source>error_bookmark_write_fail</source>
                 <target>Error al guardar el marcador.</target>
             </trans-unit>
+            <trans-unit id="108">
+                <source>title_stream_drm</source>
+                <target>Transmisión DRM</target>
+            </trans-unit>
+            <trans-unit id="109">
+                <source>error_stream_drm</source>
+                <target>No se puede reproducir la transmisión DRM.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

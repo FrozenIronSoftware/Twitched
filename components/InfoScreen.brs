@@ -170,6 +170,15 @@ function is_user() as boolean
     return stream_type = "user" or stream_type = "user_follow"
 end function
 
+' Check if the type is a DRM stream
+function is_drm() as boolean
+    stream_type = m.top.getField("stream_type")
+    if stream_type = invalid
+        return false
+    end if
+    return ucase(stream_type).instr(0, "DRM") > -1
+end function
+
 ' Handle a button selection
 function on_button_selected(event as object) as void
     callback = m.button_callbacks[event.getData()]
@@ -368,7 +377,10 @@ function on_play_button_pressed() as void
     video_id = invalid
     ' Stream play
     if not is_video()
-        if m.global.twitched_config.force_remote_hls
+        if is_drm()
+            show_drm_message()
+            return
+        else if m.global.twitched_config.force_remote_hls
             m.twitch_api.get_streams = [{
                 user_id: m.top.streamer[2]
             }, "on_stream_data"]
@@ -428,6 +440,18 @@ function show_offline_message(error_code as integer) as void
     m.optionsDialog = false
     m.dialog.title = tr("title_error")
     m.dialog.message = tr("error_stream_offline") + chr(10) + tr("title_error_code") + ": " + error_code.toStr()
+    m.dialog.buttons = [tr("button_confirm")]
+    m.dialog.focusButton = 0
+    m.dialog_type = "error"
+    m.dialog.visible = true
+    m.top.setField("dialog", m.dialog)
+end function
+
+' Show drm message
+function show_drm_message() as void
+    m.optionsDialog = false
+    m.dialog.title = tr("title_stream_drm")
+    m.dialog.message = tr("error_stream_drm")
     m.dialog.buttons = [tr("button_confirm")]
     m.dialog.focusButton = 0
     m.dialog_type = "error"
