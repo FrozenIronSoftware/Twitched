@@ -1,13 +1,12 @@
 ' Copyright (C) 2018 Rolando Islas. All Rights Reserved.
 
 ' Get the max quality of video the current roku model will support
-function get_max_quality_for_model(quality as string) as object
+function get_max_quality_for_model(quality as string, model as string) as object
     quality = ucase(quality)
     if right(quality, 1) = "P"
         quality = left(quality, len(quality) - 1)
     end if
     requested_quality = val(quality, 0)
-    model = createObject("roDeviceInfo").getModel()
     for each stream_quality in m.global.twitched_config.stream_qualities
         if stream_quality.model = model
             stream_quality = limit_stream_quality(stream_quality, requested_quality)
