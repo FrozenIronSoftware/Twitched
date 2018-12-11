@@ -65,6 +65,7 @@ function init() as void
     m.top.observeField("unfollow_community", m.port)
     m.top.observeField("unfollow_game", m.port)
     ' Task init
+    init_logging()
     m.top.functionName = "run"
     m.top.control = "RUN"
 end function
@@ -779,7 +780,7 @@ function clean_master_playlist() as void
         return
     end if
     ' Clean the playlist
-    max_quality = get_max_quality_for_model(m.hls_url_params.qualitym, get_device_model())
+    max_quality = get_max_quality_for_model(m.hls_url_params.quality, get_device_model())
     new_line_regex = createObject("roRegex", chr(13) + "?" + chr(10), "")
     lines = new_line_regex.split(m.hls_playlist)
     master_playlist = []
