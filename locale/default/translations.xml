@@ -434,7 +434,19 @@
             </trans-unit>
             <trans-unit id="106">
                 <source>error_start_menu_index_write_fail</source>
-                <target>Failed to write start menu index to registry</target>
+                <target>Failed to save start menu.</target>
+            </trans-unit>
+            <trans-unit id="107">
+                <source>error_bookmark_write_fail</source>
+                <target>Failed to save bookmark.</target>
+            </trans-unit>
+            <trans-unit id="108">
+                <source>title_stream_drm</source>
+                <target>DRM Stream</target>
+            </trans-unit>
+            <trans-unit id="109">
+                <source>error_stream_drm</source>
+                <target>Cannot play DRM stream.</target>
             </trans-unit>
         </body>
     </file>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Copyright (C) 2018 Frozen Iron Software LLC. All Rights Reserved. -->
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
-    <file datatype="x-brs" original="source/source/Twitch.brs" 
+    <file datatype="x-brs" original="source/source/Twitch.brs"
     	source-language="en-US" target-language="es-ES">
         <body>
             <trans-unit id="0">
@@ -424,6 +424,30 @@
            		<source>title_unfollow</source>
            		<target>Dejar de Seguir</target>
            	</trans-unit>
+            <trans-unit id="104">
+                <source>title_start_menu</source>
+                <target>Menu de Inicio</target>
+            </trans-unit>
+            <trans-unit id="105">
+                <source>message_start_menu</source>
+                <target>Seleccione qué menú se mostrará en el inicio de la aplicación.</target>
+            </trans-unit>
+            <trans-unit id="106">
+                <source>error_start_menu_index_write_fail</source>
+                <target>Error al guardar el menú de inicio.</target>
+            </trans-unit>
+            <trans-unit id="107">
+                <source>error_bookmark_write_fail</source>
+                <target>Error al guardar el marcador.</target>
+            </trans-unit>
+            <trans-unit id="108">
+                <source>title_stream_drm</source>
+                <target>Transmisión DRM</target>
+            </trans-unit>
+            <trans-unit id="109">
+                <source>error_stream_drm</source>
+                <target>No se puede reproducir la transmisión DRM.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

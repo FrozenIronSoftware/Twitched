@@ -234,7 +234,7 @@ function focus_menu_item(item as integer) as void
         ' Clear
         m.radiolist.content.removeChildrenIndex(m.radiolist.content.getChildCount(), 0)
         ' Add menu items
-        items = ["title_popular", "title_games", "title_creative",
+        items = ["title_popular", "title_games",
             "title_communities", "title_followed", "title_search"]
         for each menu_title in items
             radio_item = m.radiolist.content.createChild("ContentNode")
@@ -277,12 +277,23 @@ function on_checked_state_update(event as object) as void
     if m.LANG_JSON.count() <> m.checklist.checkedState.count()
         return
     end if
+    ' Check if all was selected prior to modification
+    all_selected = false
+    for each lang in m.global.language
+        if lang = "all"
+            all_selected = true
+        end if
+    end for
     ' Uncheck others if all is selected
-    if m.checklist.checkedState[0]
+    if m.checklist.checkedState[0] and not all_selected
         checkedState = [true]
         for index = 1 to m.LANG_JSON.count() - 1
             checkedState[index] = false
         end for
+        m.checklist.checkedState = checkedState
+    else if all_selected
+        checkedState = m.checklist.checkedState
+        checkedState[0] = false
         m.checklist.checkedState = checkedState
     end if
     ' Create list of enabled languages

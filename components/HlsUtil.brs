@@ -1,18 +1,21 @@
 ' Copyright (C) 2018 Rolando Islas. All Rights Reserved.
 
 ' Get the max quality of video the current roku model will support
-function get_max_quality_for_model(quality as string) as object
+function get_max_quality_for_model(quality as string, model as string) as object
     quality = ucase(quality)
     if right(quality, 1) = "P"
         quality = left(quality, len(quality) - 1)
     end if
     requested_quality = val(quality, 0)
-    model = createObject("roDeviceInfo").getModel()
-    for each stream_quality in m.global.twitched_config.stream_qualities
-        if stream_quality.model = model
-            stream_quality = limit_stream_quality(stream_quality, requested_quality)
-            return stream_quality
-        end if
+    models = get_generic_models_from_specific(model)
+    for each model_generic in models
+        for each stream_quality in m.global.twitched_config.stream_qualities
+            if stream_quality.model = model_generic
+                printl(m.DEBUG, "Quality found for model: " + model_generic + ". Original: " + model)
+                stream_quality = limit_stream_quality(stream_quality, requested_quality)
+                return stream_quality
+            end if
+        end for
     end for
     ' Quality not found in database
     ' Send a sensible 720p 30fps 7mbps default quality
@@ -31,6 +34,36 @@ function get_max_quality_for_model(quality as string) as object
         "1080p60": false,
         "only_source_60": true
     }
+end function
+
+' Given a model return the generic versions of it in an array
+' At least one will be returned
+' For example: Model 5130X will return:
+' [
+'     5130X, ' Original
+'     5130X, ' Ones removed
+'     5100X, ' Tens removed
+'     5000X  ' Hundreds removed
+' ]
+function get_generic_models_from_specific(model) as object
+    models = [model]
+    model_regex = createObject("roRegex", "([0-9]*).*", "")
+    match = model_regex.match(model)
+    if match.count() <> 2 or (type(match[1], 3) <> "roString" and type(match[1], 3) <> "String")
+        return models
+    end if
+    model_int = val(match[1], 0)
+    if model_int < 1000
+        return models
+    end if
+    thousands = int(model_int mod 10000 / 1000)
+    hundreds = int(model_int / 100 mod 10)
+    tens = int(model_int / 10 mod 10)
+    ones = int(model_int mod 10)
+    models.push(((thousands * 1000) + (hundreds * 100) + (tens * 10)).toStr() + "X")
+    models.push(((thousands * 1000) + (hundreds * 100)).toStr() + "X")
+    models.push((thousands * 1000).toStr() + "X")
+    return models
 end function
 
 ' Limit stream quality

@@ -121,3 +121,12 @@ function array_contains(search_array as object, search_item as object) as boolea
     end for
     return false
 end function
+
+' Return the smallest of two numbers
+function min(a as dynamic, b as dynamic) as dynamic
+    if a < b
+        return a
+    else
+        return b
+    end if
+end function

@@ -29,6 +29,7 @@ function main(args as dynamic) as void
 	   REG_SEARCH: "SEARCH",
 	   REG_HLS_LOCAL: "HLS",
        REG_START_MENU: "START_MENU",
+       REG_VOD_BOOKMARK: "VOD_BOOKMARK",
 	   VERSION: app_info.getVersion(),
 	   P1080: "1080p",
 	   P720: "720p",
@@ -45,6 +46,8 @@ function main(args as dynamic) as void
 	   display_safe_area(scene)
 	end if
 	scene.observeField("do_exit", port)
+    input = createObject("roInput")
+    input.setMessagePort(port)
 	' Main loop
 	while true
 	   msg = wait(0, port)
@@ -59,6 +62,14 @@ function main(args as dynamic) as void
 	               return
 	           end if
 	       end if
+       else if type(msg) = "roInputEvent"
+           info = msg.getInfo()
+           if info <> invalid
+               scene.deep_link = {
+                   contentId: info.contentId,
+                   mediaType: info.mediaType
+               }
+           end if
 	   end if
 	end while
 end function
@@ -181,14 +192,12 @@ function init() as void
     m.CHECK_PLAY = 1005
     m.POPULAR = 0
     m.GAMES = 1
-    m.CREATIVE = 2
-    m.COMMUNITIES = 3
-    m.FOLLOWED = 4
-    m.SEARCH = 5
-    m.SETTINGS = 6
-    m.MENU_ITEMS = ["title_popular", "title_games", "title_creative",
+    m.COMMUNITIES = 2
+    m.FOLLOWED = 3
+    m.SEARCH = 4
+    m.SETTINGS = 5
+    m.MENU_ITEMS = ["title_popular", "title_games",
         "title_communities", "title_followed", "title_search", "title_settings"]
-    m.AD_INTERVAL = 20 * 60
     ' Components
     m.ads = invalid
     #if enable_ads
@@ -245,6 +254,7 @@ function init() as void
     m.stream_info_timer.observeField("fire", "update_stream_info")
     m.play_check_timer.observeField("fire", "check_play_video")
     m.poster_grid.observeField("rowItemSelected", "on_poster_item_selected")
+    m.top.observeField("deep_link", "on_input_deep_link")
     ' Vars
     m.video_quality = m.global.P720
     m.last_underrun = 0
@@ -260,6 +270,7 @@ function init() as void
     m.temp_poster_data = invalid
     m.dynamic_poster_id = invalid
     m.has_attempted_refresh = false
+    m.bookmarks = invalid
     ' Init
     init_logging()
     init_analytics()
@@ -288,6 +299,18 @@ function on_twitched_config(event as object) as void
         printl(m.DEBUG, "Twitched config missing stream_qualities field. Defaulting to empty array")
         twitched_config.stream_qualities = []
     end if
+    if type(twitched_config.ad_limit_stream) <> "roInt" and type(twitched_config.ad_limit_stream) <> "Integer"
+        printl(m.DEBUG, "Twitched config missing ad_limit_stream field. Defaulting to 2")
+        twitched_config.ad_limit_stream = 2
+    end if
+    if type(twitched_config.ad_limit_vod) <> "roInt" and type(twitched_config.ad_limit_vod) <> "Integer"
+        printl(m.DEBUG, "Twitched config missing ad_limit_vod field. Defaulting to 2")
+        twitched_config.ad_limit_vod = 2
+    end if
+    if type(twitched_config.ad_interval) <> "roInt" and type(twitched_config.ad_interval) <> "Integer"
+        printl(m.DEBUG, "Twitched config missing ad_interval field. Defaulting to 20 minutes (in seconds)")
+        twitched_config.ad_interval = 20 * 60
+    end if
     m.global.twitched_config = twitched_config
     ' Load registry data that does not need to be acted upon immediatly
     m.registry.read_multi = [m.global.REG_TWITCH, [
@@ -305,6 +328,9 @@ function on_registry_multi_read(event as object) as void
         start_menu_index = result[m.global.REG_START_MENU]
         if start_menu_index <> invalid
             m.global.start_menu_index = val(start_menu_index, 0)
+            if m.global.start_menu_index > m.SEARCH or m.global.start_menu_index < 0
+                m.global.start_menu_index = 0
+            end if
         end if
     end if
     m.registry.read = [m.global.REG_TWITCH, m.global.REG_LANGUAGUE,
@@ -391,6 +417,10 @@ function on_callback(event as object) as void
         on_hls_local_write(event)
     else if callback = "on_start_menu_index_write"
         on_start_menu_index_write(event)
+    else if callback = "on_video_bookmark"
+        on_video_bookmark(event)
+    else if callback = "on_bookmark_write"
+        on_bookmark_write(event)
     else
         if callback = invalid
             callback = ""
@@ -536,14 +566,6 @@ function load_menu_item(stage as integer, force = false as boolean) as void
         m.poster_grid.visible = true
         show_message("message_loading")
         m.twitch_api.get_games = [{limit: m.MAX_POSTERS}, "on_game_data"]
-    ' Creative
-    else if stage = m.CREATIVE
-        m.content_grid.visible = true
-        show_message("message_loading")
-        ' Creative id: 488191
-        show_message("message_loading")
-        m.twitch_api.get_streams = [{limit: m.MAX_VIDEOS, game: "488191"},
-            "set_content_grid"]
     ' Communities
     else if stage = m.COMMUNITIES
         m.poster_grid.visible = true
@@ -1065,7 +1087,7 @@ end function
 
 ' Checks if the current stage's content is a video grid
 function stage_contains_video_grid() as boolean
-    return m.stage = m.POPULAR or m.stage = m.FOLLOWED or m.stage = m.DYNAMIC_GRID or m.stage = m.CREATIVE
+    return m.stage = m.POPULAR or m.stage = m.FOLLOWED or m.stage = m.DYNAMIC_GRID
 end function
 
 ' Checks if the current stage's content is a poster grid
@@ -1078,7 +1100,7 @@ function on_poster_item_selected(event as object) as void
     load_dynamic_grid()
 end function
 
-' Load a video grid with the currently selected game/community/creative videos
+' Load a video grid with the currently selected game/community videos
 function load_dynamic_grid(game_name = "" as string, game_id = "" as string, community_id = "" as string) as void
     ' Check data
     if (type(m.poster_data) <> "roArray" or m.poster_data.count() < 2 or type(m.poster_data[0]) <> "roArray" or type(m.poster_data[1]) <> "roArray") and game_name = "" and game_id = "" and community_id = ""
@@ -1324,11 +1346,13 @@ function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at
     vod = m.info_screen.video_selected
     master_playlist = ""
     headers = []
+    drm_data = invalid
     ' User direct Twitch HLS m3u8 URL
     if event <> invalid and type(event.getData().result) = "roAssociativeArray"
         hls_data = event.getData().result
         master_playlist = hls_data.url
         headers.append(hls_data.headers)
+        drm_data = hls_data.drm_data
     ' Use Twitched proxy HLS URL
     else
         printl(m.DEBUG, "Local HLS get failed. Using Twitched's HLS endpoint.")
@@ -1352,6 +1376,13 @@ function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at
     end if
     ' Setup video data
     video = createObject("roSGNode", "ContentNode")
+    if drm_data <> invalid
+        video.drmParams = {
+            keySystem: "widevine",
+            licenseServerUrl: "https://wv-keyos-twitch.licensekeyserver.com/",
+            appData: drm_data
+        }
+    end if
     video.url = master_playlist
     video.adaptiveMaxStartBitrate = 800
     video.switchingStrategy = "full-adaptation"
@@ -1360,6 +1391,9 @@ function on_hls_data(event = invalid as object, load_vod_at_time = m.load_vod_at
         video.title = vod.title
         video.description = vod.description
         m.video.duration = vod.duration
+        video.sdBifUrl = m.twitch_api.callFunc("get_bif_url", ["sd", vod.id])
+        video.hdBifUrl = m.twitch_api.callFunc("get_bif_url", ["hd", vod.id])
+        video.fhdBifUrl = m.twitch_api.callFunc("get_bif_url", ["fhd", vod.id])
     else
         video.title = m.info_screen.title
         if m.info_screen.game[0] <> invalid and m.info_screen.game[0] <> ""
@@ -1454,7 +1488,8 @@ function do_play_video(event = invalid as object, ignore_error = false as boolea
         save_stage_info(m.ADS_STAGE)
         m.stage = m.ADS_STAGE
         m.ads.view = m.ad_container
-        m.ads.show_ads = [m.info_screen.streamer[1], "GV", m.video.duration]
+        is_vod = (m.info_screen.video_selected <> invalid)
+        m.ads.show_ads = [m.info_screen.streamer[1], "GV", m.video.duration, is_vod]
         m.ad_container.visible = true
     ' Show video
     else
@@ -1692,6 +1727,11 @@ function on_video_state_change(event as object) as void
             video_error_message = ""
         end if
         print tab(2)"Video error message: " video_error_message
+        ' Don't do anthing if the error message is ignored
+        if video_error_message = "ignored"
+            print("+++++++++++++++++++++++++++++++++++++++++++++")
+            return
+        end if
         if m.stage = m.VIDEO_PLAYER or m.stage = m.CHECK_PLAY
             hide_video()
             show_video_error()
@@ -1740,6 +1780,7 @@ end function
 
 ' Hide the video and show the info screen
 function hide_video(reset_info_screen = true as boolean) as void
+    bookmark_video()
     set_saved_stage_info(m.VIDEO_PLAYER)
     m.info_screen.setFocus(true)
     m.info_screen.visible = true
@@ -1748,6 +1789,7 @@ function hide_video(reset_info_screen = true as boolean) as void
     else
         m.info_screen.focus = "true"
     end if
+    m.ad_container.visible = false
     m.video.control = "stop"
     m.video.visible = false
     m.video_title.visible = false
@@ -2008,8 +2050,60 @@ function on_vod_video_selected(event as object) as void
     if id = invalid
         return
     end if
-    preload_video(false)
+    m.registry.read = [m.global.REG_TWITCH, m.global.REG_VOD_BOOKMARK,
+        "on_video_bookmark"]
+end function
+
+' Handle a video bookmark location
+function on_video_bookmark(event as object) as void
+    data = event.getData().result
+    bookmarks = parseJson(data)
+    m.bookmarks = bookmarks
+    id = m.info_screen.video_selected
+    m.video_position = 0
+    if type(bookmarks) = "roArray"
+        for each bookmark in bookmarks
+            if bookmark.id = id
+                m.video_position = bookmark.time
+            end if
+        end for
+    end if
+    preload_video(true)
     play_video(invalid, true)
+end function
+
+' Bookmark the current video time
+function bookmark_video() as void
+    if m.info_screen.video_selected = invalid or type(m.bookmarks) <> "roArray"
+        return
+    end if
+    mark = {
+        id: m.info_screen.video_selected,
+        time: m.video.position
+    }
+    if m.bookmarks.count() >= 100
+        m.bookmarks.delete(0)
+    end if
+    added = false
+    for bookmark_index = 0 to m.bookmarks.count() - 1
+        bookmark = m.bookmarks[bookmark_index]
+        if bookmark.id = mark.id
+            m.bookmarks[bookmark_index] = mark
+            added = true
+        end if
+    end for
+    if not added
+        m.bookmarks.push(mark)
+    end if
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_VOD_BOOKMARK,
+        m.bookmarks, "on_bookmark_write"]
+end function
+
+' Handle bookmark being written
+function on_bookmark_write(event as object) as void
+    if not event.getData().result
+        error("error_bookmark_write_fail", 1019)
+    end if
 end function
 
 ' Set the dialog for the info screen
@@ -2062,9 +2156,9 @@ function check_play_ads() as void
     if m.ads = invalid or m.video = invalid or m.video.content = invalid or m.video.content.live = invalid or m.video.position = invalid or m.video.duration = invalid
         return
     end if
-    printl(m.EXTRA, "Ad Time: " + (m.AD_INTERVAL - (m.video.position - m.last_ad_position)).toStr())
+    printl(m.EXTRA, "Ad Time: " + (m.global.twitched_config.ad_interval - (m.video.position - m.last_ad_position)).toStr())
     ' Check if enough time has passed for an ad
-    if m.video.position - m.last_ad_position >= m.AD_INTERVAL
+    if m.video.position - m.last_ad_position >= m.global.twitched_config.ad_interval
         printl(m.DEBUG, "Twitch: Mid-roll ads")
         m.last_ad_position = m.video.position
         if m.video.content.live
@@ -2232,5 +2326,19 @@ end function
 function on_start_menu_index_write(event as object) as void
     if not event.getData().result
         error("error_start_menu_index_write_fail", 1018)
+    end if
+end function
+
+' Handle a deep link input event
+' The event data should be an associative array
+function on_input_deep_link(event as object) as void
+    args = event.getData()
+    if args <> invalid and (m.ads = invalid or not m.ads.showing_ads)
+        hide_video()
+        hide_video_info_screen()
+        reset()
+        m.stage = -1
+        m.global.args = args
+        deep_link_or_start()
     end if
 end function

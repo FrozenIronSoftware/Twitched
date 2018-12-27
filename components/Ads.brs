@@ -11,6 +11,7 @@ function init() as void
     ' Ads
     m.ads = Roku_Ads()
     m.ads.enableNielsenDar(true)
+    m.ads.enableAdMeasurements(true)
     m.ads.setNielsenAppId(m.global.secret.ad_nielsen_id)
     m.ads.setAdPrefs(true, 2)
     ' Components
@@ -51,8 +52,8 @@ end function
 function get_ad_id() as string
     ad_id = ""
     device_info = createObject("roDeviceInfo")
-    if not device_info.isAdIdTrackingDisabled()
-        ad_id = device_info.getAdvertisingId()
+    if not device_info.isRidaDisabled()
+        ad_id = device_info.getRida()
     end if
     return ad_id
 end function
@@ -88,14 +89,17 @@ end function
 
 ' Async show ads call
 ' Sets the status to the result of the ad call
-' @param params roArray [nielsen_id  as string, genre as string, content_length as integer]
+' @param params roArray [nielsen_id  as string, genre as string,
+' content_length as integer, is_vod as boolean]
 function show_ads(params as object) as void
+    m.top.showing_ads = true
     if not m.did_fetch_server
         m.twitch_api.get_ad_server = "on_ad_server"
     end if
     nielsen_id = params[0]
     genre = params[1]
     content_length = params[2]
+    is_vod = params[3]
     set_ad_url(m.ad_url)
     m.ads.setNielsenProgramId(nielsen_id) ' Streamer
     m.ads.setNielsenGenre(genre) ' General variety
@@ -106,29 +110,93 @@ function show_ads(params as object) as void
     else
         m.ads.setContentLength() ' Clear
     end if
-    ads = m.ads.getAds()
-    ads_count = 0
-    if ads <> invalid
-        ads_count = ads.count()
+    max_ads = m.global.twitched_config.ad_limit_stream
+    if is_vod
+        max_ads = m.global.twitched_config.ad_limit_vod
     end if
-    track_ads(ads_count, false)
-    if ads_count = 0
+    ads = get_ads(max_ads)
+    ad_pods = ads["ad_pods"]
+    ad_count = ads["count"]
+    track_ads(ad_count, false)
+    if ad_count = 0
         printl(m.DEBUG, "Ads: No ads loaded from third-party ad server")
         ' Load Roku ads as a fallback
         set_ad_url("")
-        ads = m.ads.getAds()
-        if ads <> invalid
-            ads_count = ads.count()
-        end if
-        track_ads(ads_count, true)
-        if ads_count = 0
+        ads = get_ads(max_ads)
+        ad_pods = ads["ad_pods"]
+        ad_count = ads["count"]
+        track_ads(ad_count, true)
+        if ad_count = 0
             printl(m.DEBUG, "Ads: No ads loaded from Roku ad server")
             m.top.setField("status", true)
             return
         end if
     end if
-    printl(m.DEBUG, "Ads: Showing ads")
-    m.top.setField("status", m.ads.showAds(ads, invalid, m.top.view))
+    printl(m.DEBUG, "Ads: Showing " + ad_count.toStr() + " ads")
+    m.top.setField("status", m.ads.showAds(ad_pods, invalid, m.top.view))
+    m.top.showing_ads = false
+end function
+
+' Get the ads from the current ad server.
+' @return associative array containing ad pods and the total ad count
+' The ad_pods array may be invalid
+' {
+'   ad_pods: [...],
+'   count: 0
+' }
+' An array of ad pods will be returned with the most ads contained total equal
+' to the total allowed per ad bread, passed as the first argument.
+function get_ads(max_ads as integer) as object
+    if max_ads < 1
+        printl(m.DEBUG, "Ads: Max ads set to less than 1. Forcing 2")
+        max_ads = 2 ' Load two if for some reason max_ads is 0 or less
+    end if
+    ret_ad_pods = []
+    ad_count = 0
+    ad_pods = m.ads.getAds()
+    if type(ad_pods) <> "roArray"
+        return {
+            ad_pods: invalid,
+            count: 0
+        }
+    end if
+    for each ad_pod in ad_pods
+        if type(ad_pod) = "roAssociativeArray" and ad_count < max_ads
+            allowed_ads = []
+            duration = 0
+            ads = ad_pod["ads"]
+            ' Populate an array of ads for this pod
+            if type(ads) = "roArray"
+                max_index = min(max_ads - ad_count - 1, ads.count() - 1)
+                for ad_index = 0 to max_index
+                    ad = ads[ad_index]
+                    ad_duration = ad["duration"]
+                    if ad_duration <> invalid
+                        duration = duration + ad_duration
+                        allowed_ads.push(ad)
+                    end if
+                end for
+            end if
+            ' Add this pod to the ad pods to return
+            if allowed_ads.count() > 0
+                ad_pod["ads"] = allowed_ads
+                ad_pod["duration"] = duration
+                ad_count = ad_count + allowed_ads.count()
+                ret_ad_pods.push(ad_pod)
+            end if
+        end if
+    end for
+    ' Return ad pods
+    if ad_count > 0
+        return {
+            ad_pods: ret_ad_pods,
+            count: ad_count
+        }
+    end if
+    return {
+        ad_pods: invalid,
+        count: 0
+    }
 end function
 
 ' Send analytics data about how many ads were received for playback

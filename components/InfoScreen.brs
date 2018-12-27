@@ -74,6 +74,8 @@ function on_callback(event as object) as void
         on_unfollow_channel(event)
     else if callback = "on_stream_data"
         on_stream_data(event)
+    else if callback = "on_hls_data"
+        on_hls_data(event)
     else
         if callback = invalid
             callback = ""
@@ -166,6 +168,15 @@ end function
 function is_user() as boolean
     stream_type = m.top.getField("stream_type")
     return stream_type = "user" or stream_type = "user_follow"
+end function
+
+' Check if the type is a DRM stream
+function is_drm() as boolean
+    stream_type = m.top.getField("stream_type")
+    if stream_type = invalid
+        return false
+    end if
+    return ucase(stream_type).instr(0, "DRM") > -1
 end function
 
 ' Handle a button selection
@@ -366,9 +377,17 @@ function on_play_button_pressed() as void
     video_id = invalid
     ' Stream play
     if not is_video()
-        m.twitch_api.get_streams = [{
-            user_id: m.top.streamer[2]
-        }, "on_stream_data"]
+        if is_drm()
+            show_drm_message()
+            return
+        else if m.global.twitched_config.force_remote_hls
+            m.twitch_api.get_streams = [{
+                user_id: m.top.streamer[2]
+            }, "on_stream_data"]
+        else
+            m.twitch_api.get_hls_url = [m.twitch_api.HLS_TYPE_STREAM, m.top.streamer[1],
+                m.global.P720, "on_hls_data", true]
+        end if
     ' Video play
     else
         if m.video_selected <> invalid
@@ -403,11 +422,36 @@ function on_stream_data(event as object) as void
     end if
 end function
 
+' Handle stream data (HLS) and either attempt to play video or show offline error
+function on_hls_data(event as object) as void
+    ' HLS data was returned. The stream is online
+    if event <> invalid and type(event.getData().result) = "roAssociativeArray"
+        m.top.setField("play_selected", true)
+    ' There was an error or the stream is offline
+    else
+        m.loading_dialog.visible = false
+        m.buttons.setFocus(true)
+        show_offline_message(3003)
+    end if
+end function
+
 ' Show a stream offline message dialog
 function show_offline_message(error_code as integer) as void
     m.optionsDialog = false
     m.dialog.title = tr("title_error")
     m.dialog.message = tr("error_stream_offline") + chr(10) + tr("title_error_code") + ": " + error_code.toStr()
+    m.dialog.buttons = [tr("button_confirm")]
+    m.dialog.focusButton = 0
+    m.dialog_type = "error"
+    m.dialog.visible = true
+    m.top.setField("dialog", m.dialog)
+end function
+
+' Show drm message
+function show_drm_message() as void
+    m.optionsDialog = false
+    m.dialog.title = tr("title_stream_drm")
+    m.dialog.message = tr("error_stream_drm")
     m.dialog.buttons = [tr("button_confirm")]
     m.dialog.focusButton = 0
     m.dialog_type = "error"

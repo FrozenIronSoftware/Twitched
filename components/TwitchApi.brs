@@ -9,6 +9,7 @@ function init() as void
     m.API = "https://www.twitched.org/api" ' Twitched Root API
     m.API_RAW = "https://api.twitch.tv/api" ' Twitch Raw (undocumented) endpoint [It's bloody raw - Gordon Ramsay]
     m.API_USHER = "https://usher.ttvnw.net" ' Twitch Raw (undocumented) endpoint
+    m.API_VIZIMA = "https://vizima.twitch.tv/api" ' Twitch keyserver API
     m.top.setField("AUTH_URL", "https://twitched.org/link") ' User web endpoint
     m.top.HLS_TYPE_STREAM = 0
     m.top.HLS_TYPE_VIDEO = 1
@@ -64,6 +65,7 @@ function init() as void
     m.top.observeField("unfollow_community", m.port)
     m.top.observeField("unfollow_game", m.port)
     ' Task init
+    init_logging()
     m.top.functionName = "run"
     m.top.control = "RUN"
 end function
@@ -312,6 +314,8 @@ function on_http_response(event as object) as void
             _on_hls_access_token(event)
         else if callback = "_on_hls_playlist"
             _on_hls_playlist(event)
+        else if callback = "_on_keyserver_data"
+            _on_keyserver_data(event)
         else
             if callback = invalid
                 callback = ""
@@ -364,9 +368,25 @@ function get_video_url(params as object) as string
     return (m.API + "/twitch/vod/60/" + params[1] + "/" + get_device_model() + "/" + params[0] + "+" + params[1] + ".m3u8").encodeUri().replace("+", "%2B")
 end function
 
+' Get bif url
+' @param params array [quality, video_id]
+function get_bif_url(params as object) as string
+    return (m.API + "/bif/" + params[1] + "/" + params[0] + ".bif").encodeUri()
+end function
+
 ' Get the device model info string
+' The model number is sanitized. The first numbers are kept and any letters are
+' discarded. An X will be append to the numbers.
+' Example: 8000EU becomes 8000X
+' If the format is not matched, the unmodified model will be returned.
 function get_device_model() as string
-    return createObject("roDeviceInfo").getModel()
+    device_info = createObject("roDeviceInfo")
+    model_regex = createObject("roRegex", "([0-9]*).*", "")
+    match = model_regex.match(device_info.getModel())
+    if match.count() <> 2 or (type(match[1], 3) <> "roString" and type(match[1], 3) <> "String")
+        return device_info.getModel()
+    end if
+    return match[1] + "X"
 end function
 
 ' Request a link code from the API
@@ -613,22 +633,32 @@ function validate_token(params as object) as void
 end function
 
 ' Get access data and construct a URL for an HLS endpoint
-' @param event with data containing and array of parameters [integer hls_type, string stream_id, string quality, string callback]
+' @param event with data containing and array of parameters [integer hls_type,
+'        string stream_id, string quality, string callback,
+'        boolean force_fetch]
+'        if force_fetch is true the global config and local config will be
+'        ignored even if they dictate a fetch should fail
 function get_hls_url(params as object) as void
+    passed_params = params.getData()
     ' Return invalid so the server is called for HLS playlists
-    if (not m.global.use_local_hls_parsing) or m.global.twitched_config.force_remote_hls
+    force_fetch = false
+    if passed_params[4] <> invalid and passed_params[4]
+        force_fetch = passed_params[4]
+    end if
+    if ((not m.global.use_local_hls_parsing) or m.global.twitched_config.force_remote_hls) and (not force_fetch)
         m.top.setField("result", {
-            callback: params.getData()[3]
+            callback: passed_params[3]
             result: invalid
         })
         return
     end if
-    passed_params = params.getData()
     hls_url_params = {
         type: passed_params[0],
         id: passed_params[1],
         quality: passed_params[2],
-        callback: passed_params[3]
+        callback: passed_params[3],
+        force_fetch: force_fetch,
+        drm_data: invalid
     }
     ' If the ID is the same as the stored value use the cached data
     if m.hls_url_params <> invalid and m.hls_url_params.id = hls_url_params.id
@@ -667,6 +697,7 @@ function _on_hls_access_token(event as object) as void
     data = event.result
     ' Valid data
     if type(data) = "roAssociativeArray"
+        m.hls_url_params.access_token = data
         url = ""
         url_params = []
         ' Stream
@@ -679,6 +710,9 @@ function _on_hls_access_token(event as object) as void
             url_params.push("type=any")
             url_params.push("allow_audio_only=true")
             url_params.push("allow_source=true")
+            url_params.push("playlist_include_framerate=true")
+            url_params.push("cdm=wv")
+            url_params.push("max_level=52")
         ' Video
         else if m.hls_url_params.type = m.top.HLS_TYPE_VIDEO
             url = m.API_USHER + "/vod/" + m.hls_url_params.id + ".m3u8"
@@ -689,6 +723,9 @@ function _on_hls_access_token(event as object) as void
             url_params.push("type=any")
             url_params.push("allow_audio_only=true")
             url_params.push("allow_source=true")
+            url_params.push("playlist_include_framerate=true")
+            url_params.push("cdm=wv")
+            url_params.push("max_level=52")
         ' Error
         else
             m.top.setField("result", {
@@ -712,6 +749,22 @@ end function
 function _on_hls_playlist(event as object) as void
     data = event.result
     m.hls_playlist = data
+    request_twitch_keyserver_data()
+end function
+
+' Request keyserver auth data from Twitch
+function request_twitch_keyserver_data() as void
+    url = m.API_VIZIMA + "/authxml/" + m.hls_url_params.id
+    url_params = []
+    url_params.push("token=" + m.http_twitch.escape(m.hls_url_params.access_token.token))
+    url_params.push("sig=" + m.http_twitch.escape(m.hls_url_params.access_token.sig))
+    request("GET", url, url_params, "_on_keyserver_data", "", m.http_twitch, false)
+end function
+
+' Handle keyserver data
+function _on_keyserver_data(event as object) as void
+    data = event.result
+    m.hls_url_params.drm_data = data
     clean_master_playlist()
 end function
 
@@ -727,7 +780,7 @@ function clean_master_playlist() as void
         return
     end if
     ' Clean the playlist
-    max_quality = get_max_quality_for_model(m.hls_url_params.quality)
+    max_quality = get_max_quality_for_model(m.hls_url_params.quality, get_device_model())
     new_line_regex = createObject("roRegex", chr(13) + "?" + chr(10), "")
     lines = new_line_regex.split(m.hls_playlist)
     master_playlist = []
@@ -841,7 +894,8 @@ function clean_master_playlist() as void
         callback: m.hls_url_params.callback
         result: {
             url: out_path,
-            headers: []
+            headers: [],
+            drm_data: m.hls_url_params.drm_data
         }
     })
 end function
