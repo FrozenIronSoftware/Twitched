@@ -2,14 +2,14 @@
 <!-- Copyright (C) 2017 Rolando Islas. All Rights Reserved. -->
 <component name="Chat" extends="Group">
 	<children>
-	
+
 		<Rectangle
 			id="background"
 			color="0x000000"
 			opacity="0.8"
 			width="750"
 			height="1080" />
-	
+
 		<MarkupList
 			id="chat_list"
 			itemComponentName="ChatItem"
@@ -20,13 +20,19 @@
 			drawFocusFeedback="false">
 			<ContentNode role="content" />
 		</MarkupList>
-		
+
 		<Irc
 			id="irc" />
-			
-		<KeyboardDialog 
+
+		<KeyboardDialog
 			id="keyboard"
 			visible="false" />
+
+        <Timer
+            id="chat_timer"
+            repeat="true"
+    		duration="1"
+            />
 
 	</children>
 
@@ -38,6 +44,7 @@
 		<field id="token" type="string" alwaysNotify="true" />
 		<field id="user_name" type="string" alwaysNotify="true" />
 		<field id="blur" type="boolean" alwaysNotify="true" />
+        <field id="delay_seconds" type="integer" alwaysNotify="false" />
 	</interface>
 
 	<script type="text/brightscript" uri="pkg:/components/Chat.brs" />

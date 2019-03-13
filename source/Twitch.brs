@@ -2133,6 +2133,7 @@ function update_stream_info(event = invalid as object) as void
     printl(m.EXTRA, "Screen: " + createObject("roDeviceInfo").getVideoMode())
     printl(m.EXTRA, "Quality: " + m.video_quality)
     printl(m.EXTRA, "Position: " + m.video.position.toStr())
+    printl(m.EXTRA, "Delay: " + m.video.timeToStartStreaming.toStr())
     ' Do not up/down scale if the video is not playing
     if m.video.state <> "playing"
         return
