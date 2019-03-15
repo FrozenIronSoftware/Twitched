@@ -431,7 +431,7 @@ function on_hls_data(event as object) as void
     else
         m.loading_dialog.visible = false
         m.buttons.setFocus(true)
-        show_offline_message(3003)
+        show_offline_message(3004)
     end if
 end function
 
