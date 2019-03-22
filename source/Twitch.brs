@@ -1478,8 +1478,10 @@ function do_play_video(event = invalid as object, ignore_error = false as boolea
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
     if (m.video.state = "finished" or m.video.state = "error") and not ignore_error and m.stage = m.VIDEO_PLAYER
-        show_video_error()
-        return
+        if m.ads = invalid
+            show_video_error()
+            return
+        end if
     end if
     ' Show ads
     if m.ads <> invalid and show_ads
@@ -1735,7 +1737,7 @@ function on_video_state_change(event as object) as void
         ' (with no ads) in the hope that the stream will resume.
         ' On TCL manufactured Roku TVs this will be thrown during Twitch ads
         ' because TCL apparantly hate H.264 4.0
-        if video_error_message = "ignored"
+        if video_error_message = "ignored" or m.video.errorCode = -3
             if is_tcl_device()
                 preload_video()
                 if m.stage = m.VIDEO_PLAYER or m.stage = m.CHECK_PLAY
