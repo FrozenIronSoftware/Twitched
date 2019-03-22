@@ -448,6 +448,14 @@
                 <source>error_stream_drm</source>
                 <target>Cannot play DRM stream.</target>
             </trans-unit>
+            <trans-unit id="110">
+                <source>message_tcl_detected</source>
+                <target>TCL Roku Detected</target>
+            </trans-unit>
+            <trans-unit id="111">
+                <source>message_tcl_loading</source>
+                <target>Due to unsupported codecs by TCL Roku devices a loading screen may appear for up to one minute while a Twitch embedded advertisement plays.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

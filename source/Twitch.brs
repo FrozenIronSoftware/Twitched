@@ -221,10 +221,12 @@ function init() as void
     m.settings_panel = m.top.findNode("settings")
     m.search_panel = m.top.findNode("search")
     m.video_title = m.top.findNode("video_title")
+    m.video_message = m.top.findNode("video_message")
     m.chat = m.top.findNode("chat")
     m.stream_info_timer = m.top.findNode("stream_info_timer")
     m.video_background = m.top.findNode("video_background")
     m.play_check_timer = m.top.findNode("play_check_timer")
+    m.video_message_timer = m.top.findNode("video_message_timer")
     ' Events
     if m.ads <> invalid
         m.ads.observeField("status", "on_ads_end")
@@ -253,6 +255,7 @@ function init() as void
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
     m.play_check_timer.observeField("fire", "check_play_video")
+    m.video_message_timer.observeField("fire", "hide_video_message")
     m.poster_grid.observeField("rowItemSelected", "on_poster_item_selected")
     m.top.observeField("deep_link", "on_input_deep_link")
     ' Vars
@@ -1732,7 +1735,11 @@ function on_video_state_change(event as object) as void
         ' On TCL manufactured Roku TVs this will be thrown during Twitch ads
         ' because TCL apparantly hate H.264 4.0
         if video_error_message = "ignored"
-            play_video(invalid, false, false)
+            if is_tcl_device()
+                show_video_message("message_tcl_detected", "message_tcl_loading")
+                preload_video()
+                play_video(invalid, false, false)
+            end if
             print("+++++++++++++++++++++++++++++++++++++++++++++")
             return
         end if
@@ -1754,6 +1761,21 @@ function on_video_state_change(event as object) as void
             resize_video_theater_mode()
         end if
     end if
+end function
+
+' Show a message on the top of the video. This is not an error and the message
+' will automatically hide after a few seconds
+function show_video_message(line_one as string, line_two = "" as string) as void
+    m.video_message.visible = true
+    m.video_message.findNode("line_one").text = tr(line_one)
+    m.video_message.findNode("line_two").text = tr(line_two)
+    m.video_message_timer.control = "stop"
+    m.video_message_timer.control = "start"
+end function
+
+' Hide the video message
+function hide_video_message(event = invalid as object) as void
+    m.video_message.visible = false
 end function
 
 ' Resize the video to the normal fullscreen dimensions

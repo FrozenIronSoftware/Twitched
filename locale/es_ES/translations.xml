@@ -448,6 +448,14 @@
                 <source>error_stream_drm</source>
                 <target>No se puede reproducir la transmisión DRM.</target>
             </trans-unit>
+            <trans-unit id="110">
+                <source>message_tcl_detected</source>
+                <target>TCL Roku Detectado</target>
+            </trans-unit>
+            <trans-unit id="111">
+                <source>message_tcl_loading</source>
+                <target>Debido a los codecs no admitidos por los dispositivos TCL Roku, puede aparecer una pantalla de carga durante hasta un minuto mientras se reproduce un anuncio integrado de Twitch.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>
