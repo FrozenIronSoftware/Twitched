@@ -25,6 +25,7 @@ function init() as void
     ' Variables
     m.did_fetch_server = false
     m.ad_url = ""
+    m.ad_play_times = {}
     ' Task init
     m.top.functionName = "run"
     m.top.control = "RUN"
@@ -100,6 +101,15 @@ function show_ads(params as object) as void
     genre = params[1]
     content_length = params[2]
     is_vod = params[3]
+
+    ' Check last ad time for a channel
+    if does_channel_have_ad_cooldown(nielsen_id)
+        m.top.setField("status", true)
+        m.top.showing_ads = false
+        return
+    end if
+
+    ' Normal ad flow
     set_ad_url(m.ad_url)
     m.ads.setNielsenProgramId(nielsen_id) ' Streamer
     m.ads.setNielsenGenre(genre) ' General variety
@@ -133,8 +143,29 @@ function show_ads(params as object) as void
         end if
     end if
     printl(m.DEBUG, "Ads: Showing " + ad_count.toStr() + " ads")
-    m.top.setField("status", m.ads.showAds(ad_pods, invalid, m.top.view))
+    did_ads_play = m.ads.showAds(ad_pods, invalid, m.top.view)
+    if did_ads_play
+        m.ad_play_times[nielsen_id] = uptime(0)
+    end if
+    m.top.setField("status", did_ads_play)
     m.top.showing_ads = false
+end function
+
+' Returns true if the channel has played an ad in the last 5 minutes.
+' An ad should not be played if this is the case.
+function does_channel_have_ad_cooldown(key as string) as boolean
+    ' Clean old times
+    to_delete = []
+    for each time_key in m.ad_play_times.keys()
+        if uptime(0) - m.ad_play_times[time_key] >= 5 * 60
+            to_delete.push(time_key)
+        end if
+    end for
+    for each time_key in to_delete
+        m.ad_play_times.delete(time_key)
+    end for
+    ' Check time
+    return m.ad_play_times.doesExist(key)
 end function
 
 ' Get the ads from the current ad server.
