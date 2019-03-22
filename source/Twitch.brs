@@ -274,6 +274,7 @@ function init() as void
     m.dynamic_poster_id = invalid
     m.has_attempted_refresh = false
     m.bookmarks = invalid
+    m.last_back_time = 0
     ' Init
     init_logging()
     init_analytics()
@@ -1724,7 +1725,7 @@ function on_video_state_change(event as object) as void
     print "Video State: " + event.getData()
     print tab(2)"Stage: " m.stage.toStr()
     ' Handle error
-    if event.getData() = "error"
+    if event.getData() = "error" and uptime(0) - m.last_back_time > 1
         video_error_message = m.video.errorMsg
         if video_error_message = invalid
             video_error_message = ""
@@ -1736,9 +1737,11 @@ function on_video_state_change(event as object) as void
         ' because TCL apparantly hate H.264 4.0
         if video_error_message = "ignored"
             if is_tcl_device()
-                show_video_message("message_tcl_detected", "message_tcl_loading")
                 preload_video()
-                play_video(invalid, false, false)
+                if m.stage = m.VIDEO_PLAYER or m.stage = m.CHECK_PLAY
+                    show_video_message("message_tcl_detected", "message_tcl_loading")
+                    play_video(invalid, false, false)
+                end if
             end if
             print("+++++++++++++++++++++++++++++++++++++++++++++")
             return
@@ -1806,6 +1809,7 @@ end function
 
 ' Hide the video and show the info screen
 function hide_video(reset_info_screen = true as boolean) as void
+    m.last_back_time = uptime(0)
     bookmark_video()
     set_saved_stage_info(m.VIDEO_PLAYER)
     m.info_screen.setFocus(true)
@@ -1826,7 +1830,9 @@ function hide_video(reset_info_screen = true as boolean) as void
     m.play_params = invalid
     m.play_check_timer.control = "stop"
     m.is_video_preloaded = false
+    m.video_message.visible = false
     reset_video_size()
+    m.last_back_time = uptime(0)
 end function
 
 ' Handle the close event for the dialog
