@@ -1727,8 +1727,12 @@ function on_video_state_change(event as object) as void
             video_error_message = ""
         end if
         print tab(2)"Video error message: " video_error_message
-        ' Don't do anthing if the error message is ignored
+        ' Ignored **seems** to mean a codec error. We force a play here
+        ' (with no ads) in the hope that the stream will resume.
+        ' On TCL manufactured Roku TVs this will be thrown during Twitch ads
+        ' because TCL apparantly hate H.264 4.0
         if video_error_message = "ignored"
+            play_video(invalid, false, false)
             print("+++++++++++++++++++++++++++++++++++++++++++++")
             return
         end if

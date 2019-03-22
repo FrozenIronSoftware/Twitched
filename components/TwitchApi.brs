@@ -813,20 +813,6 @@ function clean_master_playlist() as void
             playlists_meeting_quality.push(playlist)
         end if
     end for
-    ' If no playlists match the quality, add the smallest
-    'if playlists_meeting_quality.count() = 0
-    '    smallest = invalid
-    '    for each playlist in playlists
-    '        if is_stream_video(playlist)
-    '            if smallest = invalid or get_stream_quality(smallest) > get_stream_quality(playlist) and stream_meets_quality(max_quality, playlist)
-    '                smallest = playlist
-    '            end if
-    '        end if
-    '    end for
-    '    if smallest <> invalid
-    '        playlists_meeting_quality.push(smallest)
-    '    end if
-    'end if
     ' Add streams to the master playlist
     did_add_playlist = false
     for each playlist in playlists_meeting_quality
@@ -889,6 +875,13 @@ function clean_master_playlist() as void
         return
     end if
     print "Generated playlist file: " + out_path
+
+    device_info = createObject("roDeviceInfo")
+    model_details = device_info.getModelDetails()
+    if model_details["VendorName"] = "TCL"
+        printl(m.DEBUG, "TCL manufactured Roku! (i.e. zero quality control)")
+    end if
+
     ' Set value
     m.top.setField("result", {
         callback: m.hls_url_params.callback
