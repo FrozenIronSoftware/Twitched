@@ -77,6 +77,9 @@ function queue_chat_message(message as object) as void
         time: message_time,
         message: message
     }
+    if message.do_not_queue = true
+        message_packet.time = 0
+    end if
     m.queued_messages.push(message_packet)
 end function
 
