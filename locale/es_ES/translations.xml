@@ -456,6 +456,14 @@
                 <source>message_tcl_loading</source>
                 <target>Debido a los codecs no admitidos por los dispositivos TCL Roku, puede aparecer una pantalla de carga durante hasta un minuto mientras se reproduce un anuncio integrado de Twitch.</target>
             </trans-unit>
+            <trans-unit id="112">
+                <source>title_chat_delay</source>
+                <target>Retraso de chat</target>
+            <trans-unit>
+            <trans-unit id="113">
+                <source>error_chat_delay_write_fail</source>
+                <target>Error al guardar las preferencias de demora de chat.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

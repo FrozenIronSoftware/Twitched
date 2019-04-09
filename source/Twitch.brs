@@ -30,6 +30,7 @@ function main(args as dynamic) as void
 	   REG_HLS_LOCAL: "HLS",
        REG_START_MENU: "START_MENU",
        REG_VOD_BOOKMARK: "VOD_BOOKMARK",
+       REG_DELAY_CHAT: "DELAY_CHAT"
 	   VERSION: app_info.getVersion(),
 	   P1080: "1080p",
 	   P720: "720p",
@@ -38,7 +39,8 @@ function main(args as dynamic) as void
 	   P240: "240p",
 	   use_local_hls_parsing: true,
        start_menu_index: 0,
-	   twitched_config: {}
+	   twitched_config: {},
+       do_delay_chat: false
 	})
 	' Events
 	screen.show()
@@ -250,6 +252,7 @@ function init() as void
     m.settings_panel.observeField("language", "on_language_change")
     m.settings_panel.observeField("quality", "on_quality_change")
     m.settings_panel.observeField("hls_local", "on_hls_local_change")
+    m.settings_panel.observeField("delay_chat", "on_delay_chat_change")
     m.settings_panel.observeField("start_menu_index", "on_start_menu_index_change")
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
@@ -319,7 +322,8 @@ function on_twitched_config(event as object) as void
     ' Load registry data that does not need to be acted upon immediatly
     m.registry.read_multi = [m.global.REG_TWITCH, [
         m.global.REG_HLS_LOCAL,
-        m.global.REG_START_MENU
+        m.global.REG_START_MENU,
+        m.global.REG_DELAY_CHAT
     ], "on_registry_multi_read"]
 end function
 
@@ -329,6 +333,7 @@ function on_registry_multi_read(event as object) as void
     if type(result) = "roAssociativeArray"
         ' Set use local hls parsing defaults to true
         m.global.use_local_hls_parsing = (result[m.global.REG_HLS_LOCAL] = "true" or result[m.global.REG_HLS_LOCAL] = invalid)
+        m.global.do_delay_chat = result[m.global.REG_DELAY_CHAT] = "true"
         start_menu_index = result[m.global.REG_START_MENU]
         if start_menu_index <> invalid
             m.global.start_menu_index = val(start_menu_index, 0)
@@ -425,6 +430,8 @@ function on_callback(event as object) as void
         on_video_bookmark(event)
     else if callback = "on_bookmark_write"
         on_bookmark_write(event)
+    else if callback = "on_chat_delay_write"
+        on_chat_delay_write(event)
     else
         if callback = invalid
             callback = ""
@@ -2341,6 +2348,20 @@ function on_hls_local_change(event as object) as void
     m.registry.write = [m.global.REG_TWITCH, m.global.REG_HLS_LOCAL,
         enabled.toStr(), "on_hls_local_write"]
     m.global.use_local_hls_parsing = enabled
+end function
+
+' Update the chat delay global variable
+function on_delay_chat_change(event as object) as void
+    enabled = event.getData()
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_DELAY_CHAT,
+        enabled.toStr(), "on_chat_delay_write"]
+end function
+
+' Handle a failure of registry writing for the chat delay
+function on_chat_delay_write(event as object) as void
+    if not event.getData().result
+        error("error_chat_delay_write_fail", 1020)
+    end if
 end function
 
 ' Handle hls local setting being written to the registry

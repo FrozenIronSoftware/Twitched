@@ -70,6 +70,7 @@
 		<field id="quality" type="string" alwaysNotify="true" />
 		<field id="hls_local" type="boolean" alwaysNotify="true" />
         <field id="start_menu_index" type="integer" alwaysNotify="true" />
+        <field id="delay_chat" type="boolean" alwaysNotify="true" />
 	</interface>
 
 	<script type="text/brightscript" uri="pkg:/components/Settings.brs" />

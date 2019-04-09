@@ -67,7 +67,11 @@ end function
 ' Handle a chat message
 function on_chat_message(event as object) as void
     message = event.getData()
-    queue_chat_message(message)
+    if m.global.do_delay_chat
+        queue_chat_message(message)
+    else
+        add_chat_message(message)
+    end if
 end function
 
 ' Queue a chat message to be added later by the delayed loop

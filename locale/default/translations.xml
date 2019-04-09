@@ -456,6 +456,14 @@
                 <source>message_tcl_loading</source>
                 <target>Due to unsupported codecs by TCL Roku devices a loading screen may appear for up to one minute while a Twitch embedded advertisement plays.</target>
             </trans-unit>
+            <trans-unit id="112">
+                <source>title_chat_delay</source>
+                <target>Chat Delay</target>
+            <trans-unit>
+            <trans-unit id="113">
+                <source>error_chat_delay_write_fail</source>
+                <target>Failed to save chat delay preferences.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>
