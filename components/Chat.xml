@@ -15,7 +15,7 @@
 			itemComponentName="ChatItem"
 			itemSize="[600,180]"
 			itemSpacing="[0,0]"
-			translation="[135,135]"
+			translation="[10,0]"
 			numRows="5"
 			drawFocusFeedback="false">
 			<ContentNode role="content" />
