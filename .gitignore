@@ -2,3 +2,4 @@ out/
 .project
 .settings/
 secret.json
+dumps/

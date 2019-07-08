@@ -319,7 +319,8 @@ function handle_message(message as object) as void
         chat_message = {
             name: tr("twitched"),
             message: tr("message_irc_connected"),
-            color: "#ffffff"
+            color: "#ffffff",
+            do_not_queue: true
         }
         m.top.setField("chat_message", chat_message)
     ' Part

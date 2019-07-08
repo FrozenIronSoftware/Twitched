@@ -6,17 +6,18 @@ function init() as void
     m.URL_INFO = "https://twitched.org/info"
     m.URL_OSS = "https://twitched.org/info/oss"
     m.URL_PRIVACY = "https://twitched.org/info/privacy"
-    m.INFO = 5
-    m.OSS = 6
-    m.PRIVACY = 7
+    m.INFO = 6
+    m.OSS = 7
+    m.PRIVACY = 8
     m.LANGUAGE = 0
     m.QUALITY = 1
-    m.LOG_IN_OUT = 4
+    m.LOG_IN_OUT = 5
     m.HLS_LOCAL = 3
+    m.CHAT_DELAY = 4
     m.START_MENU = 2
     m.MENU_ITEMS = ["title_language", "title_quality", "title_start_menu",
-        "title_hls_local", "title_log_in_out", "title_info", "title_oss",
-        "title_privacy_policy"
+        "title_hls_local", "title_chat_delay", "title_log_in_out", "title_info",
+        "title_oss", "title_privacy_policy"
     ]
     m.LANG_JSON = parseJson(readAsciiFile("pkg:/resources/twitch_lang.json"))
     ' Components
@@ -61,6 +62,9 @@ function onKeyEvent(key as string, press as boolean) as boolean
                 m.radiolist.setFocus(true)
                 return true
             else if m.menu.itemFocused = m.START_MENU
+                m.radiolist.setFocus(true)
+                return true
+            else if m.menu.itemFocused = m.CHAT_DELAY
                 m.radiolist.setFocus(true)
                 return true
             end if
@@ -122,6 +126,9 @@ function select_menu_item(item as integer) as void
         end if
     ' Local HLS
     else if item = m.HLS_LOCAL
+        m.radiolist.setFocus(true)
+    ' Chat Delay
+    else if item = m.CHAT_DELAY
         m.radiolist.setFocus(true)
     ' Start menu
     else if item = m.START_MENU
@@ -199,6 +206,29 @@ function focus_menu_item(item as integer) as void
             end for
         end if
         ' Show radio list
+        m.radiolist.visible = true
+    ' Chat delay
+    else if item = m.CHAT_DELAY
+        ' Title
+        m.title.text = tr("title_chat_delay")
+        m.message.text = tr("message_chat_delay")
+        ' Clear
+        m.radiolist.content.removeChildrenIndex(m.radiolist.content.getChildCount(), 0)
+        items = ["title_enabled", "title_disabled"]
+        for each state in items
+            radio_item = m.radiolist.content.createChild("ContentNode")
+            radio_item.title = tr(state)
+        end for
+        m.global.do_delay_chat = (m.radiolist.checkedItem = 0)
+        ' Select Item
+        if m.global.do_delay_chat
+            m.radiolist.checkedItem = 0
+        else
+            m.radiolist.checkedItem = 1
+        end if
+        ' Translate radio list
+        trans = m.radiolist.translation
+        m.radiolist.translation = [trans[0], trans[1] + 250]
         m.radiolist.visible = true
     ' Log in/out
     else if item = m.LOG_IN_OUT
@@ -324,5 +354,7 @@ function on_checked_item_update(event as object) as void
         if event.getData() > -1
             m.top.setField("start_menu_index", event.getData())
         end if
+    else if m.focused_menu_item = m.CHAT_DELAY
+        m.top.setField("delay_chat", event.getData() = 0)
     end if
 end function

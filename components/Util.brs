@@ -130,3 +130,10 @@ function min(a as dynamic, b as dynamic) as dynamic
         return b
     end if
 end function
+
+' Returns true if the manufactuer is TCL.
+function is_tcl_device() as boolean
+    device_info = createObject("roDeviceInfo")
+    model_details = device_info.getModelDetails()
+    return model_details["VendorName"] = "TCL"
+end function

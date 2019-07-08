@@ -8,11 +8,14 @@ function init() as void
     m.irc = m.top.findNode("irc")
     m.chat_list = m.top.findNode("chat_list")
     m.keyboard = m.top.findNode("keyboard")
+    m.chat_timer = m.top.findNode("chat_timer")
     ' Vars
-
+    m.queued_messages = []
     ' Init
     init_logging()
     init_chat_list()
+    m.chat_timer.control = "start"
+    m.top.delay_seconds = 25
     ' Events
     m.top.observeField("connect", "connect")
     m.top.observeField("disconnect", "disconnect")
@@ -22,6 +25,7 @@ function init() as void
     m.top.observeField("visible", "on_visibility_change")
     m.irc.observeField("chat_message", "on_chat_message")
     m.keyboard.observeField("buttonSelected", "on_keyboard_button_selected")
+    m.chat_timer.observeField("fire", "update_message")
 end function
 
 ' Handle key events
@@ -39,6 +43,7 @@ end function
 ' Handle connecting
 ' Event is a field event with the value being a string with the streamer name
 function connect(event as object) as void
+    m.queued_messages = []
     set_connecting_message()
     m.irc.connect = event.getData()
 end function
@@ -56,12 +61,30 @@ end function
 ' Event is a field event with the value being ignored
 function disconnect(event as object) as void
     m.irc.disconnect = true
+    m.queued_messages = []
 end function
 
 ' Handle a chat message
 function on_chat_message(event as object) as void
     message = event.getData()
-    add_chat_message(message)
+    if m.global.do_delay_chat
+        queue_chat_message(message)
+    else
+        add_chat_message(message)
+    end if
+end function
+
+' Queue a chat message to be added later by the delayed loop
+function queue_chat_message(message as object) as void
+    message_time = uptime(0)
+    message_packet = {
+        time: message_time,
+        message: message
+    }
+    if message.do_not_queue = true
+        message_packet.time = 0
+    end if
+    m.queued_messages.push(message_packet)
 end function
 
 ' Add a chat message to the chat list
@@ -121,4 +144,22 @@ end function
 ' Hide keyboard on visibility change
 function on_visibility_change(event as object) as void
     m.keyboard.visible = false
+end function
+
+' Handle update message loop
+function update_message(event as object) as void
+    time = uptime(0)
+    to_remove = 0
+    for each message in m.queued_messages
+        if time - message.time >= m.top.delay_seconds
+            add_chat_message(message.message)
+            to_remove += 1
+        else
+            goto remove_messages
+        end if
+    end for
+    remove_messages:
+    for remove_index = 0 to to_remove - 1
+        m.queued_messages.delete(0)
+    end for
 end function

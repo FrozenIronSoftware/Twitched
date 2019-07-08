@@ -30,6 +30,7 @@ function main(args as dynamic) as void
 	   REG_HLS_LOCAL: "HLS",
        REG_START_MENU: "START_MENU",
        REG_VOD_BOOKMARK: "VOD_BOOKMARK",
+       REG_DELAY_CHAT: "DELAY_CHAT"
 	   VERSION: app_info.getVersion(),
 	   P1080: "1080p",
 	   P720: "720p",
@@ -38,7 +39,8 @@ function main(args as dynamic) as void
 	   P240: "240p",
 	   use_local_hls_parsing: true,
        start_menu_index: 0,
-	   twitched_config: {}
+	   twitched_config: {},
+       do_delay_chat: false
 	})
 	' Events
 	screen.show()
@@ -221,10 +223,12 @@ function init() as void
     m.settings_panel = m.top.findNode("settings")
     m.search_panel = m.top.findNode("search")
     m.video_title = m.top.findNode("video_title")
+    m.video_message = m.top.findNode("video_message")
     m.chat = m.top.findNode("chat")
     m.stream_info_timer = m.top.findNode("stream_info_timer")
     m.video_background = m.top.findNode("video_background")
     m.play_check_timer = m.top.findNode("play_check_timer")
+    m.video_message_timer = m.top.findNode("video_message_timer")
     ' Events
     if m.ads <> invalid
         m.ads.observeField("status", "on_ads_end")
@@ -248,11 +252,13 @@ function init() as void
     m.settings_panel.observeField("language", "on_language_change")
     m.settings_panel.observeField("quality", "on_quality_change")
     m.settings_panel.observeField("hls_local", "on_hls_local_change")
+    m.settings_panel.observeField("delay_chat", "on_delay_chat_change")
     m.settings_panel.observeField("start_menu_index", "on_start_menu_index_change")
     m.search_panel.observeField("search", "on_search")
     m.chat.observeField("blur", "on_chat_blur")
     m.stream_info_timer.observeField("fire", "update_stream_info")
     m.play_check_timer.observeField("fire", "check_play_video")
+    m.video_message_timer.observeField("fire", "hide_video_message")
     m.poster_grid.observeField("rowItemSelected", "on_poster_item_selected")
     m.top.observeField("deep_link", "on_input_deep_link")
     ' Vars
@@ -271,6 +277,7 @@ function init() as void
     m.dynamic_poster_id = invalid
     m.has_attempted_refresh = false
     m.bookmarks = invalid
+    m.last_back_time = 0
     ' Init
     init_logging()
     init_analytics()
@@ -315,7 +322,8 @@ function on_twitched_config(event as object) as void
     ' Load registry data that does not need to be acted upon immediatly
     m.registry.read_multi = [m.global.REG_TWITCH, [
         m.global.REG_HLS_LOCAL,
-        m.global.REG_START_MENU
+        m.global.REG_START_MENU,
+        m.global.REG_DELAY_CHAT
     ], "on_registry_multi_read"]
 end function
 
@@ -325,6 +333,7 @@ function on_registry_multi_read(event as object) as void
     if type(result) = "roAssociativeArray"
         ' Set use local hls parsing defaults to true
         m.global.use_local_hls_parsing = (result[m.global.REG_HLS_LOCAL] = "true" or result[m.global.REG_HLS_LOCAL] = invalid)
+        m.global.do_delay_chat = result[m.global.REG_DELAY_CHAT] = "true"
         start_menu_index = result[m.global.REG_START_MENU]
         if start_menu_index <> invalid
             m.global.start_menu_index = val(start_menu_index, 0)
@@ -421,6 +430,8 @@ function on_callback(event as object) as void
         on_video_bookmark(event)
     else if callback = "on_bookmark_write"
         on_bookmark_write(event)
+    else if callback = "on_chat_delay_write"
+        on_chat_delay_write(event)
     else
         if callback = invalid
             callback = ""
@@ -1474,8 +1485,10 @@ function do_play_video(event = invalid as object, ignore_error = false as boolea
     ' Check state before playing. The info screen preloads and fails silently.
     ' If this happens, the video should be in a "finished" state
     if (m.video.state = "finished" or m.video.state = "error") and not ignore_error and m.stage = m.VIDEO_PLAYER
-        show_video_error()
-        return
+        if m.ads = invalid
+            show_video_error()
+            return
+        end if
     end if
     ' Show ads
     if m.ads <> invalid and show_ads
@@ -1721,14 +1734,24 @@ function on_video_state_change(event as object) as void
     print "Video State: " + event.getData()
     print tab(2)"Stage: " m.stage.toStr()
     ' Handle error
-    if event.getData() = "error"
+    if event.getData() = "error" and uptime(0) - m.last_back_time > 1
         video_error_message = m.video.errorMsg
         if video_error_message = invalid
             video_error_message = ""
         end if
         print tab(2)"Video error message: " video_error_message
-        ' Don't do anthing if the error message is ignored
-        if video_error_message = "ignored"
+        ' Ignored **seems** to mean a codec error. We force a play here
+        ' (with no ads) in the hope that the stream will resume.
+        ' On TCL manufactured Roku TVs this will be thrown during Twitch ads
+        ' because TCL apparantly hate H.264 4.0
+        if video_error_message = "ignored" or m.video.errorCode = -3
+            if is_tcl_device()
+                preload_video()
+                if m.stage = m.VIDEO_PLAYER or m.stage = m.CHECK_PLAY
+                    show_video_message("message_tcl_detected", "message_tcl_loading")
+                    play_video(invalid, false, false)
+                end if
+            end if
             print("+++++++++++++++++++++++++++++++++++++++++++++")
             return
         end if
@@ -1750,6 +1773,21 @@ function on_video_state_change(event as object) as void
             resize_video_theater_mode()
         end if
     end if
+end function
+
+' Show a message on the top of the video. This is not an error and the message
+' will automatically hide after a few seconds
+function show_video_message(line_one as string, line_two = "" as string) as void
+    m.video_message.visible = true
+    m.video_message.findNode("line_one").text = tr(line_one)
+    m.video_message.findNode("line_two").text = tr(line_two)
+    m.video_message_timer.control = "stop"
+    m.video_message_timer.control = "start"
+end function
+
+' Hide the video message
+function hide_video_message(event = invalid as object) as void
+    m.video_message.visible = false
 end function
 
 ' Resize the video to the normal fullscreen dimensions
@@ -1780,6 +1818,7 @@ end function
 
 ' Hide the video and show the info screen
 function hide_video(reset_info_screen = true as boolean) as void
+    m.last_back_time = uptime(0)
     bookmark_video()
     set_saved_stage_info(m.VIDEO_PLAYER)
     m.info_screen.setFocus(true)
@@ -1800,7 +1839,9 @@ function hide_video(reset_info_screen = true as boolean) as void
     m.play_params = invalid
     m.play_check_timer.control = "stop"
     m.is_video_preloaded = false
+    m.video_message.visible = false
     reset_video_size()
+    m.last_back_time = uptime(0)
 end function
 
 ' Handle the close event for the dialog
@@ -2133,6 +2174,7 @@ function update_stream_info(event = invalid as object) as void
     printl(m.EXTRA, "Screen: " + createObject("roDeviceInfo").getVideoMode())
     printl(m.EXTRA, "Quality: " + m.video_quality)
     printl(m.EXTRA, "Position: " + m.video.position.toStr())
+    printl(m.EXTRA, "Delay: " + m.video.timeToStartStreaming.toStr())
     ' Do not up/down scale if the video is not playing
     if m.video.state <> "playing"
         return
@@ -2306,6 +2348,20 @@ function on_hls_local_change(event as object) as void
     m.registry.write = [m.global.REG_TWITCH, m.global.REG_HLS_LOCAL,
         enabled.toStr(), "on_hls_local_write"]
     m.global.use_local_hls_parsing = enabled
+end function
+
+' Update the chat delay global variable
+function on_delay_chat_change(event as object) as void
+    enabled = event.getData()
+    m.registry.write = [m.global.REG_TWITCH, m.global.REG_DELAY_CHAT,
+        enabled.toStr(), "on_chat_delay_write"]
+end function
+
+' Handle a failure of registry writing for the chat delay
+function on_chat_delay_write(event as object) as void
+    if not event.getData().result
+        error("error_chat_delay_write_fail", 1020)
+    end if
 end function
 
 ' Handle hls local setting being written to the registry
